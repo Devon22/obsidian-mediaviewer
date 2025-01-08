@@ -1,9 +1,9 @@
 {
-  "id": "obsidian-mediaviewer",
+  "id": "mediaviewer",
   "name": "Media Viewer",
   "version": "1.0.0",
   "minAppVersion": "0.15.0",
-  "description": "A media viewer plugin for Obsidian, allowing you to view and manage media files within your notes.",
+  "description": "A media viewer plugin, allowing you to view and manage media files within your notes.",
   "main": "main.js",
   "author": "Devon22",
   "authorUrl": "https://github.com/Devon22",
