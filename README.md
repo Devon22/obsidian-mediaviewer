@@ -1,6 +1,8 @@
 
 # Obsidian Media Viewer
 
+[繁體中文](README_zhTW.md) | English
+
 ## Introduction
 
 Media Viewer is a plugin designed for Obsidian, aiming to provide an intuitive media browser that allows users to easily view media files (such as images and videos) within their notes.
