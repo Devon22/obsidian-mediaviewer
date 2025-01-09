@@ -69,7 +69,6 @@ img: ![[image4.jpg]]
 
 In the plugin's settings page, you can customize the following options:
 
-- Language selection
 - Allow deletion of media files
 - Auto-open the first image
 - Open media browser when clicking on an image
