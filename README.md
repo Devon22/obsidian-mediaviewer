@@ -48,11 +48,14 @@ You can create a Gallery block in a note using the following format:
 | Attribute | Description |
 | :----- | :-------------------------------- |
 | title: | Set the title of the Gallery |
+| addButton: `true or false` | Whether to display the add image button     |
 | alt: | Add a description above an image |
 | img: | Display a thumbnail using `![image.jpg]` above a note |
 
+
 ```markdown
 ```gallery
+addButton: true
 title: gallery
 alt: image1
 ![[image1.jpg]]
