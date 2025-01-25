@@ -423,14 +423,7 @@ class FullScreenModal extends Modal {
             this.fullImage.onload = () => {
                 this.fullImage.style.display = 'block';
                 this.fullVideo.style.display = 'none';
-                this.isZoomed = false;
                 this.resetImageStyles();
-                if (this.fullImage.naturalHeight > this.fullMediaView.clientHeight) {
-                    this.fullImage.style.cursor = 'zoom-in';
-                } else {
-                    this.fullImage.style.cursor = 'default';
-                    this.fullImage.style.height = '100%';
-                }
             };
         } else {
             this.fullVideo.src = media.url;
@@ -456,13 +449,26 @@ class FullScreenModal extends Modal {
     resetImageStyles() {
         this.fullImage.style.width = 'auto';
         this.fullImage.style.height = 'auto';
-        this.fullImage.style.maxWidth = '100%';
+        this.fullImage.style.maxWidth = '100vw';
         this.fullImage.style.maxHeight = '100vh';
         this.fullImage.style.position = 'absolute';
         this.fullImage.style.left = '50%';
         this.fullImage.style.top = '50%';
         this.fullImage.style.transform = 'translate(-50%, -50%)';
-        this.fullImage.style.cursor = 'default';
+        this.fullImage.style.cursor = 'zoom-in';
+        this.fullMediaView.style.overflowX = 'hidden';
+        this.fullMediaView.style.overflowY = 'hidden';
+        this.isZoomed = false;
+
+        if (this.fullMediaView.clientWidth > this.fullMediaView.clientHeight) {
+            if (this.fullImage.naturalHeight < this.fullMediaView.clientHeight) {
+                this.fullImage.style.height = '100%';
+            }
+        } else {
+            if (this.fullImage.naturalWidth < this.fullMediaView.clientWidth) {
+                this.fullImage.style.width = '100%';
+            }
+        }
     }
 
     registerMediaEvents() {       
@@ -483,64 +489,30 @@ class FullScreenModal extends Modal {
             event.stopPropagation();
             
             if (event.target === this.fullImage) { 
-                if (this.fullMediaView.clientWidth > this.fullMediaView.clientHeight) { //橫向螢幕
-                    if (this.fullImage.naturalHeight > this.fullMediaView.clientHeight) {
-                        if (!this.isZoomed) { // 縮放
-                            const maxWidth = this.fullMediaView.clientWidth;
-                            const scale = Math.min(maxWidth / this.fullImage.naturalWidth, 1);
-                            const targetWidth = this.fullImage.naturalWidth * scale;
-                            const targetHeight = this.fullImage.naturalHeight * scale;
+                if (!this.isZoomed) { // 縮放
+                    if (this.fullImage.offsetWidth < this.fullMediaView.clientWidth && this.fullImage.offsetHeight == this.fullMediaView.clientHeight) {
+                        this.fullImage.style.width = '100vw';
+                        this.fullImage.style.height = 'auto';
+                        this.fullMediaView.style.overflowX = 'hidden';
+                        this.fullMediaView.style.overflowY = 'scroll';
+                    } else if (this.fullImage.offsetWidth == this.fullMediaView.clientWidth && this.fullImage.offsetHeight < this.fullMediaView.clientHeight) {
+                        this.fullImage.style.width = 'auto';
+                        this.fullImage.style.height = '100vh';
+                        this.fullMediaView.style.overflowX = 'scroll';
+                        this.fullMediaView.style.overflowY = 'hidden';
+                    } 
 
-                            this.fullImage.style.width = targetWidth + 'px';
-                            this.fullImage.style.height = targetHeight + 'px';
-                            this.fullImage.style.maxWidth = 'none';
-                            this.fullImage.style.maxHeight = 'none';
-                            this.fullImage.style.position = 'relative';
-                            this.fullImage.style.left = '0';
-                            this.fullImage.style.top = '0';
-                            this.fullImage.style.margin = 'auto';
-                            this.fullImage.style.transform = 'none';
-                            this.fullImage.style.cursor = 'zoom-out';
-                            
-                            this.fullMediaView.style.overflowY = 'scroll';
-                            this.isZoomed = true;
-                        } else {
-                            this.resetImageStyles();
-                            this.fullMediaView.style.overflowY = 'hidden';
-                            this.isZoomed = false;
-                        }
-                    } else {
-                        this.hideMedia();
-                    }
-                } else { // 直向螢幕
-                    if (this.fullImage.naturalHeight > this.fullMediaView.clientHeight) {
-                        if (!this.isZoomed) { // 縮放
-                            const maxHeight = this.fullMediaView.clientHeight;
-                            const scale = Math.min(maxHeight / this.fullImage.naturalHeight, 1);
-                            const targetWidth = this.fullImage.naturalWidth * scale;
-                            const targetHeight = this.fullImage.naturalHeight * scale;
-
-                            this.fullImage.style.width = targetWidth + 'px';
-                            this.fullImage.style.height = targetHeight + 'px';
-                            this.fullImage.style.maxWidth = 'none';
-                            this.fullImage.style.maxHeight = 'none';
-                            this.fullImage.style.position = 'relative';
-                            this.fullImage.style.left = '0';
-                            this.fullImage.style.top = '0';
-                            this.fullImage.style.margin = 'auto';
-                            this.fullImage.style.transform = 'none';
-                            this.fullImage.style.cursor = 'zoom-out';
-                            
-                            this.fullMediaView.style.overflowX = 'scroll';
-                            this.isZoomed = true;
-                        } else {
-                            this.resetImageStyles();
-                            this.fullMediaView.style.overflowX = 'hidden';
-                            this.isZoomed = false;
-                        }
-                    } else {
-                        this.hideMedia();
-                    }
+                    this.fullImage.style.maxWidth = 'none';
+                    this.fullImage.style.maxHeight = 'none';
+                    this.fullImage.style.position = 'relative';
+                    this.fullImage.style.left = '0';
+                    this.fullImage.style.top = '0';
+                    this.fullImage.style.margin = 'auto';
+                    this.fullImage.style.transform = 'none';
+                    this.fullImage.style.cursor = 'zoom-out';
+                    this.isZoomed = true;
+                } else {
+                    this.resetImageStyles();
                 }
             }
         };
