@@ -250,6 +250,24 @@
     margin: 1em 0;
 }
 
+/* Gallery Block - Small */
+.media-gallery-grid.size-small {
+    gap: 15px;
+    padding: 15px;
+}
+
+/* Gallery Block - Medium (Default) */
+.media-gallery-grid.size-medium {
+    gap: 15px;
+    padding: 15px;
+}
+
+/* Gallery Block - Large */
+.media-gallery-grid.size-large {
+    gap: 15px;
+    padding: 15px;
+} 
+
 .media-gallery-grid .media-thumbnail-container {
     aspect-ratio: 1;
     overflow: hidden;
@@ -509,4 +527,4 @@
 .media-gallery-grid.drag-over {
     border: 2px dashed var(--interactive-accent);
     background-color: var(--background-modifier-hover);
-} 
+}

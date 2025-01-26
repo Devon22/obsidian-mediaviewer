@@ -49,6 +49,7 @@ Media Viewer 是一個為 Obsidian 設計的插件，旨在提供一個直觀的
 | :----- | :-------------------------------- |
 | title: | 用於設置 Gallery 的標題                  |
 | addButton: `true or false` | 是否顯示新增圖片按鈕                  |
+| size: `small or medium or large` | Gallery 的縮圖尺寸 |
 | alt:   | 放在圖片的上一行，可作為圖片的說明                 |
 | img:   | 使用 `![image.jpg]` 放在筆記的上一行，可顯示為縮圖 |
 

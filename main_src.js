@@ -29,8 +29,12 @@ const TRANSLATIONS = {
         'CLICK_TO_OPEN_MEDIA_DESC': '啟用此選項後，點擊一般的圖片將以媒體瀏覽器打開 (需重啟)',
         'MUTE_VIDEO_ON_OPEN': '打開影片時靜音',
         'MUTE_VIDEO_ON_OPEN_DESC': '啟用此選項後，媒體瀏覽器打開影片時會自動靜音',
-        'GALLERY_GRID_WIDTH': 'Gallery Grid 佈局寬度',
-        'GALLERY_GRID_WIDTH_DESC': '調整 Gallery Grid 佈局的寬度，預設 150px，最小值 100px',
+        'GALLERY_GRID_LARGE': 'Gallery 大尺寸',
+        'GALLERY_GRID_LARGE_DESC': '設定 Gallery 大尺寸的寬度，最小值 150px',
+        'GALLERY_GRID_MEDIUM': 'Gallery 中尺寸 (預設)',
+        'GALLERY_GRID_MEDIUM_DESC': '設定 Gallery 中尺寸的寬度，最小值 120px',
+        'GALLERY_GRID_SMALL': 'Gallery 小尺寸',
+        'GALLERY_GRID_SMALL_DESC': '設定 Gallery 小尺寸的寬度，最小值 100px',
 
         // 命令
         'OPEN_MEDIA_VIEWER': '打開媒體瀏覽器',
@@ -63,8 +67,12 @@ const TRANSLATIONS = {
         'CLICK_TO_OPEN_MEDIA_DESC': 'Open media browser when clicking on images (requires restart)',
         'MUTE_VIDEO_ON_OPEN': 'Mute Video on Open',
         'MUTE_VIDEO_ON_OPEN_DESC': 'Automatically mute videos when opening in the media browser',
-        'GALLERY_GRID_WIDTH': 'Gallery Grid Width',
-        'GALLERY_GRID_WIDTH_DESC': 'Adjust the width of gallery grid layout, default 150px, minimum 100px',
+        'GALLERY_GRID_LARGE': 'Gallery Large Size',
+        'GALLERY_GRID_LARGE_DESC': 'Set the width for large gallery grid layout (minimum 150px)',
+        'GALLERY_GRID_MEDIUM': 'Gallery Medium Size (Default)',
+        'GALLERY_GRID_MEDIUM_DESC': 'Set the width for medium gallery grid layout (minimum 120px)',
+        'GALLERY_GRID_SMALL': 'Gallery Small Size',
+        'GALLERY_GRID_SMALL_DESC': 'Set the width for small gallery grid layout (minimum 100px)',
 
         // Commands
         'OPEN_MEDIA_VIEWER': 'Open Media Viewer',
@@ -97,8 +105,12 @@ const TRANSLATIONS = {
         'CLICK_TO_OPEN_MEDIA_DESC': '启用此选项后，点击一般的图片将以媒体浏览器打开 (需重启)',
         'MUTE_VIDEO_ON_OPEN': '打开影片时静音',
         'MUTE_VIDEO_ON_OPEN_DESC': '启用此选项后，媒体浏览器打开影片时会自动静音',
-        'GALLERY_GRID_WIDTH': 'Gallery Grid 布局宽度',
-        'GALLERY_GRID_WIDTH_DESC': '调整 Gallery Grid 布局的宽度，默认 150px，最小值 100px',
+        'GALLERY_GRID_LARGE': 'Gallery 大尺寸',
+        'GALLERY_GRID_LARGE_DESC': '设定 Gallery 大尺寸的宽度，最小值 150px',
+        'GALLERY_GRID_MEDIUM': 'Gallery 中尺寸 (默认)',
+        'GALLERY_GRID_MEDIUM_DESC': '设定 Gallery 中尺寸的宽度，最小值 120px',
+        'GALLERY_GRID_SMALL': 'Gallery 小尺寸',
+        'GALLERY_GRID_SMALL_DESC': '设定 Gallery 小尺寸的宽度，最小值 100px',
 
         // 命令
         'OPEN_MEDIA_VIEWER': '打开媒体浏览器',
@@ -131,8 +143,12 @@ const TRANSLATIONS = {
         'CLICK_TO_OPEN_MEDIA_DESC': '画像をクリックするとメディアブラウザが開きます（再起動が必要）',
         'MUTE_VIDEO_ON_OPEN': '開くときにビデオをミュート',
         'MUTE_VIDEO_ON_OPEN_DESC': 'メディアブラウザで開くときにビデオを自動的にミュートします',
-        'GALLERY_GRID_WIDTH': 'ギャラリーグリッドの幅',
-        'GALLERY_GRID_WIDTH_DESC': 'ギャラリーグリッドレイアウトの幅を調整します。デフォルトは150px、最小は100px',
+        'GALLERY_GRID_LARGE': 'ギャラリー大サイズ',
+        'GALLERY_GRID_LARGE_DESC': 'ギャラリーグリッドの大サイズ幅を設定します（最小150px）',
+        'GALLERY_GRID_MEDIUM': 'ギャラリー中サイズ (Default)',
+        'GALLERY_GRID_MEDIUM_DESC': 'ギャラリーグリッドの中サイズ幅を設定します（最小120px）',
+        'GALLERY_GRID_SMALL': 'ギャラリー小サイズ',
+        'GALLERY_GRID_SMALL_DESC': 'ギャラリーグリッドの小サイズ幅を設定します（最小100px）',
 
         // コマンド
         'OPEN_MEDIA_VIEWER': 'メディアビューワーを開く',
@@ -151,6 +167,7 @@ class FullScreenModal extends Modal {
         this.openType = openType;
         this.modalEl.addClass('media-viewer-modal');
         this.modalEl.style.background = openType === 'command' ? 'rgba(0, 0, 0, 0.5)' : 'rgba(0, 0, 0, 0.0)';
+        this.handleWheel = null; //儲存滾輪事件處理程序
     }
 
     async scanMedia() {
@@ -296,7 +313,7 @@ class FullScreenModal extends Modal {
 
         // 建立縮圖區域
         const galleryContent = contentEl.createDiv('gallery-content');
-        galleryContent.style.gridTemplateColumns = `repeat(auto-fill, minmax(${this.plugin.settings.galleryGridMinWidth}px, 1fr))`;
+        galleryContent.style.gridTemplateColumns = `repeat(auto-fill, minmax(${this.plugin.settings.galleryGridSizeMedium}px, 1fr))`;
 
         if (this.openType !== 'command') galleryContent.style.display = 'none';
 
@@ -447,6 +464,13 @@ class FullScreenModal extends Modal {
     }
 
     resetImageStyles() {
+
+        // 如果存在之前的滾輪事件處理程序，先移除它
+        if (this.handleWheel) {
+            this.fullMediaView.removeEventListener('wheel', this.handleWheel);
+            this.handleWheel = null;
+        }
+
         this.fullImage.style.width = 'auto';
         this.fullImage.style.height = 'auto';
         this.fullImage.style.maxWidth = '100vw';
@@ -459,6 +483,8 @@ class FullScreenModal extends Modal {
         this.fullMediaView.style.overflowX = 'hidden';
         this.fullMediaView.style.overflowY = 'hidden';
         this.isZoomed = false;
+
+        //new Notice(`fullMediaView.clientWidth: ${this.fullMediaView.clientWidth}\nfullMediaView.clientHeight: ${this.fullMediaView.clientHeight}\nfullImage.offsetWidth: ${this.fullImage.offsetWidth }\nfullImage.offsetHeight: ${this.fullImage.offsetHeight}`);
 
         if (this.fullMediaView.clientWidth > this.fullMediaView.clientHeight) {
             if (this.fullImage.naturalHeight < this.fullMediaView.clientHeight) {
@@ -490,18 +516,36 @@ class FullScreenModal extends Modal {
             
             if (event.target === this.fullImage) { 
                 if (!this.isZoomed) { // 縮放
-                    if (this.fullImage.offsetWidth < this.fullMediaView.clientWidth && this.fullImage.offsetHeight == this.fullMediaView.clientHeight) {
+                    
+                    if (this.fullMediaView.clientWidth > this.fullMediaView.clientHeight) {
+                        if (this.fullImage.naturalHeight < this.fullMediaView.clientHeight) {
+                            this.fullImage.style.maxWidth = 'none';
+                        }
+                    } else {
+                        if (this.fullImage.naturalWidth < this.fullMediaView.clientWidth) {
+                            this.fullImage.style.maxHeight = 'none';
+                        }
+                    }
+
+                    if (this.fullImage.offsetWidth < this.fullMediaView.clientWidth) {
                         this.fullImage.style.width = '100vw';
                         this.fullImage.style.height = 'auto';
                         this.fullMediaView.style.overflowX = 'hidden';
                         this.fullMediaView.style.overflowY = 'scroll';
-                    } else if (this.fullImage.offsetWidth == this.fullMediaView.clientWidth && this.fullImage.offsetHeight < this.fullMediaView.clientHeight) {
+                    } else {
                         this.fullImage.style.width = 'auto';
                         this.fullImage.style.height = '100vh';
                         this.fullMediaView.style.overflowX = 'scroll';
                         this.fullMediaView.style.overflowY = 'hidden';
-                    } 
 
+                        // 將事件處理程序存儲在類別屬性中
+                        this.handleWheel = (event) => {
+                            event.preventDefault();
+                            this.fullMediaView.scrollLeft += event.deltaY;
+                        };
+                        this.fullMediaView.addEventListener('wheel', this.handleWheel);
+                    }
+                    
                     this.fullImage.style.maxWidth = 'none';
                     this.fullImage.style.maxHeight = 'none';
                     this.fullImage.style.position = 'relative';
@@ -779,21 +823,54 @@ class MyMediaViewSettingTab extends PluginSettingTab {
                 }));
         
         new Setting(containerEl)
-            .setName(this.plugin.t('GALLERY_GRID_WIDTH'))
-            .setDesc(this.plugin.t('GALLERY_GRID_WIDTH_DESC'))
+            .setName(this.plugin.t('GALLERY_GRID_LARGE'))
+            .setDesc(this.plugin.t('GALLERY_GRID_LARGE_DESC'))
             .addText(text => {
-                text.inputEl.type = 'number';  // 設定為數字輸入框
-                text.inputEl.min = '100';       // 設定最小值
-                text.setPlaceholder('150')
-                    .setValue(String(this.plugin.settings.galleryGridMinWidth))
+                text.inputEl.type = 'number';
+                text.inputEl.min = '150';
+                text.setPlaceholder('200')
+                    .setValue(String(this.plugin.settings.galleryGridSizeLarge))
                     .onChange(async (value) => {
                         const width = parseInt(value, 10);
-                        if (!isNaN(width) && width >= 100) {
-                            this.plugin.settings.galleryGridMinWidth = width;
+                        if (!isNaN(width) && width >= 150) {
+                            this.plugin.settings.galleryGridSizeLarge = width;
                             await this.plugin.saveSettings();
                         }
                     });
-                return text;
+            });
+
+        new Setting(containerEl)
+            .setName(this.plugin.t('GALLERY_GRID_MEDIUM'))
+            .setDesc(this.plugin.t('GALLERY_GRID_MEDIUM_DESC'))
+            .addText(text => {
+                text.inputEl.type = 'number';
+                text.inputEl.min = '120';
+                text.setPlaceholder('150')
+                    .setValue(String(this.plugin.settings.galleryGridSizeMedium))
+                    .onChange(async (value) => {
+                        const width = parseInt(value, 10);
+                        if (!isNaN(width) && width >= 120) {
+                            this.plugin.settings.galleryGridSizeMedium = width;
+                            await this.plugin.saveSettings();
+                        }
+                    });
+            });
+
+        new Setting(containerEl)
+            .setName(this.plugin.t('GALLERY_GRID_SMALL'))
+            .setDesc(this.plugin.t('GALLERY_GRID_SMALL_DESC'))
+            .addText(text => {
+                text.inputEl.type = 'number';
+                text.inputEl.min = '100';
+                text.setPlaceholder('100')
+                    .setValue(String(this.plugin.settings.galleryGridSizeSmall))
+                    .onChange(async (value) => {
+                        const width = parseInt(value, 10);
+                        if (!isNaN(width) && width >= 100) {
+                            this.plugin.settings.galleryGridSizeSmall = width;
+                            await this.plugin.saveSettings();
+                        }
+                    });
             });
     }
 }
@@ -803,7 +880,9 @@ const DEFAULT_SETTINGS = {
     autoOpenFirstImage: false,
     openMediaBrowserOnClick: true,
     muteVideoOnOpen: false,
-    galleryGridMinWidth: 150
+    galleryGridSizeLarge: 200,
+    galleryGridSizeMedium: 150,
+    galleryGridSizeSmall: 100
 };
 
 module.exports = class MediaViewPlugin extends Plugin {
@@ -903,11 +982,6 @@ module.exports = class MediaViewPlugin extends Plugin {
 
     async loadSettings() {
         this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-        
-        // 確保 galleryGridMinWidth 是數字
-        if (typeof this.settings.galleryGridMinWidth === 'string') {
-            this.settings.galleryGridMinWidth = parseInt(this.settings.galleryGridMinWidth, 10) || DEFAULT_SETTINGS.galleryGridMinWidth;
-        }
     }
 
     async saveSettings() {
@@ -934,7 +1008,8 @@ module.exports = class MediaViewPlugin extends Plugin {
         let currentThumbnail = null;
         let containerTitle = null;
         let containerPosition = 'top-left';
-        let addButtonEnabled = false; // 預設為 true
+        let addButtonEnabled = false;
+        let gridSize = 'medium'; // 預設為中等大小
         
         // 處理縮圖連結的輔助函數
         const processMediaLink = (linkText) => {
@@ -1013,6 +1088,13 @@ module.exports = class MediaViewPlugin extends Plugin {
         for (const line of lines) {
             const trimmedLine = line.trim();
             if (!trimmedLine) continue;
+
+            // 新增 size 參數的處理
+            const sizeMatch = trimmedLine.match(/^size:\s*(small|medium|large)$/i);
+            if (sizeMatch) {
+                gridSize = sizeMatch[1].toLowerCase();
+                continue;
+            }
 
             // 檢查是否為容器標題設定
             const containerTitleMatch = trimmedLine.match(/^title:\s*(.+)$/);
@@ -1219,7 +1301,8 @@ module.exports = class MediaViewPlugin extends Plugin {
             containerInfo: {
                 title: containerTitle,
                 position: containerPosition,
-                addButtonEnabled: addButtonEnabled
+                addButtonEnabled: addButtonEnabled,
+                gridSize: gridSize
             }
         };
     }
@@ -1228,10 +1311,11 @@ module.exports = class MediaViewPlugin extends Plugin {
         const { items, containerInfo } = mediaUrlsData;
         const galleryDiv = document.createElement('div');
         galleryDiv.className = 'media-gallery-grid';
-
-        // 使用設定值，確保有預設值
-        const minWidth = Math.max(100, this.settings.galleryGridMinWidth || DEFAULT_SETTINGS.galleryGridMinWidth);
-        galleryDiv.style.gridTemplateColumns = `repeat(auto-fill, minmax(${minWidth}px, 1fr))`;
+        
+        // 根據 size 參數添加對應的 class 並設定寬度
+        galleryDiv.addClass(`size-${containerInfo.gridSize}`);
+        const width = this.settings[`galleryGridSize${containerInfo.gridSize.charAt(0).toUpperCase() + containerInfo.gridSize.slice(1)}`];
+        galleryDiv.style.gridTemplateColumns = `repeat(auto-fill, minmax(${width}px, 1fr))`;
 
         // 處理容器標題
         if (containerInfo.title) {
