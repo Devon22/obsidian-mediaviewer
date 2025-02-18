@@ -1,5 +1,4 @@
-
-# Obsidian Media Viewer
+# Media Viewer
 
 [繁體中文](README_zhTW.md) | English
 
@@ -34,7 +33,7 @@ Media Viewer is a plugin designed for Obsidian, aiming to provide an intuitive m
 
 You can create a Gallery block in a note using the following format:
 
-```markdown
+````markdown
 ```gallery
 ![[image1.jpg]]
 ![[image2.jpg]]
@@ -42,20 +41,23 @@ You can create a Gallery block in a note using the following format:
 ![[video.mp4]]
 [[note]]
 ```
+````
 
 #### Gallery Additional Parameters
 
 | Attribute | Description |
 | :----- | :-------------------------------- |
-| title: | Set the title of the Gallery |
-| addButton: `true or false` | Whether to display the add image button     |
-| size: `small or medium or large` | Gallery thumbnail size |
-| alt: | Add a description above an image |
-| img: | Display a thumbnail using `![image.jpg]` above a note |
+| title: `text or [[link]]` | Used to set the title of the Gallery |
+| size: `small or medium or large` | Thumbnail size of the Gallery |
+| addButton: `true or false` | Whether to display the add image button |
+| pagination: `number` | Display pagination when the number of images in the Gallery exceeds this number |
+| alt: `text or [[link]]`  | Placed on the line above the image link, can serve as a description for the image |
+| img: `image.jpg or ![[image.jpg]]`  | Placed on the line above the note link, can be displayed as a thumbnail |
 
 
-```markdown
+````markdown
 ```gallery
+size: small
 addButton: true
 title: gallery
 alt: image1
@@ -65,9 +67,10 @@ alt: image2
 alt: image3
 ![[image3.jpg]]
 ![[video.mp4]]
-img: ![[image4.jpg]]
+img: image4.jpg
 [[note]]
 ```
+````
 
 ## Settings
 

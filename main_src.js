@@ -4,157 +4,244 @@ const { Plugin, Modal, PluginSettingTab, Setting } = require('obsidian');
 const TRANSLATIONS = {
     'zh-TW': {
         // 通知訊息
-        'PLEASE_OPEN_NOTE': '請先打開一個筆記文件',
-        'ERROR_SCANNING_MEDIA': '掃描媒體文件時出錯',
-        'NO_MEDIA_FOUND': '此筆記中沒有找到媒體文件',
-        'MEDIA_DELETED': '已刪除媒體文件',
-        'ERROR_DELETING_MEDIA': '刪除媒體文件時出錯',
-        'GALLERY_NOT_FOUND': '無法找到對應的 Gallery 區塊',
-        'ERROR_ADDING_FILE': '新增檔案時發生錯誤',
+        'please_open_note': '請先打開一個筆記文件',
+        'error_scanning_media': '掃描媒體文件時出錯',
+        'no_media_found': '此筆記中沒有找到媒體文件',
+        'media_deleted': '已刪除媒體文件',
+        'error_deleting_media': '刪除媒體文件時出錯',
+        'gallery_not_found': '無法找到對應的 Gallery 區塊',
+        'error_adding_file': '新增檔案時發生錯誤',
 
         // 按鈕和標籤
-        'DELETE': '刪除',
-        'CANCEL': '取消',
-        'CONFIRM': '確認',
-        'CLOSE': '×',
-        'DRAG_AND_DROP': '拖曳圖片到這裡或點擊選擇檔案',
-        'ADD_IMAGE': '新增圖片',
+        'delete': '刪除',
+        'confirm': '確認',
+        'drag_and_drop': '拖曳圖片到這裡或點擊選擇檔案',
+        'add_image': '新增圖片',
 
         // 設定
-        'ALLOW_MEDIA_DELETION': '允許刪除媒體檔案',
-        'ALLOW_MEDIA_DELETION_DESC': '啟用此選項後，可以在媒體瀏覽器中刪除媒體檔案',
-        'AUTO_OPEN_FIRST_IMAGE': '自動打開第一張圖片',
-        'AUTO_OPEN_FIRST_IMAGE_DESC': '啟用此選項後，媒體瀏覽器將自動打開第一張圖片',
-        'CLICK_TO_OPEN_MEDIA': '點擊圖片打開媒體瀏覽器',
-        'CLICK_TO_OPEN_MEDIA_DESC': '啟用此選項後，點擊一般的圖片將以媒體瀏覽器打開 (需重啟)',
-        'MUTE_VIDEO_ON_OPEN': '打開影片時靜音',
-        'MUTE_VIDEO_ON_OPEN_DESC': '啟用此選項後，媒體瀏覽器打開影片時會自動靜音',
-        'GALLERY_GRID_LARGE': 'Gallery 大尺寸',
-        'GALLERY_GRID_LARGE_DESC': '設定 Gallery 大尺寸的寬度，最小值 150px',
-        'GALLERY_GRID_MEDIUM': 'Gallery 中尺寸 (預設)',
-        'GALLERY_GRID_MEDIUM_DESC': '設定 Gallery 中尺寸的寬度，最小值 120px',
-        'GALLERY_GRID_SMALL': 'Gallery 小尺寸',
-        'GALLERY_GRID_SMALL_DESC': '設定 Gallery 小尺寸的寬度，最小值 100px',
+        'allow_media_deletion': '允許刪除媒體檔案',
+        'allow_media_deletion_desc': '啟用此選項後，可以在媒體瀏覽器中刪除媒體檔案',
+        'auto_open_first_image': '自動打開第一張圖片',
+        'auto_open_first_image_desc': '啟用此選項後，媒體瀏覽器將自動打開第一張圖片',
+        'click_to_open_media': '點擊圖片打開媒體瀏覽器',
+        'click_to_open_media_desc': '啟用此選項後，點擊一般的圖片將以媒體瀏覽器打開 (需重啟)',
+        'mute_video_on_open': '打開影片時靜音',
+        'mute_video_on_open_desc': '啟用此選項後，媒體瀏覽器打開影片時會自動靜音',
+        'grid_size': '網格大小',
+        'grid_size_desc': '設定 Gallery 網格大小',
+        'grid_size_small': '小型網格',
+        'grid_size_medium': '中型網格',
+        'grid_size_large': '大型網格',
+        'grid_size_small_width': '小型網格寬度',
+        'grid_size_small_width_desc': '設定小型網格的寬度，最小值 100px',
+        'grid_size_medium_width': '中型網格寬度',
+        'grid_size_medium_width_desc': '設定中型網格的寬度，最小值 120px',
+        'grid_size_large_width': '大型網格寬度',
+        'grid_size_large_width_desc': '設定大型網格的寬度，最小值 150px',
+        'show_image_info': '顯示圖片資訊',
+        'show_image_info_desc': '在全螢幕模式下顯示圖片的檔案名稱和大小',
+        'items_per_page': '每頁顯示項目數量',
+        'items_per_page_desc': '當 Gallery 內的項目數量超過此數值時，將以分頁方式顯示',
+        'prev_page': '上一頁',
+        'next_page': '下一頁',
+        'gallery_pagination': '每頁顯示數量',
+        'gallery_pagination_desc': '設定每頁要顯示的圖片數量（0：不分頁）',
+        'insert_position': '圖片插入位置',
+        'insert_at_end': '插入在最後',
+        'insert_at_start': '插入在最前',
 
         // 命令
-        'OPEN_MEDIA_VIEWER': '打開媒體瀏覽器',
-        'GENERATE_GALLERY': '生成 Gallery 區塊'
+        'open_media_viewer': '打開媒體瀏覽器',
+        'generate_gallery': '生成 Gallery 區塊',
+        'gallery_title': 'Gallery 標題',
+        'gallery_title_desc': '設定 Gallery 的標題（選填）',
+        'gallery_size': 'Gallery 尺寸',
+        'gallery_size_desc': '選擇 Gallery 中圖片的顯示大小',
+        'gallery_add_button': '顯示上傳按鈕',
+        'gallery_add_button_desc': '是否在 Gallery 中顯示上傳圖片的按鈕'
     },
     'en': {
         // Notifications
-        'PLEASE_OPEN_NOTE': 'Please open a note first',
-        'ERROR_SCANNING_MEDIA': 'Error scanning media files',
-        'NO_MEDIA_FOUND': 'No media found in this note',
-        'MEDIA_DELETED': 'Media file deleted',
-        'ERROR_DELETING_MEDIA': 'Error deleting media file',
-        'GALLERY_NOT_FOUND': 'Gallery block not found',
-        'ERROR_ADDING_FILE': 'Error adding file',
+        'please_open_note': 'Please open a note first',
+        'error_scanning_media': 'Error scanning media files',
+        'no_media_found': 'No media found in this note',
+        'media_deleted': 'Media file deleted',
+        'error_deleting_media': 'Error deleting media file',
+        'gallery_not_found': 'Gallery block not found',
+        'error_adding_file': 'Error adding file',
 
         // Buttons and Labels
-        'DELETE': 'Delete',
-        'CANCEL': 'Cancel',
-        'CONFIRM': 'Confirm',
-        'CLOSE': '×',
-        'DRAG_AND_DROP': 'Drag and drop images here or click to select files',
-        'ADD_IMAGE': 'Add Image',
+        'delete': 'Delete',
+        'confirm': 'Confirm',
+        'drag_and_drop': 'Drag and drop images here or click to select files',
+        'add_image': 'Add Image',
 
         // Settings
-        'ALLOW_MEDIA_DELETION': 'Allow Media Deletion',
-        'ALLOW_MEDIA_DELETION_DESC': 'Enable deletion of media files in the media browser',
-        'AUTO_OPEN_FIRST_IMAGE': 'Auto Open First Image',
-        'AUTO_OPEN_FIRST_IMAGE_DESC': 'Automatically open the first image when opening the media browser',
-        'CLICK_TO_OPEN_MEDIA': 'Click Image to Open Media Browser',
-        'CLICK_TO_OPEN_MEDIA_DESC': 'Open media browser when clicking on images (requires restart)',
-        'MUTE_VIDEO_ON_OPEN': 'Mute Video on Open',
-        'MUTE_VIDEO_ON_OPEN_DESC': 'Automatically mute videos when opening in the media browser',
-        'GALLERY_GRID_LARGE': 'Gallery Large Size',
-        'GALLERY_GRID_LARGE_DESC': 'Set the width for large gallery grid layout (minimum 150px)',
-        'GALLERY_GRID_MEDIUM': 'Gallery Medium Size (Default)',
-        'GALLERY_GRID_MEDIUM_DESC': 'Set the width for medium gallery grid layout (minimum 120px)',
-        'GALLERY_GRID_SMALL': 'Gallery Small Size',
-        'GALLERY_GRID_SMALL_DESC': 'Set the width for small gallery grid layout (minimum 100px)',
+        'allow_media_deletion': 'Allow Media Deletion',
+        'allow_media_deletion_desc': 'Enable deletion of media files in the media browser',
+        'auto_open_first_image': 'Auto Open First Image',
+        'auto_open_first_image_desc': 'Automatically open the first image when opening the media browser',
+        'click_to_open_media': 'Click Image to Open Media Browser',
+        'click_to_open_media_desc': 'Open media browser when clicking on images (requires restart)',
+        'mute_video_on_open': 'Mute Video on Open',
+        'mute_video_on_open_desc': 'Automatically mute videos when opening in the media browser',
+        'grid_size': 'Grid Size',
+        'grid_size_desc': 'Set the grid size for the gallery',
+        'grid_size_small': 'Small Grid',
+        'grid_size_medium': 'Medium Grid',
+        'grid_size_large': 'Large Grid',
+        'grid_size_small_width': 'Small Grid Width',
+        'grid_size_small_width_desc': 'Set the width for small grid layout (minimum 100px)',
+        'grid_size_medium_width': 'Medium Grid Width',
+        'grid_size_medium_width_desc': 'Set the width for medium grid layout (minimum 120px)',
+        'grid_size_large_width': 'Large Grid Width',
+        'grid_size_large_width_desc': 'Set the width for large grid layout (minimum 150px)',
+        'show_image_info': 'Show Image Info',
+        'show_image_info_desc': 'Show file name and size in fullscreen mode',
+        'items_per_page': 'Items Per Page',
+        'items_per_page_desc': 'When gallery items exceed this number, they will be displayed in pages',
+        'prev_page': 'Prev Page',
+        'next_page': 'Next Page',
+        'gallery_pagination': 'Items Per Page',
+        'gallery_pagination_desc': 'Set the number of images to display per page (0: no pagination)',
+        'insert_position': 'Image Insert Position',
+        'insert_at_end': 'Insert at End',
+        'insert_at_start': 'Insert at Start',
 
         // Commands
-        'OPEN_MEDIA_VIEWER': 'Open Media Viewer',
-        'GENERATE_GALLERY': 'Generate Gallery Block'
+        'open_media_viewer': 'Open Media Viewer',
+        'generate_gallery': 'Generate Gallery Block',
+        'gallery_title': 'Gallery Title',
+        'gallery_title_desc': 'Set the title of the gallery (optional)',
+        'gallery_size': 'Gallery Size',
+        'gallery_size_desc': 'Choose the display size of images in the gallery',
+        'gallery_add_button': 'Show Upload Button',
+        'gallery_add_button_desc': 'Whether to show the upload button in the gallery'
     },
     'zh': {
         // 通知信息
-        'PLEASE_OPEN_NOTE': '请先打开一个笔记文件',
-        'ERROR_SCANNING_MEDIA': '扫描媒体文件时出错',
-        'NO_MEDIA_FOUND': '此笔记中没有找到媒体文件',
-        'MEDIA_DELETED': '已删除媒体文件',
-        'ERROR_DELETING_MEDIA': '删除媒体文件时出错',
-        'GALLERY_NOT_FOUND': '无法找到对应的 Gallery 区块',
-        'ERROR_ADDING_FILE': '新增档案时发生错误',
+        'please_open_note': '请先打开一个笔记文件',
+        'error_scanning_media': '扫描媒体文件时出错',
+        'no_media_found': '此笔记中没有找到媒体文件',
+        'media_deleted': '已删除媒体文件',
+        'error_deleting_media': '删除媒体文件时出错',
+        'gallery_not_found': '无法找到对应的 Gallery 区块',
+        'error_adding_file': '新增档案时发生错误',
 
         // 按钮和标签
-        'DELETE': '删除',
-        'CANCEL': '取消',
-        'CONFIRM': '确认',
-        'CLOSE': '×',
-        'DRAG_AND_DROP': '拖曳图片到这裡或点击选择图片',
-        'ADD_IMAGE': '新增图片',
+        'delete': '删除',
+        'confirm': '确认',
+        'drag_and_drop': '拖曳图片到这裡或点击选择图片',
+        'add_image': '新增图片',
 
         // 设置
-        'ALLOW_MEDIA_DELETION': '允许删除媒体文件',
-        'ALLOW_MEDIA_DELETION_DESC': '启用此选项后，可以在媒体浏览器中删除媒体文件',
-        'AUTO_OPEN_FIRST_IMAGE': '自动打开第一张图片',
-        'AUTO_OPEN_FIRST_IMAGE_DESC': '启用此选项后，媒体浏览器将自动打开第一张图片',
-        'CLICK_TO_OPEN_MEDIA': '点击图片打开媒体浏览器',
-        'CLICK_TO_OPEN_MEDIA_DESC': '启用此选项后，点击一般的图片将以媒体浏览器打开 (需重启)',
-        'MUTE_VIDEO_ON_OPEN': '打开影片时静音',
-        'MUTE_VIDEO_ON_OPEN_DESC': '启用此选项后，媒体浏览器打开影片时会自动静音',
-        'GALLERY_GRID_LARGE': 'Gallery 大尺寸',
-        'GALLERY_GRID_LARGE_DESC': '设定 Gallery 大尺寸的宽度，最小值 150px',
-        'GALLERY_GRID_MEDIUM': 'Gallery 中尺寸 (默认)',
-        'GALLERY_GRID_MEDIUM_DESC': '设定 Gallery 中尺寸的宽度，最小值 120px',
-        'GALLERY_GRID_SMALL': 'Gallery 小尺寸',
-        'GALLERY_GRID_SMALL_DESC': '设定 Gallery 小尺寸的宽度，最小值 100px',
+        'allow_media_deletion': '允许删除媒体文件',
+        'allow_media_deletion_desc': '启用此选项后，可以在媒体浏览器中删除媒体文件',
+        'auto_open_first_image': '自动打开第一张图片',
+        'auto_open_first_image_desc': '启用此选项后，媒体浏览器将自动打开第一张图片',
+        'click_to_open_media': '点击图片打开媒体浏览器',
+        'click_to_open_media_desc': '启用此选项后，点击一般的图片将以媒体浏览器打开 (需重启)',
+        'mute_video_on_open': '打开影片时静音',
+        'mute_video_on_open_desc': '启用此选项后，媒体浏览器打开影片时会自动静音',
+        'grid_size': '网格大小',
+        'grid_size_desc': '设置 Gallery 网格大小',
+        'grid_size_small': '小型网格',
+        'grid_size_medium': '中型网格',
+        'grid_size_large': '大型网格',
+        'grid_size_small_width': '小型网格宽度',
+        'grid_size_small_width_desc': '设置小型网格的宽度，最小值 100px',
+        'grid_size_medium_width': '中型网格宽度',
+        'grid_size_medium_width_desc': '设置中型网格的宽度，最小值 120px',
+        'grid_size_large_width': '大型网格宽度',
+        'grid_size_large_width_desc': '设置大型网格的宽度，最小值 150px',
+        'show_image_info': '显示图片信息',
+        'show_image_info_desc': '在全屏模式下显示图片的文件名和大小',
+        'items_per_page': '每页显示项目数量',
+        'items_per_page_desc': '当 Gallery 内的项目数量超过此数值时，将以分页方式显示',
+        'prev_page': '上一页',
+        'next_page': '下一页',
+        'gallery_pagination': '每页显示数量',
+        'gallery_pagination_desc': '设置每页要显示的图片数量（0：不分页）',
+        'insert_position': '图片插入位置',
+        'insert_at_end': '插入在最后',
+        'insert_at_start': '插入在最前',
 
         // 命令
-        'OPEN_MEDIA_VIEWER': '打开媒体浏览器',
-        'GENERATE_GALLERY': '生成 Gallery 区块'
+        'open_media_viewer': '打开媒体浏览器',
+        'generate_gallery': '生成 Gallery 区块',
+        'gallery_title': '相册标题',
+        'gallery_title_desc': '设置相册的标题（选填）',
+        'gallery_size': '相册尺寸',
+        'gallery_size_desc': '选择相册中图片的显示大小',
+        'gallery_add_button': '显示上传按钮',
+        'gallery_add_button_desc': '是否在相册中显示上传图片的按钮'
     },
     'ja': {
         // 通知メッジ
-        'PLEASE_OPEN_NOTE': '最初にノートを開いてください',
-        'ERROR_SCANNING_MEDIA': 'メディアファイルのスキャン中にエラーが発生しました',
-        'NO_MEDIA_FOUND': 'このノートにはメディアが見つかりません',
-        'MEDIA_DELETED': 'メディアファイルが削除されました',
-        'ERROR_DELETING_MEDIA': 'メディアファイルの削除中にエラーが発生しました',
-        'GALLERY_NOT_FOUND': 'ギャラリーブロックが見つかりません',
-        'ERROR_ADDING_FILE': 'ファイルを追加する際にエラーが発生しました',
+        'please_open_note': '最初にノートを開いてください',
+        'error_scanning_media': 'メディアファイルのスキャン中にエラーが発生しました',
+        'no_media_found': 'このノートにはメディアが見つかりません',
+        'media_deleted': 'メディアファイルが削除されました',
+        'error_deleting_media': 'メディアファイルの削除中にエラーが発生しました',
+        'gallery_not_found': 'ギャラリーブロックが見つかりません',
+        'error_adding_file': 'ファイルを追加する際にエラーが発生しました',
 
         // ボタンとラベル
-        'DELETE': '削除',
-        'CANCEL': 'キャンセル',
-        'CONFIRM': '確認',
-        'CLOSE': '×',
-        'DRAG_AND_DROP': '画像をドラッグ＆ドロップするか、クリックしてファイルを選択',
-        'ADD_IMAGE': '画像を追加',
+        'delete': '削除',
+        'confirm': '確認',
+        'drag_and_drop': '画像をドラッグ＆ドロップするか、クリックしてファイルを選択',
+        'add_image': '画像を追加',
 
         // 設定
-        'ALLOW_MEDIA_DELETION': 'メディア削除を許可',
-        'ALLOW_MEDIA_DELETION_DESC': 'メディアブラウザでメディアファイルの削除を有効にします',
-        'AUTO_OPEN_FIRST_IMAGE': '最初の画像を自動的に開く',
-        'AUTO_OPEN_FIRST_IMAGE_DESC': 'メディアブラウザを開くときに最初の画像を自動的に開きます',
-        'CLICK_TO_OPEN_MEDIA': '画像をクリックしてメディアブラウザを開く',
-        'CLICK_TO_OPEN_MEDIA_DESC': '画像をクリックするとメディアブラウザが開きます（再起動が必要）',
-        'MUTE_VIDEO_ON_OPEN': '開くときにビデオをミュート',
-        'MUTE_VIDEO_ON_OPEN_DESC': 'メディアブラウザで開くときにビデオを自動的にミュートします',
-        'GALLERY_GRID_LARGE': 'ギャラリー大サイズ',
-        'GALLERY_GRID_LARGE_DESC': 'ギャラリーグリッドの大サイズ幅を設定します（最小150px）',
-        'GALLERY_GRID_MEDIUM': 'ギャラリー中サイズ (Default)',
-        'GALLERY_GRID_MEDIUM_DESC': 'ギャラリーグリッドの中サイズ幅を設定します（最小120px）',
-        'GALLERY_GRID_SMALL': 'ギャラリー小サイズ',
-        'GALLERY_GRID_SMALL_DESC': 'ギャラリーグリッドの小サイズ幅を設定します（最小100px）',
+        'allow_media_deletion': 'メディア削除を許可',
+        'allow_media_deletion_desc': 'メディアブラウザでメディアファイルの削除を有効にします',
+        'auto_open_first_image': '最初の画像を自動的に開く',
+        'auto_open_first_image_desc': 'メディアブラウザを開くときに最初の画像を自動的に開きます',
+        'click_to_open_media': '画像をクリックしてメディアブラウザを開く',
+        'click_to_open_media_desc': '画像をクリックするとメディアブラウザが開きます（再起動が必要）',
+        'mute_video_on_open': '開くときにビデオをミュート',
+        'mute_video_on_open_desc': 'メディアブラウザで開くときにビデオを自動的にミュートします',
+        'grid_size': 'グリッドサイズ',
+        'grid_size_desc': 'ギャラリーのグリッドサイズを設定します',
+        'grid_size_small': '小さいグリッド',
+        'grid_size_medium': '中くらいのグリッド',
+        'grid_size_large': '大きいグリッド',
+        'grid_size_small_width': '小さいグリッド幅',
+        'grid_size_small_width_desc': '小さいグリッド幅を設定します（最小100px）',
+        'grid_size_medium_width': '中くらいのグリッド幅',
+        'grid_size_medium_width_desc': '中くらいのグリッド幅を設定します（最小120px）',
+        'grid_size_large_width': '大きいグリッド幅',
+        'grid_size_large_width_desc': '大きいグリッド幅を設定します（最小150px）',
+        'show_image_info': '画像情報を表示',
+        'show_image_info_desc': 'フルスクリーンモードでファイル名とサイズを表示',
+        'items_per_page': '1ページあたりのアイテム数',
+        'items_per_page_desc': 'ギャラリー内のアイテム数がこの数値を超えた場合、ページングで表示されます',
+        'prev_page': '前のページ',
+        'next_page': '次のページ',
+        'gallery_pagination': '1ページあたりの表示数',
+        'gallery_pagination_desc': '1ページに表示する画像の数を設定（0：ページングなし）',
+        'insert_position': '画像の挿入位置',
+        'insert_at_end': '最後に挿入',
+        'insert_at_start': '先頭に挿入',
 
         // コマンド
-        'OPEN_MEDIA_VIEWER': 'メディアビューワーを開く',
-        'GENERATE_GALLERY': 'ギャラリーブロックを生成'
-    }
+        'open_media_viewer': 'メディアビューワーを開く',
+        'generate_gallery': 'ギャラリーブロックを生成',
+        'gallery_title': 'ギャラリータイトル',
+        'gallery_title_desc': 'ギャラリーのタイトルを設定（オプション）',
+        'gallery_size': 'ギャラリーサイズ',
+        'gallery_size_desc': 'ギャラリー内の画像表示サイズを選択',
+        'gallery_add_button': 'アップロードボタンを表示',
+        'gallery_add_button_desc': 'ギャラリーにアップロードボタンを表示するかどうか'
+    },
 };
+
+// 全域翻譯函式
+function t(key) {
+    const langSetting = window.localStorage.getItem('language');
+    const lang = TRANSLATIONS[langSetting] || TRANSLATIONS['en'];
+    return lang[key] || key;
+}
 
 class FullScreenModal extends Modal {
     constructor(app, openType = 'command') {
@@ -166,7 +253,6 @@ class FullScreenModal extends Modal {
         this.plugin = null;
         this.openType = openType;
         this.modalEl.addClass('media-viewer-modal');
-        this.modalEl.style.background = openType === 'command' ? 'rgba(0, 0, 0, 0.5)' : 'rgba(0, 0, 0, 0.0)';
         this.handleWheel = null; //儲存滾輪事件處理程序
     }
 
@@ -174,7 +260,7 @@ class FullScreenModal extends Modal {
         // 獲取當前活動的 markdown 文件
         const activeFile = this.app.workspace.getActiveFile();
         if (!activeFile) {
-            new Notice(this.t('PLEASE_OPEN_NOTE'));
+            new Notice(t('please_open_note'));
             return [];
         }
 
@@ -185,93 +271,81 @@ class FullScreenModal extends Modal {
             // 移除 frontmatter 區域
             const contentWithoutFrontmatter = content.replace(/^---\n[\s\S]*?\n---\n/, '');
             
-            // 匹配兩種格式：
+            // 使用單一正則表達式同時匹配兩種格式：
             // 1. ![[image.jpg]] - Obsidian 內部連結
             // 2. ![alt](path) - 標準 Markdown
-
             const mediaUrls = [];
             const mediaLinks = new Map(); // 用於儲存媒體連結的原始文字
 
-            // 處理 Obsidian 內部連結
-            const internalMatches = Array.from(contentWithoutFrontmatter.matchAll(/!\[\[(.*?)(?:\|.*?)?\]\]/g));
-            for (const match of internalMatches) {
-                const linktext = match[1];
-                const fullMatch = match[0];  // 完整的連結文字
-                if (!linktext) continue;
-
-                try {
-                    // 使用 Obsidian metadataCache API 解析內部連結
-                    const file = this.app.metadataCache.getFirstLinkpathDest(linktext, '');
-                    if (file) {
-                        const url = this.app.vault.getResourcePath(file);
-                        const extension = file.extension.toLowerCase();
-                        if (extension.match(/^(jpg|jpeg|png|gif|webp|mp4|mov|webm)$/)) {
-                            // 如果這個 URL 已經存在，將新的連結文字加入到現有的列表中
-                            if (mediaLinks.has(url)) {
-                                mediaLinks.get(url).push(fullMatch);
-                            } else {
-                                mediaLinks.set(url, [fullMatch]);
-                                mediaUrls.push({
-                                    type: extension.match(/^(jpg|jpeg|png|gif|webp)$/) ? 'image' : 'video',
-                                    url: url
-                                });
-                            }
+            // 使用單一正則表達式匹配所有媒體連結
+            // Because the links in the Gallery Block need to be parsed, Metadatacache cannot be used
+            const mediaMatches = Array.from(
+                contentWithoutFrontmatter.matchAll(
+                    /(?:!\[\[(.*?)(?:\|.*?)?\]\]|!\[(.*?)\]\(\s*(\S+)(?:\s+["'][^"']*["'])?\s*\))/g
+                )
+            );
+            
+            for (const match of mediaMatches) {
+                const [fullMatch, internalLink, , markdownLink] = match;
+                let url = null;
+                let file = null;
+                
+                if (internalLink) {
+                    // 處理 Obsidian 內部連結
+                    try {
+                        file = this.app.metadataCache.getFirstLinkpathDest(internalLink, '');
+                        if (file) {
+                            url = this.app.vault.getResourcePath(file);
                         }
+                    } catch (e) {
+                        console.error('Error processing internal link:', internalLink, e);
+                        continue;
                     }
-                } catch (e) {
-                    console.error('Error processing internal link:', linktext, e);
-                }
-            }
-
-            // 處理標準 Markdown 連結
-            const externalMatches = Array.from(contentWithoutFrontmatter.matchAll(/!\[(.*?)\]\((.*?)\)/g));
-            for (const match of externalMatches) {
-                const path = match[2];
-                const fullMatch = match[0];  // 完整的連結文字
-                if (!path) continue;
-
-                if (path.startsWith('http://') || path.startsWith('https://')) {
-                    // 網絡圖片
-                    if (mediaLinks.has(path)) {
-                        mediaLinks.get(path).push(fullMatch);
+                } else if (markdownLink) {
+                    // 處理標準 Markdown 連結
+                    if (markdownLink.startsWith('http://') || markdownLink.startsWith('https://')) {
+                        // 網絡圖片
+                        url = markdownLink;
                     } else {
-                        mediaLinks.set(path, [fullMatch]);
-                        mediaUrls.push({
-                            type: 'image',
-                            url: path
-                        });
-                    }
-                } else {
-                    // 本地文件 - 使用 getFirstLinkpathDest 來解析路徑
-                    const file = this.app.metadataCache.getFirstLinkpathDest(path, '');
-                    if (!file) {
-                        // 如果找不到檔案，再嘗試直接用路徑查找
-                        const fileByPath = this.app.vault.getAbstractFileByPath(path);
-                        if (fileByPath) {
-                            const url = this.app.vault.getResourcePath(fileByPath);
-                            const extension = path.toLowerCase();
-                            if (mediaLinks.has(url)) {
-                                mediaLinks.get(url).push(fullMatch);
-                            } else {
-                                mediaLinks.set(url, [fullMatch]);
-                                mediaUrls.push({
-                                    type: extension.match(/\.(jpg|jpeg|png|gif|webp)$/) ? 'image' : 'video',
-                                    url: url
-                                });
+                        // 本地檔案
+                        file = this.app.metadataCache.getFirstLinkpathDest(markdownLink, '');
+                        if (!file) {
+                            // 如果找不到檔案，再嘗試直接用路徑查找
+                            const fileByPath = this.app.vault.getAbstractFileByPath(markdownLink);
+                            if (fileByPath) {
+                                url = this.app.vault.getResourcePath(fileByPath);
+                                if (url) {
+                                    const extension = markdownLink.toLowerCase();
+                                    if (!extension.match(/\.(jpg|jpeg|png|gif|webp|mp4|mov|webm)$/)) {
+                                        continue;
+                                    }
+                                }
                             }
-                        }
-                    } else {
-                        const url = this.app.vault.getResourcePath(file);
-                        const extension = file.extension.toLowerCase();
-                        if (mediaLinks.has(url)) {
-                            mediaLinks.get(url).push(fullMatch);
                         } else {
-                            mediaLinks.set(url, [fullMatch]);
-                            mediaUrls.push({
-                                type: extension.match(/^(jpg|jpeg|png|gif|webp)$/) ? 'image' : 'video',
-                                url: url
-                            });
+                            url = this.app.vault.getResourcePath(file);
                         }
+                    }
+                }
+                
+                if (url) {
+                    let type = 'image';
+                    if (file) {
+                        const extension = file.extension.toLowerCase();
+                        if (!extension.match(/^(jpg|jpeg|png|gif|webp|mp4|mov|webm)$/)) {
+                            continue;
+                        }
+                        type = extension.match(/^(jpg|jpeg|png|gif|webp)$/) ? 'image' : 'video';
+                    }
+                    
+                    // 如果這個 URL 已經存在，將新的連結文字加入到現有的列表中
+                    if (mediaLinks.has(url)) {
+                        mediaLinks.get(url).push(fullMatch);
+                    } else {
+                        mediaLinks.set(url, [fullMatch]);
+                        mediaUrls.push({
+                            type: type,
+                            url: url
+                        });
                     }
                 }
             }
@@ -284,7 +358,7 @@ class FullScreenModal extends Modal {
             return mediaUrls;
         } catch (error) {
             console.error('Error scanning media:', error);
-            new Notice(this.t('ERROR_SCANNING_MEDIA'));
+            new Notice(t('error_scanning_media'));
             return [];
         }
     }
@@ -293,7 +367,7 @@ class FullScreenModal extends Modal {
         // 掃描媒體檔案
         this.mediaUrls = await this.scanMedia();
         if (this.mediaUrls.length === 0) {
-            new Notice(this.t('NO_MEDIA_FOUND'));
+            new Notice(t('no_media_found'));
             this.close();
             return;
         }
@@ -313,7 +387,9 @@ class FullScreenModal extends Modal {
 
         // 建立縮圖區域
         const galleryContent = contentEl.createDiv('gallery-content');
-        galleryContent.style.gridTemplateColumns = `repeat(auto-fill, minmax(${this.plugin.settings.galleryGridSizeMedium}px, 1fr))`;
+        const gridSize = this.plugin.settings.galleryGridSize;
+        const width = this.plugin.settings[`galleryGridSize${gridSize.charAt(0).toUpperCase() + gridSize.slice(1)}`];
+        galleryContent.style.gridTemplateColumns = `repeat(auto-fill, minmax(${width}px, 1fr))`;
 
         if (this.openType !== 'command') galleryContent.style.display = 'none';
 
@@ -361,18 +437,6 @@ class FullScreenModal extends Modal {
         this.fullMediaView = contentEl.createDiv('full-media-view');
         this.fullMediaView.style.display = 'none';
         this.fullMediaView.style.background = this.openType === 'command' ? 'rgba(0, 0, 0, 0.5)' : 'rgba(0, 0, 0, 0.7)';
-        
-        // 添加刪除按鈕（只在啟用刪除功能時顯示）
-        if (this.plugin.settings.allowMediaDeletion) {
-            const deleteButton = this.fullMediaView.createEl('button', {
-                cls: 'media-delete-button',
-                text: this.t('DELETE')
-            });
-            deleteButton.onclick = async (e) => {
-                e.stopPropagation();
-                await this.deleteMedia(this.currentIndex);
-            };
-        }
 
         // 添加左右切換區域
         const prevArea = this.fullMediaView.createDiv('media-nav-area prev-area');
@@ -417,14 +481,18 @@ class FullScreenModal extends Modal {
         }
     }
 
-    showMedia(index) {
+    async showMedia(index) {
         // 過濾出所有媒體項目
         const mediaItems = this.mediaUrls.filter(item => item.type === 'image' || item.type === 'video');
         if (mediaItems.length === 0) {
-            new Notice(this.t('NO_MEDIA_FOUND'));
+            new Notice(t('no_media_found'));
             this.close();
             return;
         }
+
+        // 移除舊的資訊面板（如果存在）
+        const oldInfo = this.fullMediaView.querySelector('.image-info-panel');
+        if (oldInfo) oldInfo.remove();
 
         this.currentIndex = index;
         this.galleryCloseButton.style.display = 'none';
@@ -447,8 +515,74 @@ class FullScreenModal extends Modal {
             this.fullVideo.muted = this.plugin.settings.muteVideoOnOpen;
             this.fullVideo.style.display = 'block';
             this.fullImage.style.display = 'none';
+            this.fullVideo.loop = true;
             this.fullVideo.play();
         }
+
+        // 顯示圖片資訊
+        if (this.plugin.settings.showImageInfo || this.plugin.settings.allowMediaDeletion) {
+            this.showImageInfo(media);
+        }
+    }
+
+    async showImageInfo(media) {
+        // 創建資訊面板
+        const infoPanel = document.createElement('div');
+        infoPanel.className = 'image-info-panel';
+
+        if (this.plugin.settings.showImageInfo) {
+            // 取得檔案名稱
+            const fileName = media.path ? media.path.split('/').pop() : media.url.split('/').pop();
+            const cleanFileName = fileName.split('?')[0]; // 移除檔案名稱中 ? 後面的部分
+            const decodedFileName = decodeURIComponent(cleanFileName);
+            
+            // 添加檔案名稱
+            const numSpan = document.createElement('span');
+            numSpan.textContent = `${this.currentIndex + 1}/${this.mediaUrls.length}`; 
+            numSpan.style.display = 'inline-block';
+            numSpan.style.marginRight = '10px';
+            infoPanel.appendChild(numSpan);
+            
+            // 添加檔案名稱
+            const labelSpan = document.createElement('span');
+            labelSpan.textContent = `${decodedFileName}`; 
+            labelSpan.style.display = 'inline-block';
+            labelSpan.contentEditable = 'true';
+            infoPanel.appendChild(labelSpan);
+
+            // 添加圖片尺寸
+            if (this.isImage) {
+                const sizeSpan = document.createElement('span');
+                sizeSpan.textContent = `(${this.fullImage.naturalWidth} × ${this.fullImage.naturalHeight})`;
+                sizeSpan.style.display = 'inline-block';
+                sizeSpan.style.marginLeft = '10px';
+                infoPanel.appendChild(sizeSpan);
+            }
+        }
+        
+        // 添加刪除按鈕（只在啟用刪除功能時顯示）
+        if (this.plugin.settings.allowMediaDeletion) {
+            const deleteButton = document.createElement('a');
+            deleteButton.href = '#';
+            deleteButton.textContent = t('delete');
+            if (this.plugin.settings.showImageInfo) {
+                deleteButton.style.display = 'inline-block';
+                deleteButton.style.marginLeft = '10px';
+            }
+            deleteButton.onclick = async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                await this.deleteMedia(this.currentIndex);
+            };
+            infoPanel.appendChild(deleteButton);
+        }
+
+        this.fullMediaView.appendChild(infoPanel);
+
+        // 設定三秒後淡出
+        setTimeout(() => {
+            infoPanel.classList.add('fade');
+        }, 3000);
     }
 
     hideMedia() {
@@ -483,8 +617,6 @@ class FullScreenModal extends Modal {
         this.fullMediaView.style.overflowX = 'hidden';
         this.fullMediaView.style.overflowY = 'hidden';
         this.isZoomed = false;
-
-        //new Notice(`fullMediaView.clientWidth: ${this.fullMediaView.clientWidth}\nfullMediaView.clientHeight: ${this.fullMediaView.clientHeight}\nfullImage.offsetWidth: ${this.fullImage.offsetWidth }\nfullImage.offsetHeight: ${this.fullImage.offsetHeight}`);
 
         if (this.fullMediaView.clientWidth > this.fullMediaView.clientHeight) {
             if (this.fullImage.naturalHeight < this.fullMediaView.clientHeight) {
@@ -602,11 +734,6 @@ class FullScreenModal extends Modal {
         });
     }
 
-    onClose() {
-        const { contentEl } = this;
-        contentEl.empty();
-    }
-
     // 刪除媒體檔案
     async deleteMedia(index) {
         if (!this.plugin.settings.allowMediaDeletion) {
@@ -645,7 +772,7 @@ class FullScreenModal extends Modal {
             
             // 如果沒有更多媒體，關閉視窗
             if (this.mediaUrls.length === 0) {
-                new Notice(this.t('MEDIA_DELETED'));
+                new Notice(t('media_deleted'));
                 this.close();
                 return;
             }
@@ -688,7 +815,6 @@ class FullScreenModal extends Modal {
                     svg.setAttribute('width', '24');
                     svg.setAttribute('height', '24');
                     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                    path.setAttribute('fill', 'currentColor');
                     path.setAttribute('d', 'M8 5v14l11-7z');
                     svg.appendChild(path);
                     videoIcon.appendChild(svg);
@@ -706,18 +832,6 @@ class FullScreenModal extends Modal {
             // 建立全屏預覽區域
             this.fullMediaView = contentEl.createDiv('full-media-view');
             this.fullMediaView.style.display = 'none';
-
-            // 添加刪除按鈕（只在啟用刪除功能時顯示）
-            if (this.plugin.settings.allowMediaDeletion) {
-                const deleteButton = this.fullMediaView.createEl('button', {
-                    cls: 'media-delete-button',
-                    text: this.t('DELETE')
-                });
-                deleteButton.onclick = async (e) => {
-                    e.stopPropagation();
-                    await this.deleteMedia(this.currentIndex);
-                };
-            }
 
             // 添加左右切換區域
             const prevArea = this.fullMediaView.createDiv('media-nav-area prev-area');
@@ -757,17 +871,16 @@ class FullScreenModal extends Modal {
                 this.showMedia(nextIndex);
             }
 
-            new Notice(this.t('MEDIA_DELETED'));
+            new Notice(t('media_deleted'));
         } catch (error) {
             console.error('Error deleting media:', error);
-            new Notice(this.t('ERROR_DELETING_MEDIA'));
+            new Notice(t('error_deleting_media'));
         }
     }
 
-    t(key) {
-        const langSetting = window.localStorage.getItem('language');
-        const lang = TRANSLATIONS[langSetting] || TRANSLATIONS['en'];
-        return lang[key] || key;
+    onClose() {
+        const { contentEl } = this;
+        contentEl.empty();
     }
 }
 
@@ -783,8 +896,18 @@ class MyMediaViewSettingTab extends PluginSettingTab {
         containerEl.empty();
 
         new Setting(containerEl)
-            .setName(this.plugin.t('ALLOW_MEDIA_DELETION'))
-            .setDesc(this.plugin.t('ALLOW_MEDIA_DELETION_DESC'))
+            .setName(t('show_image_info'))
+            .setDesc(t('show_image_info_desc'))
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.showImageInfo)
+                .onChange(async (value) => {
+                    this.plugin.settings.showImageInfo = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName(t('allow_media_deletion'))
+            .setDesc(t('allow_media_deletion_desc'))
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.allowMediaDeletion)
                 .onChange(async (value) => {
@@ -793,8 +916,8 @@ class MyMediaViewSettingTab extends PluginSettingTab {
                 }));
         
         new Setting(containerEl)
-            .setName(this.plugin.t('AUTO_OPEN_FIRST_IMAGE'))
-            .setDesc(this.plugin.t('AUTO_OPEN_FIRST_IMAGE_DESC'))
+            .setName(t('auto_open_first_image'))
+            .setDesc(t('auto_open_first_image_desc'))
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.autoOpenFirstImage)
                 .onChange(async (value) => {
@@ -803,8 +926,8 @@ class MyMediaViewSettingTab extends PluginSettingTab {
                 }));
 
         new Setting(containerEl)
-            .setName(this.plugin.t('CLICK_TO_OPEN_MEDIA'))
-            .setDesc(this.plugin.t('CLICK_TO_OPEN_MEDIA_DESC'))
+            .setName(t('click_to_open_media'))
+            .setDesc(t('click_to_open_media_desc'))
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.openMediaBrowserOnClick)
                 .onChange(async (value) => {
@@ -813,92 +936,226 @@ class MyMediaViewSettingTab extends PluginSettingTab {
                 }));
         
         new Setting(containerEl)
-            .setName(this.plugin.t('MUTE_VIDEO_ON_OPEN'))
-            .setDesc(this.plugin.t('MUTE_VIDEO_ON_OPEN_DESC'))
+            .setName(t('mute_video_on_open'))
+            .setDesc(t('mute_video_on_open_desc'))
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.muteVideoOnOpen)
                 .onChange(async (value) => {
                     this.plugin.settings.muteVideoOnOpen = value;
                     await this.plugin.saveSettings();
                 }));
-        
-        new Setting(containerEl)
-            .setName(this.plugin.t('GALLERY_GRID_LARGE'))
-            .setDesc(this.plugin.t('GALLERY_GRID_LARGE_DESC'))
-            .addText(text => {
-                text.inputEl.type = 'number';
-                text.inputEl.min = '150';
-                text.setPlaceholder('200')
-                    .setValue(String(this.plugin.settings.galleryGridSizeLarge))
-                    .onChange(async (value) => {
-                        const width = parseInt(value, 10);
-                        if (!isNaN(width) && width >= 150) {
-                            this.plugin.settings.galleryGridSizeLarge = width;
-                            await this.plugin.saveSettings();
-                        }
-                    });
-            });
 
         new Setting(containerEl)
-            .setName(this.plugin.t('GALLERY_GRID_MEDIUM'))
-            .setDesc(this.plugin.t('GALLERY_GRID_MEDIUM_DESC'))
-            .addText(text => {
-                text.inputEl.type = 'number';
-                text.inputEl.min = '120';
-                text.setPlaceholder('150')
-                    .setValue(String(this.plugin.settings.galleryGridSizeMedium))
-                    .onChange(async (value) => {
-                        const width = parseInt(value, 10);
-                        if (!isNaN(width) && width >= 120) {
-                            this.plugin.settings.galleryGridSizeMedium = width;
-                            await this.plugin.saveSettings();
-                        }
-                    });
-            });
+            .setName(t('grid_size'))
+            .setDesc(t('grid_size_desc'))
+            .addDropdown(dropdown => dropdown
+                .addOption('small', t('grid_size_small'))
+                .addOption('medium', t('grid_size_medium'))
+                .addOption('large', t('grid_size_large'))
+                .setValue(this.plugin.settings.galleryGridSize)
+                .onChange(async (value) => {
+                    this.plugin.settings.galleryGridSize = value;
+                    await this.plugin.saveSettings();
+                }));
 
         new Setting(containerEl)
-            .setName(this.plugin.t('GALLERY_GRID_SMALL'))
-            .setDesc(this.plugin.t('GALLERY_GRID_SMALL_DESC'))
-            .addText(text => {
-                text.inputEl.type = 'number';
-                text.inputEl.min = '100';
-                text.setPlaceholder('100')
-                    .setValue(String(this.plugin.settings.galleryGridSizeSmall))
+            .setName(t('grid_size_small_width'))
+            .setDesc(t('grid_size_small_width_desc'))
+            .addText(text => text
+                .setPlaceholder('100')
+                .setValue(String(this.plugin.settings.galleryGridSizeSmall))
+                .onChange(async (value) => {
+                    const numValue = parseInt(value);
+                    this.plugin.settings.galleryGridSizeSmall = isNaN(numValue) ? 100 : numValue;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName(t('grid_size_medium_width'))
+            .setDesc(t('grid_size_medium_width_desc'))
+            .addText(text => text
+                .setPlaceholder('120')
+                .setValue(String(this.plugin.settings.galleryGridSizeMedium))
+                .onChange(async (value) => {
+                    const numValue = parseInt(value);
+                    this.plugin.settings.galleryGridSizeMedium = isNaN(numValue) ? 120 : numValue;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName(t('grid_size_large_width'))
+            .setDesc(t('grid_size_large_width_desc'))
+            .addText(text => text
+                .setPlaceholder('150')
+                .setValue(String(this.plugin.settings.galleryGridSizeLarge))
+                .onChange(async (value) => {
+                    const numValue = parseInt(value);
+                    this.plugin.settings.galleryGridSizeLarge = isNaN(numValue) ? 150 : numValue;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName(t('items_per_page'))
+            .setDesc(t('items_per_page_desc'))
+            .addText(text => text
+                .setPlaceholder('20')
+                .setValue(String(this.plugin.settings.itemsPerPage))
+                .onChange(async (value) => {
+                    const numValue = parseInt(value);
+                    this.plugin.settings.itemsPerPage = isNaN(numValue) ? 0 : numValue;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName(t('insert_position'))
+            .addDropdown(dropdown => {
+                dropdown
+                    .addOption('true', t('insert_at_end'))
+                    .addOption('false', t('insert_at_start'))
+                    .setValue(this.plugin.settings.insertAtEnd.toString())
                     .onChange(async (value) => {
-                        const width = parseInt(value, 10);
-                        if (!isNaN(width) && width >= 100) {
-                            this.plugin.settings.galleryGridSizeSmall = width;
-                            await this.plugin.saveSettings();
-                        }
+                        this.plugin.settings.insertAtEnd = value === 'true';
+                        await this.plugin.saveSettings();
                     });
             });
     }
 }
 
+// Gallery 設定對話框
+class GallerySettingsModal extends Modal {
+    constructor(app, editor, selectedText) {
+        super(app);
+        this.editor = editor;
+        this.selectedText = selectedText;
+        this.title = '';
+        this.size = 'medium';
+        this.addButton = true;
+        this.pagination = 0;
+    }
+
+    onOpen() {
+        const { contentEl } = this;
+
+        // 標題
+        new Setting(contentEl)
+            .setName(t('gallery_title'))
+            .setDesc(t('gallery_title_desc'))
+            .addText(text => text
+                .setValue(this.title)
+                .onChange(value => this.title = value));
+
+        // 尺寸選擇
+        new Setting(contentEl)
+            .setName(t('gallery_size'))
+            .setDesc(t('gallery_size_desc'))
+            .addDropdown(dropdown => dropdown
+                .addOption('small', t('grid_size_small'))
+                .addOption('medium', t('grid_size_medium'))
+                .addOption('large', t('grid_size_large'))
+                .setValue(this.size)
+                .onChange(value => this.size = value));
+
+        // 上傳按鈕選項
+        new Setting(contentEl)
+            .setName(t('gallery_add_button'))
+            .setDesc(t('gallery_add_button_desc'))
+            .addToggle(toggle => toggle
+                .setValue(this.addButton)
+                .onChange(value => this.addButton = value));
+
+        // 分頁設定
+        new Setting(contentEl)
+            .setName(t('gallery_pagination'))
+            .setDesc(t('gallery_pagination_desc'))
+            .addText(text => text
+                .setValue(this.pagination ? this.pagination.toString() : '')
+                .setPlaceholder('0')
+                .onChange(value => {
+                    const numValue = parseInt(value);
+                    this.pagination = !isNaN(numValue) && numValue > 0 ? numValue : 0;
+                }));
+
+        // 確認按鈕
+        new Setting(contentEl)
+            .addButton(button => button
+                .setButtonText(t('confirm'))
+                .setCta()
+                .onClick(() => {
+                    const galleryBlock = ['```gallery'];
+                    galleryBlock.push(`title: ${this.title}`);
+                    galleryBlock.push(`size: ${this.size}`);
+                    galleryBlock.push(`addButton: ${this.addButton}`);
+                    galleryBlock.push(`pagination: ${this.pagination}`);
+                    if (this.selectedText) galleryBlock.push(this.selectedText);
+                    galleryBlock.push('```\n');
+                    
+                    this.editor.replaceSelection(galleryBlock.join('\n'));
+                    this.close();
+                }));
+    }
+
+    onClose() {
+        const { contentEl } = this;
+        contentEl.empty();
+    }
+}
+
 const DEFAULT_SETTINGS = {
+    showImageInfo: true,
     allowMediaDeletion: false,
     autoOpenFirstImage: false,
     openMediaBrowserOnClick: true,
     muteVideoOnOpen: false,
-    galleryGridSizeLarge: 200,
+    galleryGridSize: 'medium',
+    galleryGridSizeSmall: 100,
     galleryGridSizeMedium: 150,
-    galleryGridSizeSmall: 100
+    galleryGridSizeLarge: 200,
+    itemsPerPage: 0,
+    insertAtEnd: true, // 預設插入在最後
 };
 
 module.exports = class MediaViewPlugin extends Plugin {
     async onload() {
         await this.loadSettings();
         
+        // 添加命令
         this.addCommand({
-            id: 'mediaview-generategallery',
-            name: this.t('GENERATE_GALLERY'),
-            callback: () => this.generateGallery()
+            id: 'open-media-viewer',
+            name: t('open_media_viewer'),
+            callback: () => {
+                const modal = new FullScreenModal(this.app, 'command');
+                modal.plugin = this;
+                modal.open();
+            }
+        });
+
+        // 添加 ribbon 命令
+        this.addRibbonIcon('images', t('open_media_viewer'), () => {
+            const modal = new FullScreenModal(this.app, 'command');
+            modal.plugin = this;
+            modal.open();
+        });
+
+        this.addCommand({
+            id: 'generategallery',
+            name: t('generate_gallery'),
+            checkCallback: (checking) => {
+                // 檢查是否有開啟的筆記
+                const activeView = this.app.workspace.getActiveViewOfType(require('obsidian').MarkdownView);
+                if (activeView) {
+                    if (!checking) {
+                        this.generateGallery();
+                    }
+                    return true;
+                }
+                return false;
+            }
         });
 
         this.registerEvent(this.app.workspace.on('editor-menu', (menu, editor, view) => {
             menu.addItem((subItem) => {
                 subItem
-                    .setTitle(this.t('GENERATE_GALLERY'))
+                    .setTitle(t('generate_gallery'))
                     .setIcon('image')
                     .onClick(() => this.generateGallery())
             });
@@ -949,31 +1206,11 @@ module.exports = class MediaViewPlugin extends Plugin {
 
             try {
                 const mediaUrlsData = await this.parseGalleryContent(source);
-                //if (mediaUrlsData.items.length > 0) {
-                    const galleryDiv = this.createGalleryElement(mediaUrlsData);
-                    el.appendChild(galleryDiv);
-                //}
+                const galleryDiv = this.createGalleryElement(mediaUrlsData);
+                el.appendChild(galleryDiv);
             } catch (error) {
                 console.error('Error processing gallery block:', error);
             }
-        });
-
-        // 添加命令
-        this.addCommand({
-            id: 'open-media-viewer',
-            name: this.t('OPEN_MEDIA_VIEWER'),
-            callback: () => {
-                const modal = new FullScreenModal(this.app, 'command');
-                modal.plugin = this;
-                modal.open();
-            }
-        });
-
-        // 添加 ribbon 命令
-        this.addRibbonIcon('images', this.t('OPEN_MEDIA_VIEWER'), () => {
-            const modal = new FullScreenModal(this.app, 'command');
-            modal.plugin = this;
-            modal.open();
         });
 
         // 添加設定頁面
@@ -993,9 +1230,9 @@ module.exports = class MediaViewPlugin extends Plugin {
         if (activeView) {
             const editor = activeView.editor;
             const selectedText = editor.getSelection();
-            editor.replaceSelection(`\`\`\`gallery\naddButton: true\n${selectedText}\n\`\`\`\n`);
+            new GallerySettingsModal(this.app, editor, selectedText).open();
         } else {
-            new Notice(this.t('PLEASE_OPEN_NOTE'));
+            new Notice(t('please_open_note'));
         }
     }
     
@@ -1007,9 +1244,12 @@ module.exports = class MediaViewPlugin extends Plugin {
         let currentLinkUrl = null;
         let currentThumbnail = null;
         let containerTitle = null;
-        let containerPosition = 'top-left';
         let addButtonEnabled = false;
-        let gridSize = 'medium'; // 預設為中等大小
+        let gridSize = this.settings.galleryGridSize || 'medium';
+        let paginationEnabled = this.settings.itemsPerPage || 0; // 設定變數以決定是否開啟分頁功能
+        
+        // 產生基於內容的唯一識別碼
+        const galleryId = 'gallery-' + this.hashString(content.trim());
         
         // 處理縮圖連結的輔助函數
         const processMediaLink = (linkText) => {
@@ -1025,7 +1265,7 @@ module.exports = class MediaViewPlugin extends Plugin {
             // 處理標準 Markdown 連結 ![alt](path)
             const markdownMatch = linkText.match(/!\[(.*?)\]\((.*?)\)/);
             if (markdownMatch) {
-                const url = markdownMatch[2];
+                const url = markdownMatch[2].split(" ")[0];
                 if (url.startsWith('http')) {
                     return url;
                 } else {
@@ -1057,28 +1297,13 @@ module.exports = class MediaViewPlugin extends Plugin {
         // 新增：處理筆記內容中的第一張圖片
         const findFirstImageInNote = async (file) => {
             try {
-                const content = await this.app.vault.read(file);
-                let firstImage = null;
-                let firstImagePosition = Infinity;
-                
-                // 檢查 ![[image.jpg]] 格式
-                const internalMatch = content.match(/!\[\[(.*?\.(?:jpg|jpeg|png|gif|webp))\]\]/i);
+                const content = await this.app.vault.cachedRead(file);
+                const internalMatch = content.match(/(?:!\[\[(.*?\.(?:jpg|jpeg|png|gif|webp))(?:\|.*?)?\]\]|!\[(.*?)\]\(\s*(\S+?(?:\.(?:jpg|jpeg|png|gif|webp)|format=(?:jpg|jpeg|png|gif|webp))[^\s)]*)\s*(?:\s+["'][^"']*["'])?\s*\))/gi);
                 if (internalMatch) {
-                    firstImage = internalMatch[0];
-                    firstImagePosition = content.indexOf(internalMatch[0]);
+                    return internalMatch[0];
+                } else {    
+                    return null;
                 }
-                
-                // 檢查 ![alt](path) 格式
-                const markdownMatch = content.match(/!\[.*?\]\((.*?(?:\.(?:jpg|jpeg|png|gif|webp)|format=(?:jpg|jpeg|png|gif|webp)).*?)\)/i);
-                if (markdownMatch) {
-                    const markdownPosition = content.indexOf(markdownMatch[0]);
-                    if (markdownPosition < firstImagePosition) {
-                        firstImage = markdownMatch[0];
-                        firstImagePosition = markdownPosition;
-                    }
-                }
-                
-                return firstImage;
             } catch (error) {
                 console.error('Error reading note content:', error);
                 return null;
@@ -1089,10 +1314,24 @@ module.exports = class MediaViewPlugin extends Plugin {
             const trimmedLine = line.trim();
             if (!trimmedLine) continue;
 
+            const paginationMatch = trimmedLine.match(/^pagination:\s*(\d+)$/i);
+            if (paginationMatch) {
+                const paginationValue = parseInt(paginationMatch[1]);
+                paginationEnabled = paginationValue || 0;
+                continue;
+            }
+            
             // 新增 size 參數的處理
             const sizeMatch = trimmedLine.match(/^size:\s*(small|medium|large)$/i);
             if (sizeMatch) {
                 gridSize = sizeMatch[1].toLowerCase();
+                continue;
+            }
+
+            // 檢查是否要禁用新增按鈕
+            const addButtonMatch = trimmedLine.match(/^addbutton:\s*(true|false)$/i);
+            if (addButtonMatch) {
+                addButtonEnabled = addButtonMatch[1].toLowerCase() === 'true';
                 continue;
             }
 
@@ -1171,7 +1410,13 @@ module.exports = class MediaViewPlugin extends Plugin {
             // 檢查是否為縮圖設定
             const thumbnailMatch = trimmedLine.match(/^img:\s*(.+)$/);
             if (thumbnailMatch) {
-                currentThumbnail = processMediaLink(thumbnailMatch[1].trim());
+                const imageUrl = thumbnailMatch[1].trim();
+                const isImageFile = /\.(jpg|jpeg|png|gif|webp|bmp|svg|tiff|tif)$/i.test(imageUrl) || /^https?:\/\/.*\.(jpg|jpeg|png|gif|webp|bmp|svg|tiff|tif)$/i.test(imageUrl);
+                if (isImageFile) {
+                    currentThumbnail = processMediaLink(`![Image](${imageUrl})`);
+                } else {
+                    currentThumbnail = processMediaLink(imageUrl);
+                }
                 continue;
             }
             
@@ -1179,7 +1424,7 @@ module.exports = class MediaViewPlugin extends Plugin {
             const internalMatch = line.match(/(!?)\[\[(.*?)(?:\|.*?)?\]\]/);
             if (internalMatch) {
                 const [_, isImage, linktext] = internalMatch;
-                const actualLinktext = linktext.split('|')[0];
+                const actualLinktext = linktext.split('|')[0].split('#')[0];
                 const file = this.app.metadataCache.getFirstLinkpathDest(actualLinktext, '');
 
                 if (isImage && !currentThumbnail) {
@@ -1287,30 +1532,38 @@ module.exports = class MediaViewPlugin extends Plugin {
                 currentThumbnail = null;
                 continue;
             }
-
-            // 檢查是否要禁用新增按鈕
-            const addButtonMatch = trimmedLine.match(/^addButton:\s*(true|false)$/i);
-            if (addButtonMatch) {
-                addButtonEnabled = addButtonMatch[1].toLowerCase() === 'true';
-                continue;
-            }
         }
 
         return {
             items,
             containerInfo: {
                 title: containerTitle,
-                position: containerPosition,
                 addButtonEnabled: addButtonEnabled,
-                gridSize: gridSize
-            }
+                gridSize: gridSize,
+                paginationEnabled: paginationEnabled
+            },
+            galleryId: galleryId
         };
     }
 
+    hashString(str) {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            const char = str.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash; // Convert to 32bit integer
+        }
+        return Math.abs(hash).toString(36);
+    }
+
     createGalleryElement(mediaUrlsData) {
-        const { items, containerInfo } = mediaUrlsData;
+        const { items, containerInfo, galleryId } = mediaUrlsData;
+        const titleDiv = document.createElement('div');
         const galleryDiv = document.createElement('div');
         galleryDiv.className = 'media-gallery-grid';
+        
+        // 使用從 mediaUrlsData 中取得的 galleryId
+        galleryDiv.setAttribute('data-gallery-id', galleryId);
         
         // 根據 size 參數添加對應的 class 並設定寬度
         galleryDiv.addClass(`size-${containerInfo.gridSize}`);
@@ -1320,13 +1573,12 @@ module.exports = class MediaViewPlugin extends Plugin {
         // 處理容器標題
         if (containerInfo.title) {
             const containerLinkArea = document.createElement('div');
-            containerLinkArea.className = `container-link-area ${containerInfo.position}`;
+            containerLinkArea.className = `container-link-area`;
             
             if (containerInfo.title.type === 'text') {
                 // 純文字
                 const textSpan = document.createElement('span');
                 textSpan.textContent = containerInfo.title.text;
-                textSpan.style.color = 'white';
                 containerLinkArea.appendChild(textSpan);
             } else {
                 // 內部或外部連結
@@ -1356,111 +1608,125 @@ module.exports = class MediaViewPlugin extends Plugin {
                 containerLinkArea.appendChild(link);
             }
             
-            galleryDiv.appendChild(containerLinkArea);
+            titleDiv.appendChild(containerLinkArea);
+
+            galleryDiv.style.borderRadius = '0 8px 8px 8px';
         }
 
-        // 處理所有項目
-        items.forEach((item, index) => {
-            if (item.type === 'note') {
-                const container = document.createElement('div');
-                container.className = 'media-thumbnail-container note-thumbnail';
-                
-                const notePreview = document.createElement('div');
-                notePreview.className = 'note-preview';
-                
-                // 如果有縮圖，使用縮圖
-                if (item.thumbnail) {
-                    const img = document.createElement('img');
-                    img.src = item.thumbnail;
-                    img.className = 'note-thumbnail-image';
-                    notePreview.appendChild(img);
-                } else {
-                    // 否則使用預設圖示
-                    const noteIcon = document.createElement('div');
-                    noteIcon.className = 'note-icon';
-                    
-                    if (item.isExternalLink) {
-                        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                        svg.setAttribute('viewBox', '0 0 24 24');
-                        svg.setAttribute('width', '24');
-                        svg.setAttribute('height', '24');
-                        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                        path.setAttribute('fill', 'currentColor');
-                        path.setAttribute('d', 'M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z');
-                        svg.appendChild(path);
-                        noteIcon.appendChild(svg);
-                        noteIcon.classList.add('external-link');
-                    } else {
-                        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                        svg.setAttribute('viewBox', '0 0 24 24');
-                        svg.setAttribute('width', '24');
-                        svg.setAttribute('height', '24');
-                        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                        path.setAttribute('fill', 'currentColor');
-                        path.setAttribute('d', 'M14,17H7V15H14V17M17,13H7V11H17V13M17,9H7V7H17V9M19,3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3Z');
-                        svg.appendChild(path);
-                        noteIcon.appendChild(svg);
-                        noteIcon.classList.add('internal-link');
-                    }
-                    notePreview.appendChild(noteIcon);
-                }
-                
-                const noteTitle = document.createElement('div');
-                noteTitle.className = 'note-title';
-                noteTitle.textContent = item.title;
-                notePreview.appendChild(noteTitle);
-                
-                container.appendChild(notePreview);
-                
-                container.onclick = (event) => {
-                    event.stopPropagation();
-                    if (item.isExternalLink) {
-                        // 外部連結：在新分頁開啟
-                        window.open(item.linkUrl, '_blank', 'noopener,noreferrer');
-                    } else if (item.isInternalLink && item.file) {
-                        // 內部連結：在新分頁開啟筆記
-                        const leaf = this.app.workspace.getLeaf('tab');
-                        leaf.openFile(item.file);
-                    } else {
-                        // 其他連結：嘗試在新分頁開啟
-                        window.open(item.path, '_blank', 'noopener,noreferrer');
-                    }
-                };
-                
-                galleryDiv.appendChild(container);
-            } else {
-                // 處理媒體檔案
-                const container = this.createMediaContainer(item, index);
-                galleryDiv.appendChild(container);
-            }
-        });
+        const container = document.createElement('div');
+        container.className = 'media-container';
+        container.appendChild(titleDiv);
+        container.appendChild(galleryDiv);
 
-        // 根據 addButtonEnabled 決定是否添加"新增圖片"按鈕
-        if (containerInfo.addButtonEnabled || items.length === 0) {
-            const addContainer = document.createElement('div');
-            addContainer.className = 'media-thumbnail-container add-media-button';
+        // 處理分頁和新增按鈕
+        const itemsPerPage = containerInfo.paginationEnabled || this.settings.itemsPerPage || 0;
+        
+        // 當 itemsPerPage 為 0 或項目數量不足時，顯示所有項目
+        if (itemsPerPage <= 0 || items.length <= itemsPerPage) {
+            // 顯示所有項目
+            items.forEach((item, index) => {
+                if (item.type === 'note') {
+                    const noteContainer = this.createNoteContainer(item);
+                    galleryDiv.appendChild(noteContainer);
+                } else {
+                    const mediaContainer = this.createMediaContainer(item, index);
+                    galleryDiv.appendChild(mediaContainer);
+                }
+            });
+
+            // 不使用分頁時，如果允許新增圖片，則顯示傳統的新增按鈕
+            if (containerInfo.addButtonEnabled || items.length === 0) {
+                const addContainer = document.createElement('div');
+                addContainer.className = 'media-thumbnail-container add-media-button';
+                
+                const addIcon = addContainer.createDiv('add-media-icon');
+                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                svg.setAttribute('viewBox', '0 0 24 24');
+                svg.setAttribute('width', '24');
+                svg.setAttribute('height', '24');
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('fill', 'currentColor');
+                path.setAttribute('d', 'M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z');
+                svg.appendChild(path);
+                addIcon.appendChild(svg);
+
+                const addIconText = document.createElement('div');
+                addIconText.className = 'add-media-text';
+                addIconText.textContent = t('add_image');
+                addIcon.appendChild(addIconText);
+
+                addContainer.onclick = () => {
+                    const modal = new ImageUploadModal(this.app, this, galleryDiv);
+                    modal.open();
+                };
+
+                galleryDiv.appendChild(addContainer);
+            }
+        } else {
+            // 使用分頁顯示
+            const totalPages = Math.ceil(items.length / itemsPerPage);
+            const currentPage = 1;
+
+            const controlsDiv = document.createElement('div');
+            controlsDiv.className = 'gallery-controls';
             
-            const addIcon = document.createElement('div');
-            addIcon.className = 'add-media-icon';
-            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-            svg.setAttribute('viewBox', '0 0 24 24');
-            svg.setAttribute('width', '24');
-            svg.setAttribute('height', '24');
-            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            path.setAttribute('fill', 'currentColor');
-            path.setAttribute('d', 'M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z');
-            svg.appendChild(path);
-            addIcon.appendChild(svg);
-            const addIconText = document.createElement('div');
-            addIconText.className = 'add-media-text';
-            addIconText.textContent = this.t('ADD_IMAGE');
-            addIcon.appendChild(addIconText);
-            addContainer.appendChild(addIcon);
-            addContainer.onclick = () => {
-                const modal = new ImageUploadModal(this.app, this, galleryDiv);
-                modal.open();
+            const paginationDiv = document.createElement('div');
+            paginationDiv.className = 'pagination';
+            
+            const prevPageButton = paginationDiv.createEl('button', {
+                cls: 'gallery-control-button prev-page-button',
+                text: t('prev_page')
+            });
+            
+            const pageInfoSpan = paginationDiv.createEl('span', {
+                cls: 'page-info',
+                text: `${currentPage} / ${totalPages}`
+            });
+            
+            const nextPageButton = paginationDiv.createEl('button', {
+                cls: 'gallery-control-button next-page-button',
+                text: t('next_page')
+            });
+
+            // 儲存當前頁碼到按鈕上，以便更新時使用
+            paginationDiv.dataset.currentPage = currentPage;
+
+            prevPageButton.onclick = () => {
+                const currentPage = parseInt(paginationDiv.dataset.currentPage);
+                // 如果是第一頁，則跳到最後一頁，否則往前一頁
+                const newPage = currentPage === 1 ? totalPages : currentPage - 1;
+                paginationDiv.dataset.currentPage = newPage;
+                this.updateGalleryPage(galleryDiv, items, newPage, itemsPerPage);
             };
-            galleryDiv.appendChild(addContainer);
+            
+            nextPageButton.onclick = () => {
+                const currentPage = parseInt(paginationDiv.dataset.currentPage);
+                // 如果是最後一頁，則跳到第一頁，否則往後一頁
+                const newPage = currentPage === totalPages ? 1 : currentPage + 1;
+                paginationDiv.dataset.currentPage = newPage;
+                this.updateGalleryPage(galleryDiv, items, newPage, itemsPerPage);
+            };
+
+            // 新增圖片按鈕移到分頁控制項旁邊
+            if (containerInfo.addButtonEnabled || items.length === 0) {
+                const addButton = paginationDiv.createEl('button', {
+                    cls: 'gallery-control-button add-image-button',
+                    text: t('add_image')
+                });
+                addButton.onclick = () => {
+                    const modal = new ImageUploadModal(this.app, this, galleryDiv);
+                    modal.open();
+                };
+            }
+
+            paginationDiv.appendChild(prevPageButton);
+            paginationDiv.appendChild(pageInfoSpan);
+            paginationDiv.appendChild(nextPageButton);
+            controlsDiv.appendChild(paginationDiv);
+            container.appendChild(controlsDiv);
+
+            // 初始化第一頁
+            this.updateGalleryPage(galleryDiv, items, currentPage, itemsPerPage);
         }
         
         // 加入拖曳事件處理
@@ -1513,11 +1779,116 @@ module.exports = class MediaViewPlugin extends Plugin {
             const modal = new ImageUploadModal(this.app, this, galleryDiv);
             await modal.handleFiles(resolvedFiles);
         });
-        
-        return galleryDiv;
+
+        return container;
     }
 
-    // 將原有的媒體容器創建邏輯抽取為獨立函數
+    createNoteContainer(item) {
+        const container = document.createElement('div');
+        container.className = 'media-thumbnail-container note-thumbnail';
+        
+        const notePreview = document.createElement('div');
+        notePreview.className = 'note-preview';
+        
+        // 如果有縮圖，使用縮圖
+        if (item.thumbnail) {
+            const img = document.createElement('img');
+            img.src = item.thumbnail;
+            img.className = 'note-thumbnail-image';
+            notePreview.appendChild(img);
+        } else {
+            // 否則使用預設圖示
+            const noteIcon = document.createElement('div');
+            noteIcon.className = 'note-icon';
+            
+            if (item.isExternalLink) {
+                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                svg.setAttribute('viewBox', '0 0 24 24');
+                svg.setAttribute('width', '24');
+                svg.setAttribute('height', '24');
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('fill', 'currentColor');
+                path.setAttribute('d', 'M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z');
+                svg.appendChild(path);
+                noteIcon.appendChild(svg);
+                noteIcon.classList.add('external-link');
+            } else {
+                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                svg.setAttribute('viewBox', '0 0 24 24');
+                svg.setAttribute('width', '24');
+                svg.setAttribute('height', '24');
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('fill', 'currentColor');
+                path.setAttribute('d', 'M14,17H7V15H14V17M17,13H7V11H17V13M17,9H7V7H17V9M19,3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3Z');
+                svg.appendChild(path);
+                noteIcon.appendChild(svg);
+                noteIcon.classList.add('internal-link');
+            }
+            notePreview.appendChild(noteIcon);
+        }
+        
+        const noteTitle = document.createElement('div');
+        noteTitle.className = 'note-title';
+        noteTitle.textContent = item.title;
+        notePreview.appendChild(noteTitle);
+        
+        container.appendChild(notePreview);
+        
+        container.onclick = (event) => {
+            event.stopPropagation();
+            if (item.isExternalLink) {
+                // 外部連結：在新分頁開啟
+                window.open(item.linkUrl, '_blank', 'noopener,noreferrer');
+            } else if (item.isInternalLink && item.file) {
+                // 內部連結：在新分頁開啟筆記
+                const leaf = this.app.workspace.getLeaf('tab');
+                leaf.openFile(item.file);
+            } else {
+                // 其他連結：嘗試在新分頁開啟
+                window.open(item.path, '_blank', 'noopener,noreferrer');
+            }
+        };
+
+        return container;
+    }
+
+    updateGalleryPage(galleryDiv, items, page, itemsPerPage) {
+        const start = (page - 1) * itemsPerPage;
+        const end = start + itemsPerPage;
+        const currentPageItems = items.slice(start, end);
+        const totalPages = Math.ceil(items.length / itemsPerPage);
+        
+        // 移除舊的項目
+        galleryDiv.innerHTML = '';
+        
+        // 新增新的項目
+        currentPageItems.forEach((item, index) => {
+            if (item.type === 'note') {
+                const noteContainer = this.createNoteContainer(item);
+                galleryDiv.appendChild(noteContainer);
+            } else {
+                const mediaContainer = this.createMediaContainer(item, start + index);
+                galleryDiv.appendChild(mediaContainer);
+            }
+        });
+
+        // 如果是最後一頁且項目數量不足，添加空的佔位元素
+        if (page === totalPages && currentPageItems.length < itemsPerPage) {
+            const placeholdersNeeded = itemsPerPage - currentPageItems.length;
+            for (let i = 0; i < placeholdersNeeded; i++) {
+                const placeholder = document.createElement('div');
+                placeholder.className = 'media-thumbnail-container placeholder';
+                placeholder.style.visibility = 'hidden'; // 隱藏但保持佔位
+                galleryDiv.appendChild(placeholder);
+            }
+        }
+        
+        // 更新分頁控制項
+        const paginationDiv = galleryDiv.parentElement.querySelector('.pagination');
+        const pageInfoSpan = paginationDiv.querySelector('.page-info');
+        pageInfoSpan.textContent = `${page} / ${totalPages}`;
+    }
+    
     createMediaContainer(media, index) {
         const container = document.createElement('div');
         container.className = 'media-thumbnail-container';
@@ -1604,12 +1975,6 @@ module.exports = class MediaViewPlugin extends Plugin {
         
         return container;
     }
-    
-    t(key) {
-        const langSetting = window.localStorage.getItem('language');
-        const lang = TRANSLATIONS[langSetting] || TRANSLATIONS['en'];
-        return lang[key] || key;
-    }
 }
 
 class ImageUploadModal extends Modal {
@@ -1638,7 +2003,7 @@ class ImageUploadModal extends Modal {
         uploadIcon.appendChild(svg);
         
         const instructions = dropZone.createDiv('upload-instructions');
-        instructions.setText(this.t('DRAG_AND_DROP'));
+        instructions.setText(t('drag_and_drop'));
 
         // 處理拖放事件
         dropZone.addEventListener('dragover', (e) => {
@@ -1657,8 +2022,7 @@ class ImageUploadModal extends Modal {
             const files = e.dataTransfer.files;
             await this.handleFiles(files);
         });
-
-        // 點擊上傳
+        
         dropZone.addEventListener('click', () => {
             const input = document.createElement('input');
             input.type = 'file';
@@ -1678,48 +2042,11 @@ class ImageUploadModal extends Modal {
     async handleFiles(files) {
         const activeFile = this.app.workspace.getActiveFile();
         if (!activeFile) {
-            new Notice(this.t('PLEASE_OPEN_NOTE'));
+            new Notice(t('please_open_note'));
             return;
         }
 
         try {
-            // 讀取當前文件內容
-            const content = await this.app.vault.read(activeFile);
-            
-            // 找出所有 gallery 區塊
-            const galleryBlocks = Array.from(content.matchAll(/```gallery\n([\s\S]*?)```/g));
-            
-            // 找到對應的 gallery 區塊
-            let targetGalleryBlock = null;
-            let targetGalleryStart = 0;
-            let targetGalleryEnd = 0;
-            
-            // 遍歷所有 gallery 區塊，找到與當前 galleryElement 對應的區塊
-            for (const match of galleryBlocks) {
-                const blockContent = match[1];
-                const blockStart = match.index;
-                const blockEnd = blockStart + match[0].length;
-                
-                // 建立臨時的 div 來渲染這個 gallery 區塊
-                const tempDiv = document.createElement('div');
-                const galleryData = await this.plugin.parseGalleryContent(blockContent);
-                const galleryEl = this.plugin.createGalleryElement(galleryData);
-                tempDiv.appendChild(galleryEl);
-                
-                // 如果這個 gallery 元素與觸發上傳的元素相同
-                if (tempDiv.querySelector('.media-gallery-grid').isEqualNode(this.galleryElement)) {
-                    targetGalleryBlock = match;
-                    targetGalleryStart = blockStart;
-                    targetGalleryEnd = blockEnd;
-                    break;
-                }
-            }
-            
-            if (!targetGalleryBlock) {
-                new Notice(this.t('GALLERY_NOT_FOUND'));
-                return;
-            }
-
             const newLinks = []; // 儲存新連結
 
             // 處理每個檔案或連結
@@ -1737,7 +2064,7 @@ class ImageUploadModal extends Modal {
                             // 解碼 URL 並移除檔案副檔名
                             const fileName = decodeURIComponent(obsidianUrlMatch[1]).replace(/\.md$/, '');
                             // 判斷 filename 是否有圖片檔的副檔名
-                            if (/\.(jpg|jpeg|png|gif|webp|mp4|mov)$/i.test(fileName)) {
+                            if (/\.(jpg|jpeg|png|gif|webp|mp4|mov|webm)$/i.test(fileName)) {
                                 newLinks.push(`![[${fileName}]]`);
                             } else {
                                 newLinks.push(`[[${fileName}]]`);
@@ -1782,22 +2109,49 @@ class ImageUploadModal extends Modal {
                 }
             }
 
-            // 在 gallery 區塊內容的最後一行插入新連結
-            const blockContent = targetGalleryBlock[1];
-            const newBlockContent = blockContent.trimEnd() + `\n${newLinks.join('\n')}\n`;
-            
-            // 更新整個文件內容
-            const newContent = 
-                content.substring(0, targetGalleryStart) +
-                "```gallery\n" +
-                newBlockContent +
-                "```" +
-                content.substring(targetGalleryEnd);
-            
-            await this.app.vault.modify(activeFile, newContent);
+            // 使用 process 方法來修改檔案內容
+            await this.app.vault.process(activeFile, (content) => {
+                // 找出所有 gallery 區塊
+                const galleryBlocks = Array.from(content.matchAll(/```gallery\n([\s\S]*?)```/g));
+                
+                // 從觸發上傳的 gallery 元素獲取唯一識別碼
+                const galleryId = this.galleryElement.getAttribute('data-gallery-id');
+                
+                // 找到對應的 gallery 區塊
+                for (const match of galleryBlocks) {
+                    const blockContent = match[1].trim();
+                    const blockStart = match.index;
+                    const blockEnd = blockStart + match[0].length;
+                    
+                    // 計算這個區塊的 galleryId
+                    const currentGalleryId = 'gallery-' + this.plugin.hashString(blockContent);
+
+                    // 如果這個 gallery 區塊的 ID 與觸發上傳的元素相同
+                    if (currentGalleryId === galleryId) {
+                        // 在 gallery 區塊內容的最前或最後一行插入新連結 (根據設定)
+                        const newBlockContent = this.plugin.settings.insertAtEnd
+                            ? blockContent.trimEnd() + `\n${newLinks.join('\n')}\n`
+                            : `${newLinks.join('\n')}\n` + blockContent + '\n';
+                        
+                        // 更新整個文件內容
+                        return (
+                            content.substring(0, blockStart) +
+                            "```gallery\n" +
+                            newBlockContent +
+                            "```" +
+                            content.substring(blockEnd)
+                        );
+                    }
+                }
+                
+                // 如果沒有找到對應的 gallery 區塊，回傳原始內容
+                new Notice(t('gallery_not_found'));
+                return content;
+            });
+
         } catch (error) {
             console.error('Error handling files:', error);
-            new Notice(this.t('ERROR_ADDING_FILE'));
+            new Notice(t('error_adding_file'));
         }
         
         this.close();
@@ -1805,7 +2159,7 @@ class ImageUploadModal extends Modal {
 
     getSafeFileName(originalName) {
         // 移除不安全的字元，只保留字母、數字、底線和檔案副檔名
-        const name = originalName.replace(/[^a-zA-Z0-9_.-]/g, '_');
+        const name = originalName.replace(/[<>:"/\\|?*]/g, '_');
         // 確保檔案名稱唯一
         return name;
     }
@@ -1836,11 +2190,5 @@ class ImageUploadModal extends Modal {
     onClose() {
         const {contentEl} = this;
         contentEl.empty();
-    }
-
-    t(key) {
-        const langSetting = window.localStorage.getItem('language');
-        const lang = TRANSLATIONS[langSetting] || TRANSLATIONS['en'];
-        return lang[key] || key;
     }
 }
