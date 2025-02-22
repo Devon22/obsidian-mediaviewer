@@ -1,4 +1,4 @@
-const { Plugin, Modal, PluginSettingTab, Setting } = require('obsidian');
+const { Plugin, Modal, PluginSettingTab, Setting, getLanguage, getFrontMatterInfo } = require('obsidian');
 
 // 語系檔案
 const TRANSLATIONS = {
@@ -74,48 +74,48 @@ const TRANSLATIONS = {
         'delete': 'Delete',
         'confirm': 'Confirm',
         'drag_and_drop': 'Drag and drop images here or click to select files',
-        'add_image': 'Add Image',
+        'add_image': 'Add image',
 
         // Settings
-        'allow_media_deletion': 'Allow Media Deletion',
+        'allow_media_deletion': 'Allow media deletion',
         'allow_media_deletion_desc': 'Enable deletion of media files in the media browser',
-        'auto_open_first_image': 'Auto Open First Image',
+        'auto_open_first_image': 'Auto open first image',
         'auto_open_first_image_desc': 'Automatically open the first image when opening the media browser',
-        'click_to_open_media': 'Click Image to Open Media Browser',
+        'click_to_open_media': 'Click image to open Media Browser',
         'click_to_open_media_desc': 'Open media browser when clicking on images (requires restart)',
-        'mute_video_on_open': 'Mute Video on Open',
+        'mute_video_on_open': 'Mute video on open',
         'mute_video_on_open_desc': 'Automatically mute videos when opening in the media browser',
-        'grid_size': 'Grid Size',
+        'grid_size': 'Grid size',
         'grid_size_desc': 'Set the grid size for the gallery',
-        'grid_size_small': 'Small Grid',
-        'grid_size_medium': 'Medium Grid',
-        'grid_size_large': 'Large Grid',
-        'grid_size_small_width': 'Small Grid Width',
+        'grid_size_small': 'Small grid',
+        'grid_size_medium': 'Medium grid',
+        'grid_size_large': 'Large grid',
+        'grid_size_small_width': 'Small grid width',
         'grid_size_small_width_desc': 'Set the width for small grid layout (minimum 100px)',
-        'grid_size_medium_width': 'Medium Grid Width',
+        'grid_size_medium_width': 'Medium grid width',
         'grid_size_medium_width_desc': 'Set the width for medium grid layout (minimum 120px)',
-        'grid_size_large_width': 'Large Grid Width',
+        'grid_size_large_width': 'Large grid width',
         'grid_size_large_width_desc': 'Set the width for large grid layout (minimum 150px)',
-        'show_image_info': 'Show Image Info',
+        'show_image_info': 'Show image info',
         'show_image_info_desc': 'Show file name and size in fullscreen mode',
-        'items_per_page': 'Items Per Page',
+        'items_per_page': 'Items per page',
         'items_per_page_desc': 'When gallery items exceed this number, they will be displayed in pages',
-        'prev_page': 'Prev Page',
-        'next_page': 'Next Page',
-        'gallery_pagination': 'Items Per Page',
+        'prev_page': 'Prev page',
+        'next_page': 'Next page',
+        'gallery_pagination': 'Items per page',
         'gallery_pagination_desc': 'Set the number of images to display per page (0: no pagination)',
-        'insert_position': 'Image Insert Position',
-        'insert_at_end': 'Insert at End',
-        'insert_at_start': 'Insert at Start',
+        'insert_position': 'Image insert position',
+        'insert_at_end': 'Insert at end',
+        'insert_at_start': 'Insert at start',
 
         // Commands
-        'open_media_viewer': 'Open Media Viewer',
-        'generate_gallery': 'Generate Gallery Block',
-        'gallery_title': 'Gallery Title',
+        'open_media_viewer': 'Open media viewer',
+        'generate_gallery': 'Generate gallery block',
+        'gallery_title': 'Gallery title',
         'gallery_title_desc': 'Set the title of the gallery (optional)',
-        'gallery_size': 'Gallery Size',
+        'gallery_size': 'Gallery size',
         'gallery_size_desc': 'Choose the display size of images in the gallery',
-        'gallery_add_button': 'Show Upload Button',
+        'gallery_add_button': 'Show upload button',
         'gallery_add_button_desc': 'Whether to show the upload button in the gallery'
     },
     'zh': {
@@ -238,7 +238,7 @@ const TRANSLATIONS = {
 
 // 全域翻譯函式
 function t(key) {
-    const langSetting = window.localStorage.getItem('language');
+    const langSetting = getLanguage();
     const lang = TRANSLATIONS[langSetting] || TRANSLATIONS['en'];
     return lang[key] || key;
 }
@@ -252,7 +252,7 @@ class FullScreenModal extends Modal {
         this.isImage = true;
         this.plugin = null;
         this.openType = openType;
-        this.modalEl.addClass('media-viewer-modal');
+        this.modalEl.addClass('mv-media-viewer-modal');
         this.handleWheel = null; //儲存滾輪事件處理程序
     }
 
@@ -269,7 +269,8 @@ class FullScreenModal extends Modal {
             const content = await this.app.vault.read(activeFile);
             
             // 移除 frontmatter 區域
-            const contentWithoutFrontmatter = content.replace(/^---\n[\s\S]*?\n---\n/, '');
+            const frontMatterInfo = getFrontMatterInfo(content);
+            const contentWithoutFrontmatter = content.substring(frontMatterInfo.contentStart);
             
             // 使用單一正則表達式同時匹配兩種格式：
             // 1. ![[image.jpg]] - Obsidian 內部連結
@@ -279,12 +280,8 @@ class FullScreenModal extends Modal {
 
             // 使用單一正則表達式匹配所有媒體連結
             // Because the links in the Gallery Block need to be parsed, Metadatacache cannot be used
-            const mediaMatches = Array.from(
-                contentWithoutFrontmatter.matchAll(
-                    /(?:!\[\[(.*?)(?:\|.*?)?\]\]|!\[(.*?)\]\(\s*(\S+)(?:\s+["'][^"']*["'])?\s*\))/g
-                )
-            );
-            
+            const mediaMatches = Array.from(contentWithoutFrontmatter.matchAll(/(?:!\[\[(.*?)(?:\|.*?)?\]\]|!\[(.*?)\]\((.*?)\))/g));
+
             for (const match of mediaMatches) {
                 const [fullMatch, internalLink, , markdownLink] = match;
                 let url = null;
@@ -305,7 +302,7 @@ class FullScreenModal extends Modal {
                     // 處理標準 Markdown 連結
                     if (markdownLink.startsWith('http://') || markdownLink.startsWith('https://')) {
                         // 網絡圖片
-                        url = markdownLink;
+                        url = markdownLink.split(' "')[0];
                     } else {
                         // 本地檔案
                         file = this.app.metadataCache.getFirstLinkpathDest(markdownLink, '');
@@ -386,7 +383,7 @@ class FullScreenModal extends Modal {
         });
 
         // 建立縮圖區域
-        const galleryContent = contentEl.createDiv('gallery-content');
+        const galleryContent = contentEl.createDiv('mv-gallery-content');
         const gridSize = this.plugin.settings.galleryGridSize;
         const width = this.plugin.settings[`galleryGridSize${gridSize.charAt(0).toUpperCase() + gridSize.slice(1)}`];
         galleryContent.style.gridTemplateColumns = `repeat(auto-fill, minmax(${width}px, 1fr))`;
@@ -394,15 +391,15 @@ class FullScreenModal extends Modal {
         if (this.openType !== 'command') galleryContent.style.display = 'none';
 
         galleryContent.addEventListener('click', (e) => {
-            const isMediaThumbnail = e.target.closest('.media-thumbnail');
+            const isMediaThumbnail = e.target.closest('.mv-media-thumbnail');
             if (!isMediaThumbnail) {
                 this.close();
             }
         });
         
         this.mediaUrls.forEach((media, index) => {
-            const container = galleryContent.createDiv('media-thumbnail-container');
-            container.addClass('media-thumbnail');
+            const container = galleryContent.createDiv('mv-media-thumbnail-container');
+            container.addClass('mv-media-thumbnail');
             
             if (media.type === 'image') {
                 const img = container.createEl('img');
@@ -412,7 +409,7 @@ class FullScreenModal extends Modal {
                 const video = container.createEl('video');
                 video.src = media.url;
                 video.onclick = () => this.showMedia(index);
-                const videoIcon = container.createDiv('video-indicator');
+                const videoIcon = container.createDiv('mv-video-indicator');
                 const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
                 svg.setAttribute('viewBox', '0 0 24 24');
                 svg.setAttribute('width', '24');
@@ -427,20 +424,20 @@ class FullScreenModal extends Modal {
 
         // 建立縮圖區域關閉按鈕
         const closeButton = contentEl.createEl('button', {
-            cls: 'gallery-close-button',
+            cls: 'mv-gallery-close-button',
             text: '×'
         });
         closeButton.onclick = () => this.close();
         this.galleryCloseButton = closeButton; 
 
         // 建立全屏預覽區域
-        this.fullMediaView = contentEl.createDiv('full-media-view');
+        this.fullMediaView = contentEl.createDiv('mv-full-media-view');
         this.fullMediaView.style.display = 'none';
         this.fullMediaView.style.background = this.openType === 'command' ? 'rgba(0, 0, 0, 0.5)' : 'rgba(0, 0, 0, 0.7)';
 
         // 添加左右切換區域
-        const prevArea = this.fullMediaView.createDiv('media-nav-area prev-area');
-        const nextArea = this.fullMediaView.createDiv('media-nav-area next-area');
+        const prevArea = this.fullMediaView.createDiv('mv-media-nav-area mv-prev-area');
+        const nextArea = this.fullMediaView.createDiv('mv-media-nav-area mv-next-area');
 
         prevArea.onclick = (e) => {
             e.stopPropagation();
@@ -454,15 +451,15 @@ class FullScreenModal extends Modal {
             this.showMedia(nextIndex);
         };
 
-        this.fullImage = this.fullMediaView.createEl('img', { cls: 'full-image' });
+        this.fullImage = this.fullMediaView.createEl('img', { cls: 'mv-full-image' });
         this.fullVideo = this.fullMediaView.createEl('video', { 
-            cls: 'full-video',
+            cls: 'mv-full-video',
             attr: { controls: true }
         });
 
         // 建立媒體關閉按鈕
         const fullCloseButton = this.fullMediaView.createEl('button', {
-            cls: 'media-close-button',
+            cls: 'mv-media-close-button',
             text: '×'
         });
         fullCloseButton.onclick = () => this.hideMedia();
@@ -491,7 +488,7 @@ class FullScreenModal extends Modal {
         }
 
         // 移除舊的資訊面板（如果存在）
-        const oldInfo = this.fullMediaView.querySelector('.image-info-panel');
+        const oldInfo = this.fullMediaView.querySelector('.mv-image-info-panel');
         if (oldInfo) oldInfo.remove();
 
         this.currentIndex = index;
@@ -528,7 +525,7 @@ class FullScreenModal extends Modal {
     async showImageInfo(media) {
         // 創建資訊面板
         const infoPanel = document.createElement('div');
-        infoPanel.className = 'image-info-panel';
+        infoPanel.className = 'mv-image-info-panel';
 
         if (this.plugin.settings.showImageInfo) {
             // 取得檔案名稱
@@ -536,45 +533,40 @@ class FullScreenModal extends Modal {
             const cleanFileName = fileName.split('?')[0]; // 移除檔案名稱中 ? 後面的部分
             const decodedFileName = decodeURIComponent(cleanFileName);
             
-            // 添加檔案名稱
-            const numSpan = document.createElement('span');
-            numSpan.textContent = `${this.currentIndex + 1}/${this.mediaUrls.length}`; 
-            numSpan.style.display = 'inline-block';
-            numSpan.style.marginRight = '10px';
-            infoPanel.appendChild(numSpan);
+            // 添加檔案編號
+            const numSpan = infoPanel.createEl('span', {
+                text: `${this.currentIndex + 1}/${this.mediaUrls.length}`,
+                cls: 'mv-info-item'
+            });
             
             // 添加檔案名稱
-            const labelSpan = document.createElement('span');
-            labelSpan.textContent = `${decodedFileName}`; 
-            labelSpan.style.display = 'inline-block';
-            labelSpan.contentEditable = 'true';
-            infoPanel.appendChild(labelSpan);
+            const labelSpan = infoPanel.createEl('span', {
+                text: decodedFileName,
+                cls: ['mv-info-item', 'mv-info-filename'],
+                attr: { contentEditable: 'true' }
+            });
 
             // 添加圖片尺寸
             if (this.isImage) {
-                const sizeSpan = document.createElement('span');
-                sizeSpan.textContent = `(${this.fullImage.naturalWidth} × ${this.fullImage.naturalHeight})`;
-                sizeSpan.style.display = 'inline-block';
-                sizeSpan.style.marginLeft = '10px';
-                infoPanel.appendChild(sizeSpan);
+                const sizeSpan = infoPanel.createEl('span', {
+                    text: `(${this.fullImage.naturalWidth} × ${this.fullImage.naturalHeight})`,
+                    cls: ['mv-info-item', 'mv-info-dimensions']
+                });
             }
         }
         
         // 添加刪除按鈕（只在啟用刪除功能時顯示）
         if (this.plugin.settings.allowMediaDeletion) {
-            const deleteButton = document.createElement('a');
-            deleteButton.href = '#';
-            deleteButton.textContent = t('delete');
-            if (this.plugin.settings.showImageInfo) {
-                deleteButton.style.display = 'inline-block';
-                deleteButton.style.marginLeft = '10px';
-            }
+            const deleteButton = infoPanel.createEl('a', {
+                text: t('delete'),
+                cls: 'mv-info-item',
+                attr: { href: '#' }
+            });
             deleteButton.onclick = async (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 await this.deleteMedia(this.currentIndex);
             };
-            infoPanel.appendChild(deleteButton);
         }
 
         this.fullMediaView.appendChild(infoPanel);
@@ -787,10 +779,10 @@ class FullScreenModal extends Modal {
             });
 
             // 重新建立縮圖區域
-            const galleryContent = contentEl.createDiv('gallery-content');
+            const galleryContent = contentEl.createDiv('mv-gallery-content');
             
             galleryContent.addEventListener('click', (e) => {
-                const isMediaThumbnail = e.target.closest('.media-thumbnail');
+                const isMediaThumbnail = e.target.closest('.mv-media-thumbnail');
                 if (!isMediaThumbnail) {
                     this.close();
                 }
@@ -798,8 +790,8 @@ class FullScreenModal extends Modal {
 
             // 重新渲染所有縮圖
             this.mediaUrls.forEach((media, idx) => {
-                const container = galleryContent.createDiv('media-thumbnail-container');
-                container.addClass('media-thumbnail');
+                const container = galleryContent.createDiv('mv-media-thumbnail-container');
+                container.addClass('mv-media-thumbnail');
                 
                 if (media.type === 'image') {
                     const img = container.createEl('img');
@@ -809,7 +801,7 @@ class FullScreenModal extends Modal {
                     const video = container.createEl('video');
                     video.src = media.url;
                     video.onclick = () => this.showMedia(idx);
-                    const videoIcon = container.createDiv('video-indicator');
+                    const videoIcon = container.createDiv('mv-video-indicator');
                     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
                     svg.setAttribute('viewBox', '0 0 24 24');
                     svg.setAttribute('width', '24');
@@ -823,19 +815,19 @@ class FullScreenModal extends Modal {
 
             // 建立縮圖區域關閉按鈕
             const closeButton = contentEl.createEl('button', {
-                cls: 'gallery-close-button',
+                cls: 'mv-gallery-close-button',
                 text: '×'
             });
             closeButton.onclick = () => this.close();
             this.galleryCloseButton = closeButton;
 
             // 建立全屏預覽區域
-            this.fullMediaView = contentEl.createDiv('full-media-view');
+            this.fullMediaView = contentEl.createDiv('mv-full-media-view');
             this.fullMediaView.style.display = 'none';
 
             // 添加左右切換區域
-            const prevArea = this.fullMediaView.createDiv('media-nav-area prev-area');
-            const nextArea = this.fullMediaView.createDiv('media-nav-area next-area');
+            const prevArea = this.fullMediaView.createDiv('mv-media-nav-area mv-prev-area');
+            const nextArea = this.fullMediaView.createDiv('mv-media-nav-area mv-next-area');
 
             prevArea.onclick = (e) => {
                 e.stopPropagation();
@@ -849,15 +841,15 @@ class FullScreenModal extends Modal {
                 this.showMedia(nextIndex);
             };
 
-            this.fullImage = this.fullMediaView.createEl('img', { cls: 'full-image' });
+            this.fullImage = this.fullMediaView.createEl('img', { cls: 'mv-full-image' });
             this.fullVideo = this.fullMediaView.createEl('video', { 
-                cls: 'full-video',
+                cls: 'mv-full-video',
                 attr: { controls: true }
             });
 
             // 建立媒體關閉按鈕
             const fullCloseButton = this.fullMediaView.createEl('button', {
-                cls: 'media-close-button',
+                cls: 'mv-media-close-button',
                 text: '×'
             });
             fullCloseButton.onclick = () => this.hideMedia();
@@ -1175,7 +1167,7 @@ module.exports = class MediaViewPlugin extends Plugin {
                 if (target.tagName === 'IMG' && 
                     !target.closest('pre') && 
                     !target.closest('.media-viewer-modal') &&
-                    !target.closest('.media-gallery-grid')) {
+                    !target.closest('.mvgb-media-gallery-grid')) {
                     // 阻止預設行為
                     evt.preventDefault();
                     evt.stopPropagation();
@@ -1200,7 +1192,7 @@ module.exports = class MediaViewPlugin extends Plugin {
 
         // 統一使用 registerMarkdownCodeBlockProcessor 來處理兩種模式
         this.registerMarkdownCodeBlockProcessor("gallery", async (source, el, ctx) => {
-            if (el.querySelector('.media-gallery-grid')) {
+            if (el.querySelector('.mvgb-media-gallery-grid')) {
                 return;
             }
 
@@ -1265,7 +1257,7 @@ module.exports = class MediaViewPlugin extends Plugin {
             // 處理標準 Markdown 連結 ![alt](path)
             const markdownMatch = linkText.match(/!\[(.*?)\]\((.*?)\)/);
             if (markdownMatch) {
-                const url = markdownMatch[2].split(" ")[0];
+                const url = markdownMatch[2].split(' "')[0];
                 if (url.startsWith('http')) {
                     return url;
                 } else {
@@ -1501,7 +1493,7 @@ module.exports = class MediaViewPlugin extends Plugin {
                             });
                         }
                     } else {
-                        const urlForTypeCheck = url.split('?')[0].toLowerCase();
+                        const urlForTypeCheck = url.split(' "')[0].split('?')[0].toLowerCase();
                         const isImageFile = urlForTypeCheck.match(/\.(jpg|jpeg|png|gif|webp)$/) || 
                                         url.includes('format=jpg') || 
                                         url.includes('format=jpeg') || 
@@ -1510,7 +1502,7 @@ module.exports = class MediaViewPlugin extends Plugin {
                                         url.includes('format=webp');
                         items.push({
                             type: isImageFile ? 'image' : 'video',
-                            url: url,
+                            url: url.split(' "')[0],
                             path: text,
                             title: currentTitle,
                             linkUrl: currentLinkUrl
@@ -1560,7 +1552,7 @@ module.exports = class MediaViewPlugin extends Plugin {
         const { items, containerInfo, galleryId } = mediaUrlsData;
         const titleDiv = document.createElement('div');
         const galleryDiv = document.createElement('div');
-        galleryDiv.className = 'media-gallery-grid';
+        galleryDiv.className = 'mvgb-media-gallery-grid';
         
         // 使用從 mediaUrlsData 中取得的 galleryId
         galleryDiv.setAttribute('data-gallery-id', galleryId);
@@ -1572,19 +1564,20 @@ module.exports = class MediaViewPlugin extends Plugin {
 
         // 處理容器標題
         if (containerInfo.title) {
-            const containerLinkArea = document.createElement('div');
-            containerLinkArea.className = `container-link-area`;
+            const containerLinkArea = titleDiv.createEl('div', {
+                cls: 'mvgb-container-link-area'
+            });
             
             if (containerInfo.title.type === 'text') {
                 // 純文字
-                const textSpan = document.createElement('span');
-                textSpan.textContent = containerInfo.title.text;
-                containerLinkArea.appendChild(textSpan);
+                const textSpan = containerLinkArea.createEl('span', {
+                    text: containerInfo.title.text
+                });
             } else {
                 // 內部或外部連結
-                const link = document.createElement('a');
-                link.textContent = containerInfo.title.text;
-                
+                const link = containerLinkArea.createEl('a', {
+                    text: containerInfo.title.text
+                });
                 if (containerInfo.title.type === 'internal') {
                     // 內部連結
                     const file = this.app.vault.getAbstractFileByPath(containerInfo.title.url);
@@ -1604,17 +1597,13 @@ module.exports = class MediaViewPlugin extends Plugin {
                         e.stopPropagation();
                     };
                 }
-                
-                containerLinkArea.appendChild(link);
             }
-            
-            titleDiv.appendChild(containerLinkArea);
 
             galleryDiv.style.borderRadius = '0 8px 8px 8px';
         }
 
         const container = document.createElement('div');
-        container.className = 'media-container';
+        container.className = 'mvgb-media-container';
         container.appendChild(titleDiv);
         container.appendChild(galleryDiv);
 
@@ -1637,9 +1626,9 @@ module.exports = class MediaViewPlugin extends Plugin {
             // 不使用分頁時，如果允許新增圖片，則顯示傳統的新增按鈕
             if (containerInfo.addButtonEnabled || items.length === 0) {
                 const addContainer = document.createElement('div');
-                addContainer.className = 'media-thumbnail-container add-media-button';
+                addContainer.className = 'mv-media-thumbnail-container mvgb-add-media-button';
                 
-                const addIcon = addContainer.createDiv('add-media-icon');
+                const addIcon = addContainer.createDiv('mvgb-add-media-icon');
                 const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
                 svg.setAttribute('viewBox', '0 0 24 24');
                 svg.setAttribute('width', '24');
@@ -1651,7 +1640,7 @@ module.exports = class MediaViewPlugin extends Plugin {
                 addIcon.appendChild(svg);
 
                 const addIconText = document.createElement('div');
-                addIconText.className = 'add-media-text';
+                addIconText.className = 'mvgb-add-media-text';
                 addIconText.textContent = t('add_image');
                 addIcon.appendChild(addIconText);
 
@@ -1668,23 +1657,23 @@ module.exports = class MediaViewPlugin extends Plugin {
             const currentPage = 1;
 
             const controlsDiv = document.createElement('div');
-            controlsDiv.className = 'gallery-controls';
+            controlsDiv.className = 'mvgb-gallery-controls';
             
             const paginationDiv = document.createElement('div');
-            paginationDiv.className = 'pagination';
+            paginationDiv.className = 'mvgb-pagination';
             
             const prevPageButton = paginationDiv.createEl('button', {
-                cls: 'gallery-control-button prev-page-button',
+                cls: 'mvgb-gallery-control-button prev-page-button',
                 text: t('prev_page')
             });
             
             const pageInfoSpan = paginationDiv.createEl('span', {
-                cls: 'page-info',
+                cls: 'mvgb-page-info',
                 text: `${currentPage} / ${totalPages}`
             });
             
             const nextPageButton = paginationDiv.createEl('button', {
-                cls: 'gallery-control-button next-page-button',
+                cls: 'mvgb-gallery-control-button next-page-button',
                 text: t('next_page')
             });
 
@@ -1710,7 +1699,7 @@ module.exports = class MediaViewPlugin extends Plugin {
             // 新增圖片按鈕移到分頁控制項旁邊
             if (containerInfo.addButtonEnabled || items.length === 0) {
                 const addButton = paginationDiv.createEl('button', {
-                    cls: 'gallery-control-button add-image-button',
+                    cls: 'mvgb-gallery-control-button mvgb-add-image-button',
                     text: t('add_image')
                 });
                 addButton.onclick = () => {
@@ -1785,21 +1774,21 @@ module.exports = class MediaViewPlugin extends Plugin {
 
     createNoteContainer(item) {
         const container = document.createElement('div');
-        container.className = 'media-thumbnail-container note-thumbnail';
+        container.className = 'mv-media-thumbnail-container mvgb-note-thumbnail';
         
         const notePreview = document.createElement('div');
-        notePreview.className = 'note-preview';
+        notePreview.className = 'mvgb-note-preview';
         
         // 如果有縮圖，使用縮圖
         if (item.thumbnail) {
             const img = document.createElement('img');
             img.src = item.thumbnail;
-            img.className = 'note-thumbnail-image';
+            img.className = 'mvgb-note-thumbnail-image';
             notePreview.appendChild(img);
         } else {
             // 否則使用預設圖示
             const noteIcon = document.createElement('div');
-            noteIcon.className = 'note-icon';
+            noteIcon.className = 'mvgb-note-icon';
             
             if (item.isExternalLink) {
                 const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -1828,7 +1817,7 @@ module.exports = class MediaViewPlugin extends Plugin {
         }
         
         const noteTitle = document.createElement('div');
-        noteTitle.className = 'note-title';
+        noteTitle.className = 'mvgb-note-title';
         noteTitle.textContent = item.title;
         notePreview.appendChild(noteTitle);
         
@@ -1877,21 +1866,21 @@ module.exports = class MediaViewPlugin extends Plugin {
             const placeholdersNeeded = itemsPerPage - currentPageItems.length;
             for (let i = 0; i < placeholdersNeeded; i++) {
                 const placeholder = document.createElement('div');
-                placeholder.className = 'media-thumbnail-container placeholder';
+                placeholder.className = 'mv-media-thumbnail-container placeholder';
                 placeholder.style.visibility = 'hidden'; // 隱藏但保持佔位
                 galleryDiv.appendChild(placeholder);
             }
         }
         
         // 更新分頁控制項
-        const paginationDiv = galleryDiv.parentElement.querySelector('.pagination');
-        const pageInfoSpan = paginationDiv.querySelector('.page-info');
+        const paginationDiv = galleryDiv.parentElement.querySelector('.mvgb-pagination');
+        const pageInfoSpan = paginationDiv.querySelector('.mvgb-page-info');
         pageInfoSpan.textContent = `${page} / ${totalPages}`;
     }
     
     createMediaContainer(media, index) {
         const container = document.createElement('div');
-        container.className = 'media-thumbnail-container';
+        container.className = 'mv-media-thumbnail-container';
         
         if (media.type === 'image') {
             const img = document.createElement('img');
@@ -1906,7 +1895,7 @@ module.exports = class MediaViewPlugin extends Plugin {
             container.appendChild(video);
             
             const videoIcon = document.createElement('div');
-            videoIcon.className = 'video-indicator';
+            videoIcon.className = 'mv-video-indicator';
             const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
             svg.setAttribute('viewBox', '0 0 24 24');
             svg.setAttribute('width', '24');
@@ -1920,7 +1909,7 @@ module.exports = class MediaViewPlugin extends Plugin {
         
         if (media.title) {
             const linkArea = document.createElement('div');
-            linkArea.className = 'media-link-area';
+            linkArea.className = 'mvgb-media-link-area';
             
             if (media.title.type === 'text') {
                 // 純文字
@@ -1987,11 +1976,11 @@ class ImageUploadModal extends Modal {
     onOpen() {
         const {contentEl} = this;
         contentEl.empty();
-        contentEl.addClass('upload-modal');
+        contentEl.addClass('mvgb-upload-modal');
 
-        const dropZone = contentEl.createDiv('upload-dropzone');
+        const dropZone = contentEl.createDiv('mvgb-upload-dropzone');
         
-        const uploadIcon = dropZone.createDiv('upload-icon');
+        const uploadIcon = dropZone.createDiv('mvgb-upload-icon');
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         svg.setAttribute('viewBox', '0 0 24 24');
         svg.setAttribute('width', '24');
@@ -2002,7 +1991,7 @@ class ImageUploadModal extends Modal {
         svg.appendChild(path);
         uploadIcon.appendChild(svg);
         
-        const instructions = dropZone.createDiv('upload-instructions');
+        const instructions = dropZone.createDiv('mvgb-upload-instructions');
         instructions.setText(t('drag_and_drop'));
 
         // 處理拖放事件
