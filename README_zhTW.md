@@ -1,13 +1,13 @@
 # Media Viewer
 
-繁體中文 | [English](README.md)
+中文 | [English](README.md)
 
 ## 介紹
 
 Media Viewer 是一個為 Obsidian 設計的插件，旨在提供一個直觀的媒體瀏覽器，使用戶能夠輕鬆查看筆記中的媒體文件（如圖片和視頻）。
 
-![demo1](demo1.jpg)
-![demo2](demo2.jpg)
+![demo1](assets/demo1.jpg)
+![demo2](assets/demo2.jpg)
 ## 功能
 
 - **媒體瀏覽器**：可以在全屏模式下查看筆記中的所有媒體文件。
@@ -27,9 +27,9 @@ Media Viewer 是一個為 Obsidian 設計的插件，旨在提供一個直觀的
 - 使用鍵盤箭頭鍵在媒體之間切換。
 
 
-### Gallery 區塊用法
+## Gallery 區塊用法
 
-![demo3](demo3.jpg)
+![demo3](assets/demo3.jpg)
 
 您可以使用以下格式在筆記中創建 Gallery 區塊：
 
@@ -43,7 +43,7 @@ Media Viewer 是一個為 Obsidian 設計的插件，旨在提供一個直觀的
 ```
 ````
 
-#### Gallery 額外參數
+### Gallery 額外參數
 
 | 屬性     | 說明                                |
 | :----- | :-------------------------------- |
@@ -60,17 +60,31 @@ title: gallery
 size: small
 addButton: true
 pagination: 10
+
 alt: image1
 ![[image1.jpg]]
+
 alt: image2
 ![[image2.jpg]]
+
 alt: image3
 ![[image3.jpg]]
+
 ![[video.mp4]]
+
 img: image4.jpg
 [[note]]
 ```
 ````
+
+### 使用命令建立 Gallery 區塊
+
+![demo4](assets/demo4.jpg)
+![demo5](assets/demo5.jpg)
+![demo6](assets/demo6.jpg)
+
+建立完成之後可以將圖片直接拖曳到區塊中新增
+
 
 ## 設定
 

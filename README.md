@@ -1,13 +1,13 @@
 # Media Viewer
 
-[繁體中文](README_zhTW.md) | English
+[中文](README_zhTW.md) | English
 
 ## Introduction
 
 Media Viewer is a plugin designed for Obsidian, aiming to provide an intuitive media browser that allows users to easily view media files (such as images and videos) within their notes.
 
-![demo1](demo1.jpg)
-![demo2](demo2.jpg)
+![demo1](assets/demo1.jpg)
+![demo2](assets/demo2.jpg)
 
 ## Features
 
@@ -29,7 +29,7 @@ Media Viewer is a plugin designed for Obsidian, aiming to provide an intuitive m
 
 ### Gallery Block Usage
 
-![demo3](demo3.jpg)
+![demo3](assets/demo3.jpg)
 
 You can create a Gallery block in a note using the following format:
 
@@ -42,6 +42,14 @@ You can create a Gallery block in a note using the following format:
 [[note]]
 ```
 ````
+
+### Create Gallery Block Using Commands
+
+![demo4](assets/demo4.jpg)
+![demo5](assets/demo5.jpg)
+![demo6](assets/demo6.jpg)
+
+After creation, you can directly drag and drop images into the block to add them.
 
 #### Gallery Additional Parameters
 
@@ -60,13 +68,18 @@ You can create a Gallery block in a note using the following format:
 size: small
 addButton: true
 title: gallery
+
 alt: image1
 ![[image1.jpg]]
+
 alt: image2
 ![[image2.jpg]]
+
 alt: image3
 ![[image3.jpg]]
+
 ![[video.mp4]]
+
 img: image4.jpg
 [[note]]
 ```
