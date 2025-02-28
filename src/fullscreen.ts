@@ -308,6 +308,20 @@ export class FullScreenModal extends Modal {
         const infoPanel = document.createElement('div');
         infoPanel.className = 'mv-image-info-panel';
 
+        // 添加刪除按鈕（只在啟用刪除功能時顯示）
+        if (this.plugin.settings.allowMediaDeletion) {
+            const deleteButton = infoPanel.createEl('a', {
+                text: t('delete'),
+                cls: 'mv-info-item',
+                attr: { href: '#' }
+            });
+            deleteButton.onclick = async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                await this.deleteMedia(this.currentIndex);
+            };
+        }
+
         if (this.plugin.settings.showImageInfo) {
             // 取得檔案名稱
             const fileName = media.path ? media.path.split('/').pop() : media.url.split('/').pop();
@@ -335,20 +349,6 @@ export class FullScreenModal extends Modal {
                     cls: ['mv-info-item', 'mv-info-dimensions']
                 });
             }
-        }
-        
-        // 添加刪除按鈕（只在啟用刪除功能時顯示）
-        if (this.plugin.settings.allowMediaDeletion) {
-            const deleteButton = infoPanel.createEl('a', {
-                text: t('delete'),
-                cls: 'mv-info-item',
-                attr: { href: '#' }
-            });
-            deleteButton.onclick = async (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                await this.deleteMedia(this.currentIndex);
-            };
         }
 
         this.fullMediaView.appendChild(infoPanel);

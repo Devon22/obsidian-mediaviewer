@@ -51,23 +51,27 @@ export class ImageUploadModal extends Modal {
             await this.handleFiles(files);
         });
         
+        const fileInput = contentEl.createEl('input', {
+            type: 'file',
+            attr: {
+                accept: 'image/*,video/*',
+                multiple: true,
+                style: 'display: none;' // 隱藏但保持在DOM中
+            }
+        });
+
+        fileInput.addEventListener('change', async () => {
+            if (fileInput.files && fileInput.files.length > 0) {
+                await this.handleFiles(Array.from(fileInput.files));
+            }
+        });
+        
         dropZone.addEventListener('click', () => {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = 'image/*,video/*';
-            input.multiple = true;
-            
-            input.onchange = async () => {
-                if (input.files) {
-                    await this.handleFiles(Array.from(input.files));
-                }
-            };
-            
-            input.click();
+            fileInput.click();
         });
     }
 
-    async handleFiles(files: File[]) {
+    async handleFiles(files: File[]): Promise<void> {
         const activeFile = this.app.workspace.getActiveFile();
         if (!activeFile) {
             new Notice(t('please_open_note'));
@@ -106,17 +110,30 @@ export class ImageUploadModal extends Modal {
                 if (file instanceof File) {
                     // 檢查是否為支援的媒體類型
                     if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
-                        // 生成安全的檔案名稱
-                        const safeName = this.getSafeFileName(file.name);
-                        
+                    
                         // 取得附件資料夾路徑
                         const attachmentFolderPath = this.getAttachmentFolderPath(activeFile);
                         
                         // 確保附件資料夾存在
                         await this.ensureFolderExists(attachmentFolderPath);
                         
+                        // 生成安全的檔案名稱
+                        let safeName = this.getSafeFileName(file.name);
+
+                        // 檢查檔案是否已存在，如果存在就在檔名後加上數字
+                        let counter = 1;
+                        let fileNameWithoutExt = safeName.substring(0, safeName.lastIndexOf('.'));
+                        let extension = safeName.substring(safeName.lastIndexOf('.'));
+                        let newFilePath = `${attachmentFolderPath}/${safeName}`;
+                        
+                        while (await this.app.vault.adapter.exists(newFilePath)) {
+                            safeName = `${fileNameWithoutExt}_${counter}${extension}`;
+                            newFilePath = `${attachmentFolderPath}/${safeName}`;
+                            counter++;
+                        }
+
                         // 建立完整的檔案路徑
-                        const filePath = `${attachmentFolderPath}/${safeName}`;
+                        const filePath = newFilePath;
 
                         // 讀取並儲存檔案
                         const arrayBuffer: ArrayBuffer = await new Promise((resolve, reject) => {
@@ -136,6 +153,8 @@ export class ImageUploadModal extends Modal {
                         if (!fileExists) {
                             await this.app.vault.createBinary(filePath, arrayBuffer);
                         }
+
+                        new Notice(filePath);
 
                         // 將新連結加入陣列
                         newLinks.push(`![[${safeName}]]`);

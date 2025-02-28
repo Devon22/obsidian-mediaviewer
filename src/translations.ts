@@ -12,7 +12,8 @@ type LanguageKey = keyof Translations;
 
 // 全域翻譯函式
 export function t(key: string): string {
-    const lang: LanguageKey = getLanguage() as LanguageKey;
+    const lang = window.localStorage.getItem('language') as LanguageKey;
+    //const lang: LanguageKey = getLanguage() as LanguageKey;
     const translations = TRANSLATIONS[lang] || TRANSLATIONS['en'];
     return translations[key] || key;
 }
