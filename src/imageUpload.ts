@@ -105,6 +105,19 @@ export class ImageUploadModal extends Modal {
                     }
                     continue;
                 }
+                
+                if (file && typeof file === 'object' && (file.type === 'text')) {
+                    const textContent = (file as any).getData();
+                    const textContents = textContent.split('\n');
+                    for (const content of textContents) {
+                        if (content.startsWith('obsidian://')) {
+                            continue;
+                        }
+                        const fileName = content.replace('.md]]', ']]');
+                        newLinks.push(fileName);
+                    }
+                    continue;
+                }
 
                 // 處理一般檔案
                 if (file instanceof File) {

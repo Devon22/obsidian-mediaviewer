@@ -592,7 +592,6 @@ export class GalleryBlock {
                         });
                         files.push(uriPromise);
                     } else if (item.type === 'text/plain') {
-                        // 備用：處理純文字 (應該可以刪)
                         const textPromise = new Promise(resolve => {
                             item.getAsString((string: string) => {
                                 resolve({ type: 'text', getData: () => string });

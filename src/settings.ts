@@ -152,5 +152,18 @@ export class MediaViewSettingTab extends PluginSettingTab {
                     this.plugin.settings.itemsPerPage = isNaN(numValue) ? 20 : numValue;
                     await this.plugin.saveSettings();
                 }));
+        
+        new Setting(containerEl)
+            .setName(t('insert_position'))
+            .addDropdown(dropdown => {
+                dropdown
+                    .addOption('true', t('insert_at_end'))
+                    .addOption('false', t('insert_at_start'))
+                    .setValue(this.plugin.settings.insertAtEnd.toString())
+                    .onChange(async (value) => {
+                        this.plugin.settings.insertAtEnd = value === 'true';
+                        await this.plugin.saveSettings();
+                    });
+            });
     }
 }
