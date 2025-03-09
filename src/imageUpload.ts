@@ -69,6 +69,70 @@ export class ImageUploadModal extends Modal {
         dropZone.addEventListener('click', () => {
             fileInput.click();
         });
+
+        // 新增貼上剪貼簿按鈕
+        const pasteButton = contentEl.createEl('button', {
+            text: t('paste_from_clipboard'),
+            cls: 'mvgb-paste-button',
+        });
+
+        pasteButton.addEventListener('click', async () => {
+            try {
+                // 先嘗試讀取剪貼簿中的文字內容
+                const text = await navigator.clipboard.readText();
+                if (text) {
+                    // 使用正則表達式找出所有網址
+                    const urlRegex = /(https?:\/\/[^\s]+)/gi;
+                    const urls = text.match(urlRegex);
+                    
+                    if (urls && urls.length > 0) {
+                        // 將每個網址轉換成 Markdown 圖片格式
+                        const markdownLinks = urls.map(url => `![](${url})`);
+                        await this.handleLinks(markdownLinks);
+                        return;
+                    }
+                }
+
+                // 如果不是網址或檔案路徑，或是讀取失敗，則嘗試讀取剪貼簿中的圖片
+                const items = await navigator.clipboard.read();
+                for (const item of items) {
+                    const imageTypes = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
+                    const imageType = item.types.find(type => imageTypes.includes(type));
+
+                    if (imageType) {
+                        const blob = await item.getType(imageType);
+                        const activeFile = this.app.workspace.getActiveFile();
+                        if (!activeFile) {
+                            new Notice(t('please_open_note'));
+                            return;
+                        }
+                        // 取得附件資料夾路徑
+                        const attachmentFolderPath = this.getAttachmentFolderPath(activeFile);
+                        // 確保附件資料夾存在
+                        await this.ensureFolderExists(attachmentFolderPath);
+                        let safeName = this.getSafeFileName(`pasted_image.${imageType.split('/')[1]}`);
+                        let timestamp = new Date().toISOString().replace(/[-:.TZ]/g, "");
+                        let fileNameWithoutExt = safeName.substring(0, safeName.lastIndexOf('.'));
+                        let extension = safeName.substring(safeName.lastIndexOf('.'));
+                        safeName = `${fileNameWithoutExt}_${timestamp}${extension}`;
+                        let newFilePath = `${attachmentFolderPath}/${safeName}`;
+                        if (await this.app.vault.adapter.exists(newFilePath)) {
+                            let counter = 1;
+                            while (await this.app.vault.adapter.exists(newFilePath)) {
+                                safeName = `${fileNameWithoutExt}_${timestamp}_${counter}${extension}`;
+                                newFilePath = `${attachmentFolderPath}/${safeName}`;
+                                counter++;
+                            }
+                        }
+                        const newFile = new File([blob], safeName, { type: imageType });
+                        await this.handleFiles([newFile]);
+                    }
+                }
+            } catch (err) {
+                new Notice(t('clipboard_error'+err));
+                console.error('剪貼簿讀取錯誤:', err);
+            }
+        });
     }
 
     async handleFiles(files: File[]): Promise<void> {
@@ -217,6 +281,62 @@ export class ImageUploadModal extends Modal {
 
         } catch (error) {
             console.error('Error handling files:', error);
+            new Notice(t('error_adding_file'));
+        }
+        
+        this.close();
+    }
+
+    async handleLinks(links: string[]): Promise<void> {
+        const activeFile = this.app.workspace.getActiveFile();
+        if (!activeFile) {
+            new Notice(t('please_open_note'));
+            return;
+        }
+
+        try {
+            // 使用 process 方法來修改檔案內容
+            await this.app.vault.process(activeFile, (content) => {
+                // 找出所有 gallery 區塊
+                const galleryBlocks = Array.from(content.matchAll(/```gallery\n([\s\S]*?)```/g));
+                
+                // 從觸發上傳的 gallery 元素獲取唯一識別碼
+                const galleryId = this.galleryElement.getAttribute('data-gallery-id');
+                
+                // 找到對應的 gallery 區塊
+                for (const match of galleryBlocks) {
+                    const blockContent = match[1].trim();
+                    const blockStart = match.index;
+                    const blockEnd = blockStart + match[0].length;
+                    
+                    // 計算這個區塊的 galleryId
+                    const currentGalleryId = 'gallery-' + this.hashString(blockContent);
+
+                    // 如果這個 gallery 區塊的 ID 與觸發上傳的元素相同
+                    if (currentGalleryId === galleryId) {
+                        // 在 gallery 區塊內容的最前或最後一行插入新連結 (根據設定)
+                        const newBlockContent = this.plugin.settings.insertAtEnd
+                            ? blockContent.trimEnd() + `\n${links.join('\n')}\n`
+                            : `${links.join('\n')}\n` + blockContent + '\n';
+                        
+                        // 更新整個文件內容
+                        return (
+                            content.substring(0, blockStart) +
+                            "```gallery\n" +
+                            newBlockContent +
+                            "```" +
+                            content.substring(blockEnd)
+                        );
+                    }
+                }
+                
+                // 如果沒有找到對應的 gallery 區塊，回傳原始內容
+                new Notice(t('gallery_not_found'));
+                return content;
+            });
+
+        } catch (error) {
+            console.error('Error handling links:', error);
             new Notice(t('error_adding_file'));
         }
         

@@ -125,7 +125,7 @@ export class GalleryBlock {
         const findFirstImageInNote = async (file: TFile) => {
             try {
                 const content = await this.app.vault.cachedRead(file);
-                const internalMatch = content.match(/(?:!\[\[(.*?\.(?:jpg|jpeg|png|gif|webp))(?:\|.*?)?\]\]|!\[(.*?)\]\(\s*(\S+?(?:\.(?:jpg|jpeg|png|gif|webp)|format=(?:jpg|jpeg|png|gif|webp))[^\s)]*)\s*(?:\s+["'][^"']*["'])?\s*\))/gi);
+                const internalMatch = content.match(/(?:!\[\[(.*?\.(?:jpg|jpeg|png|gif|webp))(?:\|.*?)?\]\]|!\[(.*?)\]\(\s*(\S+?(?:\.(?:jpg|jpeg|png|gif|webp)|format=(?:jpg|jpeg|png|gif|webp))[^\s)]*)\s*(?:\s+["'][^"']*["'])?\s*\))/i);
                 if (internalMatch) {
                     return internalMatch[0];
                 } else {    
@@ -258,7 +258,7 @@ export class GalleryBlock {
                     // 處理一般的圖片/媒體連結
                     if (file) {
                         const extension = file.extension.toLowerCase();
-                        if (extension.match(/^(jpg|jpeg|png|gif|webp|mp4|mov|webm)$/)) {
+                        if (extension.match(/^(jpg|jpeg|png|gif|webp|mp4|mkv|mov|webm)$/)) {
                             items.push({
                                 type: extension.match(/^(jpg|jpeg|png|gif|webp)$/) ? 'image' : 'video',
                                 url: this.app.vault.getResourcePath(file),
@@ -310,7 +310,7 @@ export class GalleryBlock {
                             if (fileByPath && fileByPath instanceof TFile) {
                                 const extension = url.toLowerCase();
                                 items.push({
-                                    type: extension.match(/\.(jpg|jpeg|png|gif|webp)$/) ? 'image' : 'video',
+                                    type: extension.match(/\.(mp4|mkv|mov|webm)$/) ? 'video' : 'image',
                                     url: this.app.vault.getResourcePath(fileByPath),
                                     path: text || fileByPath.path,
                                     title: currentTitle,
@@ -320,7 +320,7 @@ export class GalleryBlock {
                         } else {
                             const extension = file.extension.toLowerCase();
                             items.push({
-                                type: extension.match(/^(jpg|jpeg|png|gif|webp)$/) ? 'image' : 'video',
+                                type: extension.match(/^(mp4|mkv|mov|webm)$/) ? 'video' : 'image',
                                 url: this.app.vault.getResourcePath(file),
                                 path: text || file.path,
                                 title: currentTitle,
@@ -329,14 +329,9 @@ export class GalleryBlock {
                         }
                     } else {
                         const urlForTypeCheck = url.split(' "')[0].split('?')[0].toLowerCase();
-                        const isImageFile = urlForTypeCheck.match(/\.(jpg|jpeg|png|gif|webp)$/) || 
-                                        url.includes('format=jpg') || 
-                                        url.includes('format=jpeg') || 
-                                        url.includes('format=png') || 
-                                        url.includes('format=gif') || 
-                                        url.includes('format=webp');
+                        const isImageFile = urlForTypeCheck.match(/\.(mp4|mkv|mov|webm)$/);
                         items.push({
-                            type: isImageFile ? 'image' : 'video',
+                            type: isImageFile ? 'video' : 'image',
                             url: url.split(' "')[0],
                             path: text,
                             title: currentTitle,

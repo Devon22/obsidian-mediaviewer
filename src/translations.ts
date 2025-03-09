@@ -29,11 +29,13 @@ const TRANSLATIONS: Translations = {
         'error_deleting_media': '刪除媒體文件時出錯',
         'gallery_not_found': '無法找到對應的 Gallery 區塊',
         'error_adding_file': '新增檔案時發生錯誤',
+        'clipboard_error': '讀取剪貼簿時發生錯誤',
 
         // 按鈕和標籤
         'delete': '刪除',
         'confirm': '確認',
         'drag_and_drop': '拖曳圖片到這裡或點擊選擇檔案',
+        'paste_from_clipboard': '從剪貼簿貼上圖片',
         'add_image': '新增圖片',
 
         // 設定
@@ -87,11 +89,13 @@ const TRANSLATIONS: Translations = {
         'error_deleting_media': 'Error deleting media file',
         'gallery_not_found': 'Gallery block not found',
         'error_adding_file': 'Error adding file',
+        'clipboard_error': 'Error reading clipboard',
 
         // Buttons and Labels
         'delete': 'Delete',
         'confirm': 'Confirm',
         'drag_and_drop': 'Drag and drop images here or click to select files',
+        'paste_from_clipboard': 'Paste image from clipboard',
         'add_image': 'Add image',
 
         // Settings
@@ -145,11 +149,13 @@ const TRANSLATIONS: Translations = {
         'error_deleting_media': '删除媒体文件时出错',
         'gallery_not_found': '无法找到对应的 Gallery 区块',
         'error_adding_file': '新增档案时发生错误',
+        'clipboard_error': '读取剪贴板时发生错误',
 
         // 按钮和标签
         'delete': '删除',
         'confirm': '确认',
         'drag_and_drop': '拖曳图片到这裡或点击选择图片',
+        'paste_from_clipboard': '从剪贴板粘贴图片',
         'add_image': '新增图片',
 
         // 设置
@@ -203,11 +209,13 @@ const TRANSLATIONS: Translations = {
         'error_deleting_media': 'メディアファイルの削除中にエラーが発生しました',
         'gallery_not_found': 'ギャラリーブロックが見つかりません',
         'error_adding_file': 'ファイルを追加する際にエラーが発生しました',
+        'clipboard_error': 'クリップボードの読み取り時にエラーが発生しました',
 
         // ボタンとラベル
         'delete': '削除',
         'confirm': '確認',
         'drag_and_drop': '画像をドラッグ＆ドロップするか、クリックしてファイルを選択',
+        'paste_from_clipboard': 'クリップボードから画像を貼り付け',
         'add_image': '画像を追加',
 
         // 設定

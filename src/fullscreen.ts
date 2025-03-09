@@ -93,7 +93,7 @@ export class FullScreenModal extends Modal {
                                 url = this.app.vault.getResourcePath(fileByPath);
                                 if (url) {
                                     const extension = markdownLink.toLowerCase();
-                                    if (!extension.match(/\.(jpg|jpeg|png|gif|webp|mp4|mov|webm)$/)) {
+                                    if (!extension.match(/\.(jpg|jpeg|png|gif|webp|mp4|mkv|mov|webm)$/)) {
                                         continue;
                                     }
                                 }
@@ -108,7 +108,7 @@ export class FullScreenModal extends Modal {
                     let type = 'image';
                     if (file) {
                         const extension = file.extension.toLowerCase();
-                        if (!extension.match(/^(jpg|jpeg|png|gif|webp|mp4|mov|webm)$/)) {
+                        if (!extension.match(/^(jpg|jpeg|png|gif|webp|mp4|mkv|mov|webm)$/)) {
                             continue;
                         }
                         type = extension.match(/^(jpg|jpeg|png|gif|webp)$/) ? 'image' : 'video';
