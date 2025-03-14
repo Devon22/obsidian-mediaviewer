@@ -1,8 +1,9 @@
-import { App, TFile } from 'obsidian';
+import { App, TFile, Menu, Notice } from 'obsidian';
 import MediaViewPlugin from '../main';
 import { FullScreenModal } from './fullscreen';
 import { MediaViewSettings } from './settings';
 import { ImageUploadModal } from './imageUpload';
+import { GalleryBlockGenerateModal } from './galleryBlockGenerate';
 import { t } from './translations';
 
 interface GalleryItem {
@@ -605,6 +606,80 @@ export class GalleryBlock {
             await modal.handleFiles(resolvedFiles);
         });
 
+        // 右鍵選單
+        galleryDiv.addEventListener('contextmenu', (event) => {
+            event.preventDefault();
+            const menu = new Menu();
+            menu.addItem((item) => {
+                item
+                    .setTitle(t('add_image'))
+                    .setIcon("image")
+                    .onClick(() => {
+                        const modal = new ImageUploadModal(this.app, this.plugin, galleryDiv);
+                        modal.open();
+                    });
+            });
+            menu.addItem((item) => {
+                item
+                    .setTitle(t('setting_gallery'))
+                    .setIcon("settings")
+                    .onClick(() => {                        
+                        // 獲取 gallery 區塊的 ID
+                        const galleryId = galleryDiv.getAttribute('data-gallery-id');
+                        if (!galleryId) {
+                            return;
+                        }
+                        
+                        // 獲取當前筆記的文件
+                        const activeFile = this.app.workspace.getActiveFile();
+                        if (!activeFile) {
+                            new Notice(t('please_open_note'));
+                            return;
+                        }
+                        
+                        // 讀取文件內容
+                        this.app.vault.read(activeFile).then((content) => {
+                            // 尋找包含當前 gallery ID 的 gallery 區塊
+                            const galleryBlockRegex = /```gallery\n([\s\S]*?)```/g;
+                            let match;
+                            let galleryContent = '';
+                            let matchPosition = { start: 0, end: 0 };
+                            
+                            while ((match = galleryBlockRegex.exec(content)) !== null) {
+                                const blockContent = match[1];
+                                const blockId = 'gallery-' + this.hashString(blockContent.trim());
+                                if (blockId === galleryId) {
+                                    galleryContent = blockContent;
+                                    matchPosition.start = match.index;
+                                    matchPosition.end = match.index + match[0].length;
+                                    break;
+                                }
+                            }
+                            
+                            if (!galleryContent) {
+                                new Notice(t('gallery_not_found'));
+                                return;
+                            }
+                            
+                            // 創建並打開設定對話框
+                            const modal = new GalleryBlockGenerateModal(this.app, galleryContent);
+                            
+                            // 設置確認後的回調函數，使用 vault.process 修改文件
+                            modal.onConfirm = (newGalleryBlock: string) => {
+                                this.app.vault.process(activeFile, (fileContent) => {
+                                    return fileContent.substring(0, matchPosition.start) + 
+                                            newGalleryBlock + 
+                                            fileContent.substring(matchPosition.end);
+                                });
+                            };
+                            
+                            modal.open();
+                        });
+                    });
+            });
+            menu.showAtMouseEvent(event);
+        });
+        
         return container;
     }
 

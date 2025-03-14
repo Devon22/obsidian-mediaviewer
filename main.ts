@@ -105,7 +105,16 @@ export default class MediaViewPlugin extends Plugin {
         if (activeView) {
             const editor = activeView.editor;
             const selectedText = editor.getSelection();
-            new GalleryBlockGenerateModal(this.app, editor, selectedText).open();
+            //new GalleryBlockGenerateModal(this.app, selectedText).open();
+            // 創建並打開設定對話框
+            const modal = new GalleryBlockGenerateModal(this.app, selectedText);
+                            
+            // 設置確認後的回調函數，使用 vault.process 修改文件
+            modal.onConfirm = (newGalleryBlock: string) => {
+                editor.replaceSelection(newGalleryBlock);
+            };
+            
+            modal.open();
         } else {
             new Notice(t('please_open_note'));
         }

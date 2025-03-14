@@ -73,6 +73,7 @@ const TRANSLATIONS: Translations = {
         // 命令
         'open_media_viewer': '打開媒體瀏覽器',
         'generate_gallery': '生成 Gallery 區塊',
+        'setting_gallery': '設定 Gallery 區塊',
         'gallery_title': 'Gallery 標題',
         'gallery_title_desc': '設定 Gallery 的標題（選填）',
         'gallery_size': 'Gallery 尺寸',
@@ -133,6 +134,7 @@ const TRANSLATIONS: Translations = {
         // Commands
         'open_media_viewer': 'Open media viewer',
         'generate_gallery': 'Generate gallery block',
+        'setting_gallery': 'Setting gallery block',
         'gallery_title': 'Gallery title',
         'gallery_title_desc': 'Set the title of the gallery (optional)',
         'gallery_size': 'Gallery size',
@@ -193,6 +195,7 @@ const TRANSLATIONS: Translations = {
         // 命令
         'open_media_viewer': '打开媒体浏览器',
         'generate_gallery': '生成 Gallery 区块',
+        'setting_gallery': '设置 Gallery 区块',
         'gallery_title': '相册标题',
         'gallery_title_desc': '设置相册的标题（选填）',
         'gallery_size': '相册尺寸',
@@ -253,6 +256,7 @@ const TRANSLATIONS: Translations = {
         // コマンド
         'open_media_viewer': 'メディアビューワーを開く',
         'generate_gallery': 'ギャラリーブロックを生成',
+        'setting_gallery': 'ギャラリーブロックを設定',
         'gallery_title': 'ギャラリータイトル',
         'gallery_title_desc': 'ギャラリーのタイトルを設定（オプション）',
         'gallery_size': 'ギャラリーサイズ',

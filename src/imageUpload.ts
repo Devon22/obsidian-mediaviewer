@@ -5,10 +5,13 @@ import { t } from './translations';
 export class ImageUploadModal extends Modal {
     plugin: MediaViewPlugin;
     galleryElement: HTMLElement;
+    insertAtEnd: boolean; // 新增變數來儲存插入位置選項
+    
     constructor(app: App, plugin: MediaViewPlugin, galleryElement: HTMLElement) {
         super(app);
         this.plugin = plugin;
         this.galleryElement = galleryElement; // 儲存觸發上傳的 gallery 元素
+        this.insertAtEnd = this.plugin.settings.insertAtEnd; // 初始化為設定中的值
     }
 
     onOpen() {
@@ -31,44 +34,6 @@ export class ImageUploadModal extends Modal {
         
         const instructions = dropZone.createDiv('mvgb-upload-instructions');
         instructions.setText(t('drag_and_drop'));
-
-        // 處理拖放事件
-        dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.addClass('drag-over');
-        });
-
-        dropZone.addEventListener('dragleave', () => {
-            dropZone.removeClass('drag-over');
-        });
-
-        dropZone.addEventListener('drop', async (e) => {
-            e.preventDefault();
-            dropZone.removeClass('drag-over');
-            
-            if (e.dataTransfer === null) return;
-            const files = (e.dataTransfer.files as any);
-            await this.handleFiles(files);
-        });
-        
-        const fileInput = contentEl.createEl('input', {
-            type: 'file',
-            attr: {
-                accept: 'image/*,video/*',
-                multiple: true,
-                style: 'display: none;' // 隱藏但保持在DOM中
-            }
-        });
-
-        fileInput.addEventListener('change', async () => {
-            if (fileInput.files && fileInput.files.length > 0) {
-                await this.handleFiles(Array.from(fileInput.files));
-            }
-        });
-        
-        dropZone.addEventListener('click', () => {
-            fileInput.click();
-        });
 
         // 新增貼上剪貼簿按鈕
         const pasteButton = contentEl.createEl('button', {
@@ -132,6 +97,81 @@ export class ImageUploadModal extends Modal {
                 new Notice(t('clipboard_error'+err));
                 console.error('剪貼簿讀取錯誤:', err);
             }
+        });
+
+        // 新增插入位置選項
+        const insertPositionContainer = contentEl.createDiv('mvgb-insert-position-container');
+        insertPositionContainer.addClass('mvgb-setting-item');
+        
+        const insertPositionLabel = insertPositionContainer.createDiv('mvgb-setting-label');
+        insertPositionLabel.setText(t('insert_position'));
+        
+        const insertPositionControl = insertPositionContainer.createDiv('mvgb-setting-control');
+        
+        // 建立下拉選單
+        const insertPositionDropdown = insertPositionControl.createEl('select', {
+            cls: 'mvgb-insert-position-dropdown'
+        });
+        
+        // 添加選項
+        const endOption = insertPositionDropdown.createEl('option', {
+            text: t('insert_at_end'),
+            value: 'true'
+        });
+
+        const startOption = insertPositionDropdown.createEl('option', {
+            text: t('insert_at_start'),
+            value: 'false'
+        });
+        
+        // 設定初始選擇的選項
+        if (this.insertAtEnd) {
+            endOption.selected = true;
+        } else {
+            startOption.selected = true;
+        }
+        
+        // 添加變更事件
+        insertPositionDropdown.addEventListener('change', () => {
+            this.insertAtEnd = insertPositionDropdown.value === 'true';
+        });
+
+        // 處理拖放事件
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.addClass('drag-over');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.removeClass('drag-over');
+        });
+
+        dropZone.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            dropZone.removeClass('drag-over');
+            
+            if (e.dataTransfer === null) return;
+            const files = (e.dataTransfer.files as any);
+            await this.handleFiles(files);
+        });
+        
+        const fileInput = contentEl.createEl('input', {
+            type: 'file',
+            attr: {
+                accept: 'image/*,video/*',
+                multiple: true,
+                style: 'display: none;' // 隱藏但保持在DOM中
+            }
+        });
+
+        fileInput.addEventListener('change', async () => {
+            if (fileInput.files && fileInput.files.length > 0) {
+                await this.handleFiles(Array.from(fileInput.files));
+            }
+        });
+        
+        dropZone.addEventListener('click', () => {
+            fileInput.click();
         });
     }
 
@@ -258,8 +298,8 @@ export class ImageUploadModal extends Modal {
 
                     // 如果這個 gallery 區塊的 ID 與觸發上傳的元素相同
                     if (currentGalleryId === galleryId) {
-                        // 在 gallery 區塊內容的最前或最後一行插入新連結 (根據設定)
-                        const newBlockContent = this.plugin.settings.insertAtEnd
+                        // 在 gallery 區塊內容的最前或最後一行插入新連結 (根據選擇的選項)
+                        const newBlockContent = this.insertAtEnd
                             ? blockContent.trimEnd() + `\n${newLinks.join('\n')}\n`
                             : `${newLinks.join('\n')}\n` + blockContent + '\n';
                         
@@ -314,8 +354,8 @@ export class ImageUploadModal extends Modal {
 
                     // 如果這個 gallery 區塊的 ID 與觸發上傳的元素相同
                     if (currentGalleryId === galleryId) {
-                        // 在 gallery 區塊內容的最前或最後一行插入新連結 (根據設定)
-                        const newBlockContent = this.plugin.settings.insertAtEnd
+                        // 在 gallery 區塊內容的最前或最後一行插入新連結 (根據選擇的選項)
+                        const newBlockContent = this.insertAtEnd
                             ? blockContent.trimEnd() + `\n${links.join('\n')}\n`
                             : `${links.join('\n')}\n` + blockContent + '\n';
                         
@@ -355,7 +395,7 @@ export class ImageUploadModal extends Modal {
 
     getSafeFileName(originalName: string) {
         // 移除不安全的字元，只保留字母、數字、底線和檔案副檔名
-        const name = originalName.replace(/[<>:"/\\|?*]/g, '_');
+        const name = originalName.replace(/[#<>:"/\\|?*]/g, '_');
         // 確保檔案名稱唯一
         return name;
     }
