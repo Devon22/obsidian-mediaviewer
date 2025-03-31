@@ -118,6 +118,42 @@
     fill: currentColor;
 }
 
+.mv-audio-indicator {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    width: 32px;
+    height: 32px;
+    background: rgba(0, 100, 200, 0.6);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    z-index: 1;
+    backdrop-filter: blur(2px);
+}
+
+.mv-audio-indicator svg {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+}
+
+.mv-audio-filename {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 15px;
+    color: var(--text-normal);
+    font-size: 14px;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    backdrop-filter: blur(2px);
+}
+
 .mv-full-media-view {
     position: fixed;
     top: 0;
@@ -662,4 +698,3 @@
     background-color: var(--background-primary);
     color: var(--text-normal);
 }
-

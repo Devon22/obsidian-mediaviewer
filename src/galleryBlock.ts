@@ -1,4 +1,4 @@
-import { App, TFile, Menu, Notice } from 'obsidian';
+import { App, TFile, Menu, Notice, Platform } from 'obsidian';
 import MediaViewPlugin from '../main';
 import { FullScreenModal } from './fullscreen';
 import { MediaViewSettings } from './settings';
@@ -259,7 +259,7 @@ export class GalleryBlock {
                     // 處理一般的圖片/媒體連結
                     if (file) {
                         const extension = file.extension.toLowerCase();
-                        if (extension.match(/^(jpg|jpeg|png|gif|webp|mp4|mkv|mov|webm)$/)) {
+                        if (extension.match(/^(jpg|jpeg|png|gif|webp|mp4|mkv|mov|webm|mp3|m4a|flac|ogg|wav|3gp)$/)) {
                             items.push({
                                 type: extension.match(/^(jpg|jpeg|png|gif|webp)$/) ? 'image' : 'video',
                                 url: this.app.vault.getResourcePath(file),
@@ -311,7 +311,7 @@ export class GalleryBlock {
                             if (fileByPath && fileByPath instanceof TFile) {
                                 const extension = url.toLowerCase();
                                 items.push({
-                                    type: extension.match(/\.(mp4|mkv|mov|webm)$/) ? 'video' : 'image',
+                                    type: extension.match(/\.(mp4|mkv|mov|webm|mp3|m4a|flac|ogg|wav|3gp)$/) ? 'video' : 'image',
                                     url: this.app.vault.getResourcePath(fileByPath),
                                     path: text || fileByPath.path,
                                     title: currentTitle,
@@ -321,7 +321,7 @@ export class GalleryBlock {
                         } else {
                             const extension = file.extension.toLowerCase();
                             items.push({
-                                type: extension.match(/^(mp4|mkv|mov|webm)$/) ? 'video' : 'image',
+                                type: extension.match(/^(mp4|mkv|mov|webm|mp3|m4a|flac|ogg|wav|3gp)$/) ? 'video' : 'image',
                                 url: this.app.vault.getResourcePath(file),
                                 path: text || file.path,
                                 title: currentTitle,
@@ -330,7 +330,7 @@ export class GalleryBlock {
                         }
                     } else {
                         const urlForTypeCheck = url.split(' "')[0].split('?')[0].toLowerCase();
-                        const isImageFile = urlForTypeCheck.match(/\.(mp4|mkv|mov|webm)$/);
+                        const isImageFile = urlForTypeCheck.match(/\.(mp4|mkv|mov|webm|mp3|m4a|flac|ogg|wav|3gp)$/);
                         items.push({
                             type: isImageFile ? 'video' : 'image',
                             url: url.split(' "')[0],
@@ -608,6 +608,9 @@ export class GalleryBlock {
 
         // 右鍵選單
         galleryDiv.addEventListener('contextmenu', (event) => {
+            if (event.target !== galleryDiv) {
+                return;
+            }
             event.preventDefault();
             const menu = new Menu();
             menu.addItem((item) => {
@@ -764,7 +767,7 @@ export class GalleryBlock {
         galleryDiv.replaceChildren();
         
         // 新增新的項目
-        currentPageItems.forEach((item, index) => {
+        currentPageItems.forEach((item: GalleryItem, index: number) => {
             if (item.type === 'note') {
                 const noteContainer = this.createNoteContainer(item);
                 galleryDiv.appendChild(noteContainer);
@@ -806,28 +809,64 @@ export class GalleryBlock {
             if (media.url) {
                 img.src = media.url;
                 img.alt = media.path || '';
-                img.style.pointerEvents = 'none';
+                if(Platform.isMobile) img.style.pointerEvents = 'none';
                 container.appendChild(img);
             }
         } else {
-            const video = document.createElement('video') as HTMLVideoElement;
-            if (media.url) {
-                video.src = media.url;
-                video.style.pointerEvents = 'none';
-                container.appendChild(video);
+            if (media.path && media.url) {
+                // 處理影片檔案
+                if (media.path.match(/\.(mp4|mkv|mov|webm)$/)) {
+                    const video = document.createElement('video') as HTMLVideoElement;
+                    video.src = media.url;
+                    video.style.pointerEvents = 'none';
+                    container.appendChild(video);
+                    
+                    const videoIcon = document.createElement('div');
+                    videoIcon.className = 'mv-video-indicator';
+                    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                    svg.setAttribute('viewBox', '0 0 24 24');
+                    svg.setAttribute('width', '24');
+                    svg.setAttribute('height', '24');
+                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    path.setAttribute('d', 'M8 5v14l11-7z');
+                    svg.appendChild(path);
+                    videoIcon.appendChild(svg);
+                    container.appendChild(videoIcon);
+                } else {
+                    // 處理音樂檔案
+                    const audio = document.createElement('audio') as HTMLAudioElement;
+                    audio.src = media.url;
+                    audio.style.pointerEvents = 'none';
+                    container.appendChild(audio);
+
+                    const audioIcon = document.createElement('div');
+                    audioIcon.className = 'mv-audio-indicator';
+                    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                    svg.setAttribute('viewBox', '0 0 24 24');
+                    svg.setAttribute('width', '24');
+                    svg.setAttribute('height', '24');
+                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    path.setAttribute('fill', 'currentColor');
+                    path.setAttribute('d', 'M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z');
+                    svg.appendChild(path);
+                    audioIcon.appendChild(svg);
+                    container.appendChild(audioIcon);
+                    
+                    // 添加檔案名稱顯示
+                    const filenameDiv = document.createElement('div');
+                    filenameDiv.className = 'mv-audio-filename';
+                    let filename = '';
+                    if (media.path) {
+                        // 從路徑中提取檔案名稱
+                        const pathParts = media.path.split('/');
+                        filename = pathParts[pathParts.length - 1];
+                        // 移除副檔名
+                        filename = filename.replace(/\.[^/.]+$/, '');
+                    }
+                    filenameDiv.textContent = filename;
+                    container.appendChild(filenameDiv);
+                }
             }
-            
-            const videoIcon = document.createElement('div');
-            videoIcon.className = 'mv-video-indicator';
-            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-            svg.setAttribute('viewBox', '0 0 24 24');
-            svg.setAttribute('width', '24');
-            svg.setAttribute('height', '24');
-            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            path.setAttribute('d', 'M8 5v14l11-7z');
-            svg.appendChild(path);
-            videoIcon.appendChild(svg);
-            container.appendChild(videoIcon);
         }
         
         if (typeof media.title === 'object' && media.title !== null) {
@@ -873,19 +912,21 @@ export class GalleryBlock {
             
             container.appendChild(linkArea);
         }
-        
-        container.onclick = () => {
-            const modal = new FullScreenModal(this.app, this.plugin, 'thumbnail');
-            modal.open();
-            setTimeout(() => {
-                const allUrls = modal.mediaUrls;
-                const targetIndex = allUrls.findIndex(m => m.url === media.url);
-                if (targetIndex !== -1) {
-                    modal.showMedia(targetIndex);
-                }
-            }, 100);
-        };
-        
+
+        if ((!this.plugin.settings.disableClickToOpenMediaOnGallery && media.type === 'image') || media.type === 'video') {
+            container.onclick = () => {
+                const modal = new FullScreenModal(this.app, this.plugin, 'thumbnail');
+                modal.open();
+                setTimeout(() => {
+                    const allUrls = modal.mediaUrls;
+                    const targetIndex = allUrls.findIndex(m => m.url === media.url);
+                    if (targetIndex !== -1) {
+                        modal.showMedia(targetIndex);
+                    }
+                }, 100);
+            };
+        }
+
         return container;
     }
 }

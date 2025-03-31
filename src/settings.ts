@@ -7,6 +7,7 @@ export interface MediaViewSettings {
     allowMediaDeletion: boolean;
     autoOpenFirstImage: boolean;
     openMediaBrowserOnClick: boolean;
+    disableClickToOpenMediaOnGallery: boolean;
     muteVideoOnOpen: boolean;
     galleryGridSize: string;
     galleryGridSizeSmall: number;
@@ -21,6 +22,7 @@ export const DEFAULT_SETTINGS: MediaViewSettings = {
     allowMediaDeletion: false,
     autoOpenFirstImage: false,
     openMediaBrowserOnClick: true,
+    disableClickToOpenMediaOnGallery: false,
     muteVideoOnOpen: false,
     galleryGridSize: 'medium',
     galleryGridSizeSmall: 100,
@@ -82,6 +84,17 @@ export class MediaViewSettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
         
+        // 禁用 Gallery 內圖片的點擊事件 (以便相容其他圖片類插件)
+        new Setting(containerEl)
+            .setName(t('disable_click_to_open_media_on_gallery'))
+            .setDesc(t('disable_click_to_open_media_on_gallery_desc'))
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.disableClickToOpenMediaOnGallery)
+                .onChange(async (value) => {
+                    this.plugin.settings.disableClickToOpenMediaOnGallery = value;
+                    await this.plugin.saveSettings();
+                }));
+
         new Setting(containerEl)
             .setName(t('mute_video_on_open'))
             .setDesc(t('mute_video_on_open_desc'))

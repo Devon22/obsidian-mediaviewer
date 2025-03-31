@@ -93,7 +93,7 @@ export class FullScreenModal extends Modal {
                                 url = this.app.vault.getResourcePath(fileByPath);
                                 if (url) {
                                     const extension = markdownLink.toLowerCase();
-                                    if (!extension.match(/\.(jpg|jpeg|png|gif|webp|mp4|mkv|mov|webm)$/)) {
+                                    if (!extension.match(/\.(jpg|jpeg|png|gif|webp|mp4|mkv|mov|webm|flac|m4a|mp3|ogg|wav|3gp)$/)) {
                                         continue;
                                     }
                                 }
@@ -108,7 +108,7 @@ export class FullScreenModal extends Modal {
                     let type = 'image';
                     if (file) {
                         const extension = file.extension.toLowerCase();
-                        if (!extension.match(/^(jpg|jpeg|png|gif|webp|mp4|mkv|mov|webm)$/)) {
+                        if (!extension.match(/^(jpg|jpeg|png|gif|webp|mp4|mkv|mov|webm|flac|m4a|mp3|ogg|wav|3gp)$/)) {
                             continue;
                         }
                         type = extension.match(/^(jpg|jpeg|png|gif|webp)$/) ? 'image' : 'video';
@@ -187,19 +187,44 @@ export class FullScreenModal extends Modal {
                 img.src = media.url;
                 img.onclick = () => this.showMedia(index);
             } else {
-                const video = container.createEl('video');
-                video.src = media.url;
-                video.onclick = () => this.showMedia(index);
-                const videoIcon = container.createDiv('mv-video-indicator');
-                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                svg.setAttribute('viewBox', '0 0 24 24');
-                svg.setAttribute('width', '24');
-                svg.setAttribute('height', '24');
-                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                path.setAttribute('fill', 'currentColor');
-                path.setAttribute('d', 'M8 5v14l11-7z');
-                svg.appendChild(path);
-                videoIcon.appendChild(svg);
+                if (media.url.match(/\.(mp4|mkv|mov|webm)/i)) {
+                    const video = container.createEl('video');
+                    video.src = media.url;
+                    video.onclick = () => this.showMedia(index);
+                    const videoIcon = container.createDiv('mv-video-indicator');
+                    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                    svg.setAttribute('viewBox', '0 0 24 24');
+                    svg.setAttribute('width', '24');
+                    svg.setAttribute('height', '24');
+                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    path.setAttribute('fill', 'currentColor');
+                    path.setAttribute('d', 'M8 5v14l11-7z');
+                    svg.appendChild(path);
+                    videoIcon.appendChild(svg);
+                } else {
+                    const audio = container.createEl('audio');
+                    audio.src = media.url;
+                    container.onclick = () => this.showMedia(index);
+                    const audioIcon = container.createDiv('mv-audio-indicator');
+                    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                    svg.setAttribute('viewBox', '0 0 24 24');
+                    svg.setAttribute('width', '24');
+                    svg.setAttribute('height', '24');
+                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    path.setAttribute('fill', 'currentColor');
+                    path.setAttribute('d', 'M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z');
+                    svg.appendChild(path);
+                    audioIcon.appendChild(svg);
+
+                    // 添加檔案名稱顯示
+                    const fileName = media.path ? media.path.split('/').pop() : media.url.split('/').pop();
+                    if (fileName) {
+                        const cleanFileName = fileName.split('?')[0]; // 移除檔案名稱中 ? 後面的部分
+                        const decodedFileName = decodeURIComponent(cleanFileName)
+                        const filenameDiv = container.createDiv('mv-audio-filename');
+                        filenameDiv.textContent = decodedFileName.replace(/\.[^/.]+$/, '');
+                    }
+                }
             }
         });
 
@@ -290,7 +315,9 @@ export class FullScreenModal extends Modal {
             };
         } else {
             this.fullVideo.src = media.url;
-            this.fullVideo.muted = this.plugin.settings.muteVideoOnOpen;
+            if (media.url.match(/\.(mp4|mkv|mov|webm)/i)) {
+                this.fullVideo.muted = this.plugin.settings.muteVideoOnOpen;
+            }
             this.fullVideo.style.display = 'block';
             this.fullImage.style.display = 'none';
             this.fullVideo.loop = true;
@@ -330,13 +357,13 @@ export class FullScreenModal extends Modal {
             const decodedFileName = decodeURIComponent(cleanFileName);
             
             // 添加檔案編號
-            const numSpan = infoPanel.createEl('span', {
+            infoPanel.createEl('span', {
                 text: `${this.currentIndex + 1}/${this.mediaUrls.length}`,
                 cls: 'mv-info-item'
             });
             
             // 添加檔案名稱
-            const labelSpan = infoPanel.createEl('span', {
+            infoPanel.createEl('span', {
                 text: decodedFileName,
                 cls: ['mv-info-item', 'mv-info-filename'],
                 attr: { contentEditable: 'true' }
@@ -344,7 +371,7 @@ export class FullScreenModal extends Modal {
 
             // 添加圖片尺寸
             if (this.isImage) {
-                const sizeSpan = infoPanel.createEl('span', {
+                infoPanel.createEl('span', {
                     text: `(${this.fullImage.naturalWidth} × ${this.fullImage.naturalHeight})`,
                     cls: ['mv-info-item', 'mv-info-dimensions']
                 });
@@ -583,18 +610,43 @@ export class FullScreenModal extends Modal {
                     img.src = media.url;
                     img.onclick = () => this.showMedia(idx);
                 } else {
-                    const video = container.createEl('video');
-                    video.src = media.url;
-                    video.onclick = () => this.showMedia(idx);
-                    const videoIcon = container.createDiv('mv-video-indicator');
-                    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                    svg.setAttribute('viewBox', '0 0 24 24');
-                    svg.setAttribute('width', '24');
-                    svg.setAttribute('height', '24');
-                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                    path.setAttribute('d', 'M8 5v14l11-7z');
-                    svg.appendChild(path);
-                    videoIcon.appendChild(svg);
+                    if (media.url.match(/\.(mp4|mkv|mov|webm)/i)) {
+                        const video = container.createEl('video');
+                        video.src = media.url;
+                        video.onclick = () => this.showMedia(idx);
+                        const videoIcon = container.createDiv('mv-video-indicator');
+                        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                        svg.setAttribute('viewBox', '0 0 24 24');
+                        svg.setAttribute('width', '24');
+                        svg.setAttribute('height', '24');
+                        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                        path.setAttribute('d', 'M8 5v14l11-7z');
+                        svg.appendChild(path);
+                        videoIcon.appendChild(svg);
+                    } else {
+                        const audio = container.createEl('audio');
+                        audio.src = media.url;
+                        container.onclick = () => this.showMedia(idx);
+                        const audioIcon = container.createDiv('mv-audio-indicator');
+                        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                        svg.setAttribute('viewBox', '0 0 24 24');
+                        svg.setAttribute('width', '24');
+                        svg.setAttribute('height', '24');
+                        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                        path.setAttribute('fill', 'currentColor');
+                        path.setAttribute('d', 'M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z');
+                        svg.appendChild(path);
+                        audioIcon.appendChild(svg);
+
+                        // 添加檔案名稱顯示
+                        const fileName = media.path ? media.path.split('/').pop() : media.url.split('/').pop();
+                        if (fileName) {
+                            const cleanFileName = fileName.split('?')[0]; // 移除檔案名稱中 ? 後面的部分
+                            const decodedFileName = decodeURIComponent(cleanFileName)
+                            const filenameDiv = container.createDiv('mv-audio-filename');
+                            filenameDiv.textContent = decodedFileName.replace(/\.[^/.]+$/, '');
+                        }
+                    }
                 }
             });
 

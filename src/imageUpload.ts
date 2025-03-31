@@ -200,7 +200,7 @@ export class ImageUploadModal extends Modal {
                             // 解碼 URL 並移除檔案副檔名
                             const fileName = decodeURIComponent(obsidianUrlMatch[1]).replace(/\.md$/, '');
                             // 判斷 filename 是否有圖片檔的副檔名
-                            if (/\.(jpg|jpeg|png|gif|webp|mp4|mov|webm)$/i.test(fileName)) {
+                            if (/\.(jpg|jpeg|png|gif|webp|mp4|mov|webm|mp3|m4a|flac|ogg|wav|3gp)$/i.test(fileName)) {
                                 newLinks.push(`![[${fileName}]]`);
                             } else {
                                 newLinks.push(`[[${fileName}]]`);
@@ -226,7 +226,7 @@ export class ImageUploadModal extends Modal {
                 // 處理一般檔案
                 if (file instanceof File) {
                     // 檢查是否為支援的媒體類型
-                    if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
+                    if (file.type.startsWith('image/') || file.type.startsWith('video/') || file.type.startsWith('audio/')) {
                     
                         // 取得附件資料夾路徑
                         const attachmentFolderPath = this.getAttachmentFolderPath(activeFile);

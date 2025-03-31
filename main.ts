@@ -65,7 +65,7 @@ export default class MediaViewPlugin extends Plugin {
                 // 確認點擊的是圖片，且不在 code block 內，也不在 modal 內
                 if (target.tagName === 'IMG' && 
                     !target.closest('pre') && 
-                    !target.closest('.media-viewer-modal') &&
+                    !target.closest('.mv-media-viewer-modal') &&
                     !target.closest('.mvgb-media-gallery-grid')) {
                     // 阻止預設行為
                     evt.preventDefault();
