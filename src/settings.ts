@@ -15,6 +15,7 @@ export interface MediaViewSettings {
     galleryGridSizeLarge: number;
     itemsPerPage: number;
     insertAtEnd: boolean;
+    displayOriginalSize: boolean;
 }
 
 export const DEFAULT_SETTINGS: MediaViewSettings = {
@@ -30,6 +31,7 @@ export const DEFAULT_SETTINGS: MediaViewSettings = {
     galleryGridSizeLarge: 200,
     itemsPerPage: 0,
     insertAtEnd: true, // 預設插入在最後
+    displayOriginalSize: false,
 };
 
 export class MediaViewSettingTab extends PluginSettingTab {
@@ -71,6 +73,16 @@ export class MediaViewSettingTab extends PluginSettingTab {
                 .setValue(this.plugin.settings.autoOpenFirstImage)
                 .onChange(async (value) => {
                     this.plugin.settings.autoOpenFirstImage = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName(t('display_original_size'))
+            .setDesc(t('display_original_size_desc'))
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.displayOriginalSize)
+                .onChange(async (value) => {
+                    this.plugin.settings.displayOriginalSize = value;
                     await this.plugin.saveSettings();
                 }));
 

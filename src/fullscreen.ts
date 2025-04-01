@@ -399,7 +399,6 @@ export class FullScreenModal extends Modal {
     }
 
     resetImageStyles() {
-
         // 如果存在之前的滾輪事件處理程序，先移除它
         if (this.handleWheel) {
             this.fullMediaView.removeEventListener('wheel', this.handleWheel);
@@ -408,29 +407,45 @@ export class FullScreenModal extends Modal {
 
         this.fullImage.style.width = 'auto';
         this.fullImage.style.height = 'auto';
-        this.fullImage.style.maxWidth = '100vw';
-        this.fullImage.style.maxHeight = '100vh';
+        
+        if (this.plugin.settings.displayOriginalSize &&
+            this.fullImage.naturalWidth < this.fullMediaView.clientWidth && 
+            this.fullImage.naturalHeight < this.fullMediaView.clientHeight) {
+            // 以原始尺寸顯示
+            this.fullImage.style.maxWidth = `${this.fullImage.naturalWidth}px`;
+            this.fullImage.style.maxHeight = `${this.fullImage.naturalHeight}px`;
+            this.fullImage.style.cursor = 'default';
+        } else {
+            // 全螢幕顯示
+            this.fullImage.style.maxWidth = '100vw';
+            this.fullImage.style.maxHeight = '100vh';
+            this.fullImage.style.cursor = 'zoom-in';
+        }
+
         this.fullImage.style.position = 'absolute';
         this.fullImage.style.left = '50%';
         this.fullImage.style.top = '50%';
         this.fullImage.style.transform = 'translate(-50%, -50%)';
-        this.fullImage.style.cursor = 'zoom-in';
+        
         this.fullMediaView.style.overflowX = 'hidden';
         this.fullMediaView.style.overflowY = 'hidden';
         this.isZoomed = false;
 
-        if (this.fullMediaView.clientWidth > this.fullMediaView.clientHeight) {
-            if (this.fullImage.naturalHeight < this.fullMediaView.clientHeight) {
-                this.fullImage.style.height = '100%';
-            }
-        } else {
-            if (this.fullImage.naturalWidth < this.fullMediaView.clientWidth) {
-                this.fullImage.style.width = '100%';
+        if (!this.plugin.settings.displayOriginalSize) {
+            if (this.fullMediaView.clientWidth > this.fullMediaView.clientHeight) {
+                if (this.fullImage.naturalHeight < this.fullMediaView.clientHeight) {
+                    this.fullImage.style.height = '100%';
+                }
+            } else {
+                if (this.fullImage.naturalWidth < this.fullMediaView.clientWidth) {
+                    this.fullImage.style.width = '100%';
+                }
             }
         }
     }
 
-    registerMediaEvents() {       
+    registerMediaEvents() {
+
         // 點擊預覽區域背景時關閉
         this.fullMediaView.onclick = (event) => {
             // 檢查點擊的是否為預覽區域本身或其直接子元素
@@ -444,8 +459,16 @@ export class FullScreenModal extends Modal {
 
         // 圖片點擊事件（放大）
         this.fullImage.onclick = (event) => {
+            
             // 阻止事件冒泡，避免觸發外層的點擊事件
             event.stopPropagation();
+
+            // 
+            if (this.plugin.settings.displayOriginalSize &&
+                this.fullImage.naturalWidth < this.fullMediaView.clientWidth && 
+                this.fullImage.naturalHeight < this.fullMediaView.clientHeight) {
+                    return;
+            }
             
             if (event.target === this.fullImage) { 
                 if (!this.isZoomed) { // 縮放

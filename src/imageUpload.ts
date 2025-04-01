@@ -158,7 +158,7 @@ export class ImageUploadModal extends Modal {
         const fileInput = contentEl.createEl('input', {
             type: 'file',
             attr: {
-                accept: 'image/*,video/*',
+                accept: 'image/*,video/*,audio/*',
                 multiple: true,
                 style: 'display: none;' // 隱藏但保持在DOM中
             }
