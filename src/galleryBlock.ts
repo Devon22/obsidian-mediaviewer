@@ -109,7 +109,7 @@ export class GalleryBlock {
                 }
             }
 
-            // 處理直接的 URL 或路徑
+            // 處理直接的 URL 或路徑 (僅img參數)
             if (linkText.startsWith('http')) {
                 return linkText;
             } else {
@@ -126,8 +126,11 @@ export class GalleryBlock {
         const findFirstImageInNote = async (file: TFile) => {
             try {
                 const content = await this.app.vault.cachedRead(file);
-                const internalMatch = content.match(/(?:!\[\[(.*?\.(?:jpg|jpeg|png|gif|webp))(?:\|.*?)?\]\]|!\[(.*?)\]\(\s*(\S+?(?:\.(?:jpg|jpeg|png|gif|webp)|format=(?:jpg|jpeg|png|gif|webp))[^\s)]*)\s*(?:\s+["'][^"']*["'])?\s*\))/i);
+                const internalMatch = content.match(/(?:!?\[\[(.*?\.(?:jpg|jpeg|png|gif|webp))(?:\|.*?)?\]\]|!\[(.*?)\]\(\s*(\S+?(?:\.(?:jpg|jpeg|png|gif|webp)|format=(?:jpg|jpeg|png|gif|webp))[^\s)]*)\s*(?:\s+["'][^"']*["'])?\s*\))/i);
                 if (internalMatch) {
+                    if (internalMatch[1]) {
+                        return `![[${internalMatch[1]}]]`;
+                    }
                     return internalMatch[0];
                 } else {    
                     return null;
@@ -680,6 +683,59 @@ export class GalleryBlock {
                         });
                     });
             });
+            menu.addItem((item) => {
+                item
+                    .setTitle(t('ungenerate_gallery'))
+                    .setIcon("eraser")
+                    .onClick(() => {
+                        // 獲取 gallery 區塊的 ID
+                        const galleryId = galleryDiv.getAttribute('data-gallery-id');
+                        if (!galleryId) {
+                            return;
+                        }
+                        
+                        // 獲取當前筆記的文件
+                        const activeFile = this.app.workspace.getActiveFile();
+                        if (!activeFile) {
+                            new Notice(t('please_open_note'));
+                            return;
+                        }
+                        
+                        // 讀取文件內容
+                        this.app.vault.read(activeFile).then((content) => {
+                            // 尋找包含當前 gallery ID 的 gallery 區塊
+                            const galleryBlockRegex = /```gallery\n([\s\S]*?)```/g;
+                            let match;
+                            let matchPosition = { start: 0, end: 0 };
+                            
+                            while ((match = galleryBlockRegex.exec(content)) !== null) {
+                                const blockContent = match[1];
+                                const blockId = 'gallery-' + this.hashString(blockContent.trim());
+                                if (blockId === galleryId) {
+                                    matchPosition.start = match.index;
+                                    matchPosition.end = match.index + match[0].length;
+                                    break;
+                                }
+                            }
+                            
+                            if (!matchPosition.start) {
+                                new Notice(t('gallery_not_found'));
+                                return;
+                            }
+                            
+                            // 移除 gallery 標記，保留內容
+                            const newContent = content.substring(matchPosition.start + '```gallery\n'.length, matchPosition.end - '```'.length);
+                            
+                            // 使用 vault.process 修改文件
+                            this.app.vault.process(activeFile, (fileContent) => {
+                                return fileContent.substring(0, matchPosition.start) + 
+                                        newContent + 
+                                        fileContent.substring(matchPosition.end);
+                            });
+                        });
+                    });
+            });
+            
             menu.showAtMouseEvent(event);
         });
         
