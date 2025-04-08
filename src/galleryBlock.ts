@@ -174,7 +174,7 @@ export class GalleryBlock {
                 // 檢查是否為內部連結 [[note]]
                 const internalLinkMatch = titleText.match(/\[\[(.*?)(?:\|.*?)?\]\]/);
                 if (internalLinkMatch) {
-                    const linktext = internalLinkMatch[1].split('|')[0];
+                    const linktext = internalLinkMatch[1].split('|')[0].split('#')[0];
                     const file = this.app.metadataCache.getFirstLinkpathDest(linktext, '');
                     containerTitle = {
                         text: linktext,
@@ -210,7 +210,7 @@ export class GalleryBlock {
                 // 檢查是否為內部連結
                 const internalLinkMatch = titleText.match(/\[\[(.*?)(?:\|.*?)?\]\]/);
                 if (internalLinkMatch) {
-                    const linktext = internalLinkMatch[1].split('|')[0];
+                    const linktext = internalLinkMatch[1].split('|')[0].split('#')[0];
                     const file = this.app.metadataCache.getFirstLinkpathDest(linktext, '');
                     currentTitle = {
                         text: linktext,
