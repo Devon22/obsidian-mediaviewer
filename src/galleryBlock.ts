@@ -871,7 +871,7 @@ export class GalleryBlock {
         } else {
             if (media.path && media.url) {
                 // 處理影片檔案
-                if (media.path.match(/\.(mp4|mkv|mov|webm)$/)) {
+                if (media.path.toLowerCase().match(/\.(mp4|mkv|mov|webm)$/)) {
                     const video = document.createElement('video') as HTMLVideoElement;
                     video.src = media.url;
                     video.style.pointerEvents = 'none';
