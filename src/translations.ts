@@ -37,6 +37,8 @@ const TRANSLATIONS: Translations = {
         'drag_and_drop': '拖曳圖片到這裡或點擊選擇檔案',
         'paste_from_clipboard': '從剪貼簿貼上圖片',
         'add_image': '新增圖片',
+        'auto_play': '自動播放',
+        'stop_auto_play': '停止播放',
 
         // 設定
         'allow_media_deletion': '允許刪除媒體檔案',
@@ -73,6 +75,8 @@ const TRANSLATIONS: Translations = {
         'insert_position': '圖片插入位置',
         'insert_at_end': '插入在最後',
         'insert_at_start': '插入在最前',
+        'auto_play_interval': '自動播放間隔',
+        'auto_play_interval_desc': '設定自動播放的間隔秒數（0：不自動播放）',
 
         // 命令
         'open_media_viewer': '打開媒體瀏覽器',
@@ -103,6 +107,8 @@ const TRANSLATIONS: Translations = {
         'drag_and_drop': 'Drag and drop images here or click to select files',
         'paste_from_clipboard': 'Paste image from clipboard',
         'add_image': 'Add image',
+        'auto_play': 'Auto Play',
+        'stop_auto_play': 'Stop Auto Play',
 
         // Settings
         'allow_media_deletion': 'Allow media deletion',
@@ -139,6 +145,8 @@ const TRANSLATIONS: Translations = {
         'insert_position': 'Image insert position',
         'insert_at_end': 'Insert at end',
         'insert_at_start': 'Insert at start',
+        'auto_play_interval': 'Auto play interval',
+        'auto_play_interval_desc': 'Set the interval in seconds for auto play (0: no auto play)',
 
         // Commands
         'open_media_viewer': 'Open media viewer',
@@ -169,6 +177,8 @@ const TRANSLATIONS: Translations = {
         'drag_and_drop': '拖曳图片到这裡或点击选择图片',
         'paste_from_clipboard': '从剪贴板粘贴图片',
         'add_image': '新增图片',
+        'auto_play': '自动播放',
+        'stop_auto_play': '停止播放',
 
         // 设置
         'allow_media_deletion': '允许删除媒体文件',
@@ -205,6 +215,8 @@ const TRANSLATIONS: Translations = {
         'insert_position': '图片插入位置',
         'insert_at_end': '插入在最后',
         'insert_at_start': '插入在最前',
+        'auto_play_interval': '自动播放间隔',
+        'auto_play_interval_desc': '设置自动播放的间隔秒数（0：不自动播放）',
 
         // 命令
         'open_media_viewer': '打开媒体浏览器',

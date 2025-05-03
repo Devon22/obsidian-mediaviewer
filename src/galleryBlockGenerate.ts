@@ -116,10 +116,10 @@ export class GalleryBlockGenerateModal extends Modal {
                 .setCta()
                 .onClick(() => {
                     const galleryBlock = ['```gallery'];
-                    galleryBlock.push(`title: ${this.title}`);
-                    galleryBlock.push(`size: ${this.size}`);
-                    galleryBlock.push(`addButton: ${this.addButton}`);
-                    galleryBlock.push(`pagination: ${this.pagination}`);
+                    if(this.title !== '') galleryBlock.push(`title: ${this.title}`);
+                    if(this.size !== 'medium') galleryBlock.push(`size: ${this.size}`);
+                    if(this.addButton) galleryBlock.push(`addButton: ${this.addButton}`);
+                    if(this.pagination > 0) galleryBlock.push(`pagination: ${this.pagination}`);
                     if (this.selectedText) galleryBlock.push(this.selectedText);
                     galleryBlock.push('```\n');
                     

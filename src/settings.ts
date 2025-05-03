@@ -16,12 +16,13 @@ export interface MediaViewSettings {
     itemsPerPage: number;
     insertAtEnd: boolean;
     displayOriginalSize: boolean;
+    autoPlayInterval: number;
 }
 
 export const DEFAULT_SETTINGS: MediaViewSettings = {
     showImageInfo: true,
-    allowMediaDeletion: false,
-    autoOpenFirstImage: false,
+    allowMediaDeletion: false, // 預設不允許刪除圖片
+    autoOpenFirstImage: false, // 預設不自動打開第一張圖片
     openMediaBrowserOnClick: true,
     disableClickToOpenMediaOnGallery: false,
     muteVideoOnOpen: false,
@@ -29,9 +30,10 @@ export const DEFAULT_SETTINGS: MediaViewSettings = {
     galleryGridSizeSmall: 100,
     galleryGridSizeMedium: 150,
     galleryGridSizeLarge: 200,
-    itemsPerPage: 0,
+    itemsPerPage: 0, // 預設不分頁
     insertAtEnd: true, // 預設插入在最後
-    displayOriginalSize: false,
+    displayOriginalSize: false, // 預設不顯示原始尺寸
+    autoPlayInterval: 0, // 預設不自動播放
 };
 
 export class MediaViewSettingTab extends PluginSettingTab {
@@ -114,6 +116,18 @@ export class MediaViewSettingTab extends PluginSettingTab {
                 .setValue(this.plugin.settings.muteVideoOnOpen)
                 .onChange(async (value) => {
                     this.plugin.settings.muteVideoOnOpen = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName(t('auto_play_interval'))
+            .setDesc(t('auto_play_interval_desc'))
+            .addText(text => text
+                .setPlaceholder('0')
+                .setValue(String(this.plugin.settings.autoPlayInterval))
+                .onChange(async (value) => {
+                    const numValue = parseInt(value);
+                    this.plugin.settings.autoPlayInterval = isNaN(numValue) ? 0 : Math.max(0, numValue);
                     await this.plugin.saveSettings();
                 }));
 

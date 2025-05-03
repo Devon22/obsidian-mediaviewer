@@ -23,6 +23,8 @@ export class FullScreenModal extends Modal {
     fullVideo: HTMLVideoElement;
     galleryCloseButton: HTMLButtonElement;
     handleWheel: ((event: WheelEvent) => void) | null;
+    autoPlayTimer: number | null; 
+    isAutoPlaying: boolean;
 
     constructor(app: App, plugin: MediaViewPlugin, openType = 'command') {
         super(app);
@@ -34,6 +36,8 @@ export class FullScreenModal extends Modal {
         this.openType = openType;
         this.modalEl.addClass('mv-media-viewer-modal');
         this.handleWheel = null; //儲存滾輪事件處理程序
+        this.autoPlayTimer = null; //儲存自動播放計時器
+        this.isAutoPlaying = false; //自動播放狀態
     }
 
     async scanMedia(): Promise<Media[]> {
@@ -293,6 +297,12 @@ export class FullScreenModal extends Modal {
             return;
         }
 
+        // 記住當前的自動播放狀態
+        const wasAutoPlaying = this.isAutoPlaying;
+        
+        // 清除現有的自動播放計時器（如果存在）
+        this.clearAutoPlayTimer();
+
         // 移除舊的資訊面板（如果存在）
         const oldInfo = this.fullMediaView.querySelector('.mv-image-info-panel');
         if (oldInfo) oldInfo.remove();
@@ -325,8 +335,13 @@ export class FullScreenModal extends Modal {
         }
 
         // 顯示圖片資訊
-        if (this.plugin.settings.showImageInfo || this.plugin.settings.allowMediaDeletion) {
+        if (this.plugin.settings.showImageInfo || this.plugin.settings.allowMediaDeletion || this.plugin.settings.autoPlayInterval > 0) {
             this.showImageInfo(media);
+        }
+        
+        // 如果之前是自動播放狀態，則繼續自動播放
+        if (wasAutoPlaying) {
+            this.startAutoPlay();
         }
     }
 
@@ -346,6 +361,30 @@ export class FullScreenModal extends Modal {
                 e.preventDefault();
                 e.stopPropagation();
                 await this.deleteMedia(this.currentIndex);
+            };
+        }
+        
+        // 添加自動播放按鈕（只在設定值不為 0 時顯示）
+        if (this.plugin.settings.autoPlayInterval > 0) {
+            const autoPlayButton = infoPanel.createEl('a', {
+                // 根據當前的自動播放狀態設定按鈕文字
+                text: this.isAutoPlaying ? t('stop_auto_play') : t('auto_play'),
+                cls: 'mv-info-item',
+                attr: { 
+                    href: '#',
+                    'data-action': 'autoplay' // 新增 data-action 屬性以便於選取
+                }
+            });
+            autoPlayButton.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (this.isAutoPlaying) {
+                    this.stopAutoPlay();
+                    autoPlayButton.textContent = t('auto_play');
+                } else {
+                    this.startAutoPlay();
+                    autoPlayButton.textContent = t('stop_auto_play');
+                }
             };
         }
 
@@ -391,6 +430,9 @@ export class FullScreenModal extends Modal {
             this.close();
             return;
         }
+
+        // 清除自動播放計時器
+        this.stopAutoPlay();
 
         this.fullMediaView.style.display = 'none';
         this.galleryCloseButton.style.display = 'flex';
@@ -531,21 +573,27 @@ export class FullScreenModal extends Modal {
         };
 
         // 鍵盤事件
-        this.scope.register(null, 'ArrowLeft', () => {
-            if (this.isImage || this.fullVideo.currentTime <= 0) {
+        this.scope.register(null, 'ArrowLeft', (evt) => {
+            if (evt.ctrlKey && !this.isImage && this.fullVideo) {
+                // Alt+左方向鍵：影片倒退 5 秒
+                this.fullVideo.currentTime = Math.max(0, this.fullVideo.currentTime - 5);
+                evt.preventDefault();
+            } else {
+                // 普通左方向鍵：切換到上一個媒體
                 this.currentIndex = (this.currentIndex - 1 + this.mediaUrls.length) % this.mediaUrls.length;
                 this.showMedia(this.currentIndex);
-            } else {
-                this.fullVideo.currentTime -= 5;
             }
         });
 
-        this.scope.register(null, 'ArrowRight', () => {
-            if (this.isImage || this.fullVideo.currentTime >= this.fullVideo.duration) {
+        this.scope.register(null, 'ArrowRight', (evt) => {
+            if (evt.ctrlKey && !this.isImage && this.fullVideo) {
+                // Alt+右方向鍵：影片前進 5 秒
+                this.fullVideo.currentTime = Math.min(this.fullVideo.duration, this.fullVideo.currentTime + 5);
+                evt.preventDefault();
+            } else {
+                // 普通右方向鍵：切換到下一個媒體
                 this.currentIndex = (this.currentIndex + 1) % this.mediaUrls.length;
                 this.showMedia(this.currentIndex);
-            } else {
-                this.fullVideo.currentTime += 5;
             }
         });
 
@@ -730,7 +778,56 @@ export class FullScreenModal extends Modal {
         }
     }
 
+    // 啟動自動播放功能
+    startAutoPlay() {
+        // 清除現有計時器（如果存在）
+        this.clearAutoPlayTimer();
+        
+        // 檢查是否啟用自動播放
+        const interval = this.plugin.settings.autoPlayInterval;
+        if (interval > 0) {
+            // 設定新的計時器
+            this.autoPlayTimer = window.setTimeout(() => {
+                // 播放下一張圖片
+                const nextIndex = (this.currentIndex + 1) % this.mediaUrls.length;
+                this.showMedia(nextIndex);
+            }, interval * 1000) as number; // 轉換為毫秒，並確保類型為 number
+            
+            // 設定自動播放狀態為開啟
+            this.isAutoPlaying = true;
+            
+            // 更新按鈕文字（如果存在）
+            const autoPlayButton = this.fullMediaView.querySelector('.mv-info-item[data-action="autoplay"]');
+            if (autoPlayButton) {
+                autoPlayButton.textContent = t('stop_auto_play');
+            }
+        }
+    }
+    
+    // 停止自動播放
+    stopAutoPlay() {
+        this.clearAutoPlayTimer();
+        this.isAutoPlaying = false;
+        
+        // 更新按鈕文字（如果存在）
+        const autoPlayButton = this.fullMediaView.querySelector('.mv-info-item[data-action="autoplay"]');
+        if (autoPlayButton) {
+            autoPlayButton.textContent = t('auto_play');
+        }
+    }
+    
+    // 清除自動播放計時器
+    clearAutoPlayTimer() {
+        if (this.autoPlayTimer) {
+            window.clearTimeout(this.autoPlayTimer);
+            this.autoPlayTimer = null;
+        }
+    }
+
     onClose() {
+        // 確保關閉時清除計時器
+        this.stopAutoPlay();
+        
         const { contentEl } = this;
         contentEl.empty();
     }

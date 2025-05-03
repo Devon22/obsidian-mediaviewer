@@ -1,6 +1,6 @@
 # Media Viewer
 
-[中文](README_zhTW.md) | [English](README.md) | 日本語
+[English](README.md) | 日本語 | [中文](README_zhTW.md)
 
 ## はじめに
 

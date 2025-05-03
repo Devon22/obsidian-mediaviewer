@@ -1,6 +1,6 @@
 # Media Viewer
 
-中文 | [English](README.md) | [日本語](README_ja.md)
+[English](README.md) | [日本語](README_ja.md) | 中文
 
 ## 介紹
 
