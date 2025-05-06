@@ -110,12 +110,21 @@ export class FullScreenModal extends Modal {
                 
                 if (url) {
                     let type = 'image';
+                    const urlExtension = url.split('.').pop()?.toLowerCase(); // Get extension from URL
+
                     if (file) {
                         const extension = file.extension.toLowerCase();
                         if (!extension.match(/^(jpg|jpeg|png|gif|webp|mp4|mkv|mov|webm|flac|m4a|mp3|ogg|wav|3gp)$/)) {
                             continue;
                         }
                         type = extension.match(/^(jpg|jpeg|png|gif|webp)$/) ? 'image' : 'video';
+                    } else if (urlExtension) { // If it's an external URL, check its extension
+                        if (urlExtension.match(/^(mp4|mkv|mov|webm|flac|m4a|mp3|ogg|wav|3gp)$/)) {
+                            type = 'video';
+                        } else if (!urlExtension.match(/^(jpg|jpeg|png|gif|webp)$/)) {
+                            // If the extension is not a known video or image type, skip it
+                            continue;
+                        }
                     }
                     
                     // 如果這個 URL 已經存在，將新的連結文字加入到現有的列表中

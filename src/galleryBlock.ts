@@ -312,7 +312,7 @@ export class GalleryBlock {
                             // 如果找不到檔案，再嘗試直接用路徑查找
                             const fileByPath = this.app.vault.getAbstractFileByPath(url);
                             if (fileByPath && fileByPath instanceof TFile) {
-                                const extension = url.toLowerCase();
+                                const extension = fileByPath.extension.toLowerCase();
                                 items.push({
                                     type: extension.match(/\.(mp4|mkv|mov|webm|mp3|m4a|flac|ogg|wav|3gp)$/) ? 'video' : 'image',
                                     url: this.app.vault.getResourcePath(fileByPath),
