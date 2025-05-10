@@ -110,7 +110,7 @@ export class FullScreenModal extends Modal {
                 
                 if (url) {
                     let type = 'image';
-                    const urlExtension = url.split('.').pop()?.toLowerCase(); // Get extension from URL
+                    const urlExtension = url.split('.').pop()?.toLowerCase();
 
                     if (file) {
                         const extension = file.extension.toLowerCase();
@@ -118,12 +118,23 @@ export class FullScreenModal extends Modal {
                             continue;
                         }
                         type = extension.match(/^(jpg|jpeg|png|gif|webp)$/) ? 'image' : 'video';
-                    } else if (urlExtension) { // If it's an external URL, check its extension
+                    } else if (urlExtension) {
                         if (urlExtension.match(/^(mp4|mkv|mov|webm|flac|m4a|mp3|ogg|wav|3gp)$/)) {
                             type = 'video';
                         } else if (!urlExtension.match(/^(jpg|jpeg|png|gif|webp)$/)) {
-                            // If the extension is not a known video or image type, skip it
-                            continue;
+                            // 檢查 URL 是否包含圖片格式的查詢參數
+                            const urlLower = url.toLowerCase();
+                            if (urlLower.includes('format=jpg') || 
+                                urlLower.includes('format=jpeg') || 
+                                urlLower.includes('format=png') || 
+                                urlLower.includes('format=gif') || 
+                                urlLower.includes('format=webp') ||
+                                // 檢查 URL 路徑中是否包含圖片擴展名
+                                urlLower.match(/\.(jpg|jpeg|png|gif|webp)(\?|&|#|$)/)) {
+                                type = 'image';
+                            } else {
+                                continue;
+                            }
                         }
                     }
                     
@@ -819,9 +830,11 @@ export class FullScreenModal extends Modal {
         this.isAutoPlaying = false;
         
         // 更新按鈕文字（如果存在）
-        const autoPlayButton = this.fullMediaView.querySelector('.mv-info-item[data-action="autoplay"]');
-        if (autoPlayButton) {
-            autoPlayButton.textContent = t('auto_play');
+        if (this.fullMediaView) {
+            const autoPlayButton = this.fullMediaView.querySelector('.mv-info-item[data-action="autoplay"]');
+            if (autoPlayButton) {
+                autoPlayButton.textContent = t('auto_play');
+            }
         }
     }
     
