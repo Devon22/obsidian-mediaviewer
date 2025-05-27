@@ -7,9 +7,13 @@ import { t } from './src/translations';
 
 export default class MediaViewPlugin extends Plugin {
     settings: MediaViewSettings;
+
     async onload() {
         await this.loadSettings();
         
+        // 添加設定頁面
+        this.addSettingTab(new MediaViewSettingTab(this.app, this));
+
         // 添加命令
         this.addCommand({
             id: 'open-media-viewer',
@@ -18,12 +22,6 @@ export default class MediaViewPlugin extends Plugin {
                 const modal = new FullScreenModal(this.app, this, 'command');
                 modal.open();
             }
-        });
-
-        // 添加 ribbon 命令
-        this.addRibbonIcon('images', t('open_media_viewer'), () => {
-            const modal = new FullScreenModal(this.app, this, 'command');
-            modal.open();
         });
 
         this.addCommand({
@@ -42,62 +40,67 @@ export default class MediaViewPlugin extends Plugin {
             }
         });
 
-        this.registerEvent(this.app.workspace.on('editor-menu', (menu, editor, view) => {
-            menu.addItem((subItem) => {
-                subItem
-                    .setTitle(t('generate_gallery'))
-                    .setIcon('image')
-                    .onClick(() => this.generateGallery())
+        this.app.workspace.onLayoutReady(() => {
+            // 添加 ribbon 命令
+            this.addRibbonIcon('images', t('open_media_viewer'), () => {
+                const modal = new FullScreenModal(this.app, this, 'command');
+                modal.open();
             });
-        }));
 
-        if (this.settings.openMediaBrowserOnClick) {
-            // 添加點擊圖片的事件監聽
-            this.registerDomEvent(document, 'click', (evt) => {
-                const target = (evt.target) as HTMLImageElement;
-                if (!target) return;
+            this.registerEvent(this.app.workspace.on('editor-menu', (menu, editor, view) => {
+                menu.addItem((subItem) => {
+                    subItem
+                        .setTitle(t('generate_gallery'))
+                        .setIcon('image')
+                        .onClick(() => this.generateGallery())
+                });
+            }));
 
-                if (!target.closest('.markdown-reading-view') &&
-                !target.closest('.cm-s-obsidian') ) {
-                    return;
-                }
+            if (this.settings.openMediaBrowserOnClick) {
+                // 添加點擊圖片的事件監聽
+                this.registerDomEvent(document, 'click', (evt) => {
+                    const target = (evt.target) as HTMLImageElement;
+                    if (!target) return;
 
-                // 確認點擊的是圖片，且不在 code block 內，也不在 modal 內
-                if (target.tagName === 'IMG' && 
-                    !target.closest('pre') && 
-                    !target.closest('.mv-media-viewer-modal') &&
-                    !target.closest('.mvgb-media-gallery-grid')) {
-                    // 阻止預設行為
-                    evt.preventDefault();
-                    evt.stopPropagation();
+                    if (!target.closest('.markdown-reading-view') &&
+                    !target.closest('.cm-s-obsidian') ) {
+                        return;
+                    }
 
-                    // 開啟 modal
-                    const modal = new FullScreenModal(this.app, this, 'thumbnail');
-                    modal.open();
-                    
-                    // 等待 modal 載入完成後顯示對應圖片
-                    setTimeout(() => {
-                        const allUrls = modal.mediaUrls;
-                        const targetUrl = target.src;
-                        const targetIndex = allUrls.findIndex(m => m.url === targetUrl);
-                        if (targetIndex !== -1) {
-                            modal.showMedia(targetIndex);
-                        }
-                    }, 100);
-                }
-            }, true);
-        }
+                    // 確認點擊的是圖片，且不在 code block 內，也不在 modal 內
+                    if (target.tagName === 'IMG' && 
+                        !target.closest('pre') && 
+                        !target.closest('.mv-media-viewer-modal') &&
+                        !target.closest('.mvgb-media-gallery-grid')) {
+                        // 阻止預設行為
+                        evt.preventDefault();
+                        evt.stopPropagation();
 
-        // 初始化 GalleryBlockProcessor
-        const galleryProcessor = new GalleryBlock(this.app, this);
+                        // 開啟 modal
+                        const modal = new FullScreenModal(this.app, this, 'thumbnail');
+                        modal.open();
+                        
+                        // 等待 modal 載入完成後顯示對應圖片
+                        setTimeout(() => {
+                            const allUrls = modal.mediaUrls;
+                            const targetUrl = target.src;
+                            const targetIndex = allUrls.findIndex(m => m.url === targetUrl);
+                            if (targetIndex !== -1) {
+                                modal.showMedia(targetIndex);
+                            }
+                        }, 100);
+                    }
+                }, true);
+            }
 
-        // 統一使用 registerMarkdownCodeBlockProcessor 來處理兩種模式
-        this.registerMarkdownCodeBlockProcessor("gallery", (source, el, ctx) => 
-            galleryProcessor.processGalleryBlock(source, el)
-        );
+            // 初始化 GalleryBlockProcessor
+            const galleryProcessor = new GalleryBlock(this.app, this);
 
-        // 添加設定頁面
-        this.addSettingTab(new MediaViewSettingTab(this.app, this));
+            // 統一使用 registerMarkdownCodeBlockProcessor 來處理兩種模式
+            this.registerMarkdownCodeBlockProcessor("gallery", (source, el, ctx) => 
+                galleryProcessor.processGalleryBlock(source, el)
+            );
+        });
     }
 
     generateGallery() {

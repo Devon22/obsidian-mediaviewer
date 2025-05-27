@@ -130,7 +130,7 @@ export class FullScreenModal extends Modal {
                                 urlLower.includes('format=gif') || 
                                 urlLower.includes('format=webp') ||
                                 // 檢查 URL 路徑中是否包含圖片擴展名
-                                urlLower.match(/\.(jpg|jpeg|png|gif|webp)(\?|&|#|$)/)) {
+                                urlLower.match(/\.(jpg|jpeg|png|gif|webp)(\?|&|#|!|$)/)) {
                                 type = 'image';
                             } else {
                                 continue;

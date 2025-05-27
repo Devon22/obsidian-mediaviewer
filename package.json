@@ -1,6 +1,6 @@
 {
 	"name": "mediaviewer",
-	"version": "1.9.7",
+	"version": "1.9.8",
 	"description": "This is a sample plugin for Obsidian (https://obsidian.md)",
 	"main": "main.js",
 	"scripts": {
