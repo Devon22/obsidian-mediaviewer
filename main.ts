@@ -40,13 +40,13 @@ export default class MediaViewPlugin extends Plugin {
             }
         });
 
-        this.app.workspace.onLayoutReady(() => {
-            // 添加 ribbon 命令
-            this.addRibbonIcon('images', t('open_media_viewer'), () => {
-                const modal = new FullScreenModal(this.app, this, 'command');
-                modal.open();
-            });
+        // 添加 ribbon 命令
+        this.addRibbonIcon('images', t('open_media_viewer'), () => {
+            const modal = new FullScreenModal(this.app, this, 'command');
+            modal.open();
+        });
 
+        this.app.workspace.onLayoutReady(() => {
             this.registerEvent(this.app.workspace.on('editor-menu', (menu, editor, view) => {
                 menu.addItem((subItem) => {
                     subItem
