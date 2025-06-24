@@ -538,10 +538,15 @@
     overflow: hidden;
     text-overflow: ellipsis;
     display: -webkit-box;
+    line-clamp: 2;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     width: 100%;
     margin-top: auto;
+}
+
+.mvgb-invalid-link {
+    color: var(--text-error) !important;
 }
 
 .mvgb-note-icon svg {
