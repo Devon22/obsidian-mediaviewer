@@ -61,7 +61,7 @@ After creation, you can directly drag and drop images into the block to add them
 | pagination: `number` | Display pagination when the number of images in the Gallery exceeds this number |
 | alt: `text or [[link]]`  | Placed on the line above the image link, can serve as a description for the image |
 | img: `image.jpg or ![[image.jpg]]`  | Placed on the line above the note link, can be displayed as a thumbnail |
-
+| filter: `text` | Used to filter Gallery content |
 
 ````markdown
 ```gallery

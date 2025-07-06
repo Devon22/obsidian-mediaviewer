@@ -225,8 +225,11 @@ export class ImageUploadModal extends Modal {
 
                 // 處理一般檔案
                 if (file instanceof File) {
-                    // 檢查是否為支援的媒體類型
-                    if (file.type.startsWith('image/') || file.type.startsWith('video/') || file.type.startsWith('audio/')) {
+                    // 檢查是否為支援的媒體類型（MIME）或副檔名
+                    const lowerName = file.name.toLowerCase();
+                    const isSupportedExt = /\.(jpg|jpeg|png|gif|webp|mp4|mov|webm|mp3|m4a|flac|ogg|wav|3gp)$/i.test(lowerName);
+                    const isSupportedMime = file.type && (file.type.startsWith('image/') || file.type.startsWith('video/') || file.type.startsWith('audio/'));
+                    if (isSupportedMime || isSupportedExt) {
                     
                         // 取得附件資料夾路徑
                         const attachmentFolderPath = this.getAttachmentFolderPath(activeFile);

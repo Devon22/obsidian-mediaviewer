@@ -53,6 +53,7 @@ Media Viewer 是一個為 Obsidian 設計的插件，旨在提供一個直觀的
 | pagination: `數字` | Gallery 的圖片大於幾張時以分頁顯示 |
 | alt: `文字 or [[連結]]`  | 放在圖片連結的上一行，可作為圖片的說明                 |
 | img: `image.jpg or ![[image.jpg]]`  | 放在筆記連結的上一行，可顯示為縮圖 |
+| filter: `文字` | 用於過濾 Gallery 的內容 |
 
 ````markdown
 ```gallery

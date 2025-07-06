@@ -75,6 +75,7 @@ export class GalleryBlock {
         let addButtonEnabled = false;
         let gridSize = this.plugin.settings.galleryGridSize || 'medium';
         let paginationEnabled = this.plugin.settings.itemsPerPage || 0; // 設定變數以決定是否開啟分頁功能
+        let filterKeyword: string | null = null; // 新增搜尋關鍵字
         
         // 產生基於內容的唯一識別碼
         const galleryId = 'gallery-' + this.hashString(content.trim());
@@ -152,6 +153,16 @@ export class GalleryBlock {
                 continue;
             }
             
+            // 新增 filter 參數的處理
+            const filterMatch = trimmedLine.match(/^filter:\s*(.*?)\s*$/i);
+            if (filterMatch) {
+                const keyword = filterMatch[1].trim().toLowerCase();
+                if (keyword && keyword !== 'null' && keyword !== 'undefined') {
+                    filterKeyword = keyword;
+                }
+                continue;
+            }
+
             // 新增 size 參數的處理
             const sizeMatch = trimmedLine.match(/^size:\s*(small|medium|large)$/i);
             if (sizeMatch) {
@@ -360,8 +371,15 @@ export class GalleryBlock {
             }
         }
 
+        const shouldFilter = !!filterKeyword && filterKeyword.trim() !== '';
+        const finalItems = shouldFilter ? items.filter(item => {
+            const titleText = typeof item.title === 'string' ? item.title : (item.title ? (item.title as any).text : '');
+            const textToFilter = (titleText || '') + (item.path || '') + (item.url || '');
+            return textToFilter.toLowerCase().includes(filterKeyword!);
+        }) : items;
+
         return {
-            items,
+            items: finalItems,
             containerInfo: {
                 title: containerTitle,
                 addButtonEnabled: addButtonEnabled,
