@@ -680,7 +680,7 @@ export class GalleryBlock {
                                 }
                             }
                             
-                            if (!galleryContent) {
+                            if (!match || match.length === 0) {
                                 new Notice(t('gallery_not_found'));
                                 return;
                             }
