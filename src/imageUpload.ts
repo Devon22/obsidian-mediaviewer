@@ -69,15 +69,18 @@ export class ImageUploadModal extends Modal {
                     if (imageType) {
                         const blob = await item.getType(imageType);
                         // 嘗試取得目前的 Markdown 檔案
-                        // 優先使用來源路徑，若無則使用當前開啟的檔案
+                        // 優先使用來源路徑，若無效則使用當前開啟的檔案
                         let activeFile: TFile | null = null;
-                        activeFile = this.sourcePath 
-                            ? this.app.vault.getAbstractFileByPath(this.sourcePath) as TFile | null
-                            : this.app.workspace.getActiveFile();
+                        if (this.sourcePath) {
+                            activeFile = this.app.vault.getAbstractFileByPath(this.sourcePath) as TFile | null;
+                        }
                         
                         if (!activeFile) {
-                            new Notice(t('please_open_note'));
-                            return;
+                            activeFile = this.app.workspace.getActiveFile();
+                            if (!activeFile) {
+                                new Notice(t('please_open_note'));
+                                return;
+                            }
                         }
                         // 取得附件資料夾路徑
                         const attachmentFolderPath = this.getAttachmentFolderPath(activeFile);
@@ -185,15 +188,18 @@ export class ImageUploadModal extends Modal {
 
     async handleFiles(files: File[]): Promise<void> {
         // 嘗試取得目前的 Markdown 檔案
-        // 優先使用來源路徑，若無則使用當前開啟的檔案
+        // 優先使用來源路徑，若無效則使用當前開啟的檔案
         let activeFile: TFile | null = null;
-        activeFile = this.sourcePath 
-            ? this.app.vault.getAbstractFileByPath(this.sourcePath) as TFile | null
-            : this.app.workspace.getActiveFile();
+        if (this.sourcePath) {
+            activeFile = this.app.vault.getAbstractFileByPath(this.sourcePath) as TFile | null;
+        }
         
         if (!activeFile) {
-            new Notice(t('please_open_note'));
-            return;
+            activeFile = this.app.workspace.getActiveFile();
+            if (!activeFile) {
+                new Notice(t('please_open_note'));
+                return;
+            }
         }
 
         try {
@@ -346,15 +352,18 @@ export class ImageUploadModal extends Modal {
 
     async handleLinks(links: string[]): Promise<void> {
         // 嘗試取得目前的 Markdown 檔案
-        // 優先使用來源路徑，若無則使用當前開啟的檔案
+        // 優先使用來源路徑，若無效則使用當前開啟的檔案
         let activeFile: TFile | null = null;
-        activeFile = this.sourcePath 
-            ? this.app.vault.getAbstractFileByPath(this.sourcePath) as TFile | null
-            : this.app.workspace.getActiveFile();
+        if (this.sourcePath) {
+            activeFile = this.app.vault.getAbstractFileByPath(this.sourcePath) as TFile | null;
+        }
         
         if (!activeFile) {
-            new Notice(t('please_open_note'));
-            return;
+            activeFile = this.app.workspace.getActiveFile();
+            if (!activeFile) {
+                new Notice(t('please_open_note'));
+                return;
+            }
         }
 
         try {

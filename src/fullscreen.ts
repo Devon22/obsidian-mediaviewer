@@ -43,15 +43,18 @@ export class FullScreenModal extends Modal {
     }
 
     async scanMedia(): Promise<Media[]> {
-        // 優先使用來源路徑，若無則使用當前開啟的檔案
+        // 優先使用來源路徑，若無效則使用當前開啟的檔案
         let activeFile: TFile | null = null;
-        activeFile = this.sourcePath 
-            ? this.app.vault.getAbstractFileByPath(this.sourcePath) as TFile | null
-            : this.app.workspace.getActiveFile();
+        if (this.sourcePath) {
+            activeFile = this.app.vault.getAbstractFileByPath(this.sourcePath) as TFile | null;
+        }
         
         if (!activeFile) {
-            new Notice(t('please_open_note'));
-            return [];
+            activeFile = this.app.workspace.getActiveFile();
+            if (!activeFile) {
+                new Notice(t('please_open_note'));
+                return [];
+            }
         }
 
         try {
@@ -657,14 +660,17 @@ export class FullScreenModal extends Modal {
 
         const media = this.mediaUrls[index];
         
-        // 優先使用來源路徑，若無則使用當前開啟的檔案
+        // 優先使用來源路徑，若無效則使用當前開啟的檔案
         let activeFile: TFile | null = null;
-        activeFile = this.sourcePath 
-            ? this.app.vault.getAbstractFileByPath(this.sourcePath) as TFile | null
-            : this.app.workspace.getActiveFile();
+        if (this.sourcePath) {
+            activeFile = this.app.vault.getAbstractFileByPath(this.sourcePath) as TFile | null;
+        }
         
         if (!activeFile) {
-            return;
+            activeFile = this.app.workspace.getActiveFile();
+            if (!activeFile) {
+                return;
+            }
         }
         
         try {

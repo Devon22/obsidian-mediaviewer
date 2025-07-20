@@ -658,15 +658,18 @@ export class GalleryBlock {
                         }
                         
                         // 獲取當前筆記的文件
-                        // 優先使用來源路徑，若無則使用當前開啟的檔案
+                        // 優先使用來源路徑，若無效則使用當前開啟的檔案
                         let activeFile: TFile | null = null;
-                        activeFile = this.sourcePath 
-                            ? this.app.vault.getAbstractFileByPath(this.sourcePath) as TFile | null
-                            : this.app.workspace.getActiveFile();
+                        if (this.sourcePath) {
+                            activeFile = this.app.vault.getAbstractFileByPath(this.sourcePath) as TFile | null;
+                        }
                         
                         if (!activeFile) {
-                            new Notice(t('please_open_note'));
-                            return;
+                            activeFile = this.app.workspace.getActiveFile();
+                            if (!activeFile) {
+                                new Notice(t('please_open_note'));
+                                return;
+                            }
                         }
                         
                         // 讀取文件內容
@@ -721,15 +724,18 @@ export class GalleryBlock {
                         }
                         
                         // 獲取當前筆記的文件
-                        // 優先使用來源路徑，若無則使用當前開啟的檔案
+                        // 優先使用來源路徑，若無效則使用當前開啟的檔案
                         let activeFile: TFile | null = null;
-                        activeFile = this.sourcePath 
-                            ? this.app.vault.getAbstractFileByPath(this.sourcePath) as TFile | null
-                            : this.app.workspace.getActiveFile();
+                        if (this.sourcePath) {
+                            activeFile = this.app.vault.getAbstractFileByPath(this.sourcePath) as TFile | null;
+                        }
                         
                         if (!activeFile) {
-                            new Notice(t('please_open_note'));
-                            return;
+                            activeFile = this.app.workspace.getActiveFile();
+                            if (!activeFile) {
+                                new Notice(t('please_open_note'));
+                                return;
+                            }
                         }
                         
                         // 讀取文件內容
