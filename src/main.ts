@@ -63,7 +63,8 @@ export default class MediaViewPlugin extends Plugin {
                     if (!target) return;
 
                     if (!target.closest('.markdown-reading-view') &&
-                    !target.closest('.cm-s-obsidian') ) {
+                        !target.closest('.cm-s-obsidian') &&
+                        !target.closest('.ge-note-content')) {
                         return;
                     }
 
@@ -76,8 +77,11 @@ export default class MediaViewPlugin extends Plugin {
                         evt.preventDefault();
                         evt.stopPropagation();
 
+                        // 取得GE那裡獲得的 sourcePath
+                        const sourcePath = target.dataset.sourcePath;
+
                         // 開啟 modal
-                        const modal = new FullScreenModal(this.app, this, 'thumbnail');
+                        const modal = new FullScreenModal(this.app, this, 'thumbnail', sourcePath);
                         modal.open();
                         
                         // 等待 modal 載入完成後顯示對應圖片
