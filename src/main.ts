@@ -1,9 +1,9 @@
 import { Plugin, Notice, MarkdownView } from 'obsidian';
-import { MediaViewSettingTab, DEFAULT_SETTINGS, MediaViewSettings } from './src/settings';
-import { FullScreenModal } from './src/fullscreen';
-import { GalleryBlock } from './src/galleryBlock';
-import { GalleryBlockGenerateModal } from './src/galleryBlockGenerate';
-import { t } from './src/translations';
+import { MediaViewSettingTab, DEFAULT_SETTINGS, MediaViewSettings } from './settings';
+import { FullScreenModal } from './fullscreen';
+import { GalleryBlock } from './galleryBlock';
+import { GalleryBlockGenerateModal } from './galleryBlockGenerate';
+import { t } from './translations';
 
 export default class MediaViewPlugin extends Plugin {
     settings: MediaViewSettings;
@@ -98,7 +98,7 @@ export default class MediaViewPlugin extends Plugin {
 
             // 統一使用 registerMarkdownCodeBlockProcessor 來處理兩種模式
             this.registerMarkdownCodeBlockProcessor("gallery", (source, el, ctx) => 
-                galleryProcessor.processGalleryBlock(source, el)
+                galleryProcessor.processGalleryBlock(source, el, ctx?.sourcePath)
             );
         });
     }

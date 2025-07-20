@@ -1,5 +1,5 @@
 import { App, PluginSettingTab, Setting } from 'obsidian';
-import MediaViewPlugin from '../main';
+import MediaViewPlugin from './main';
 import { t } from './translations';
 
 export interface MediaViewSettings {

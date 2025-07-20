@@ -1,5 +1,5 @@
 import { App, TFile, Menu, Notice, Platform } from 'obsidian';
-import MediaViewPlugin from '../main';
+import MediaViewPlugin from './main';
 import { FullScreenModal } from './fullscreen';
 import { MediaViewSettings } from './settings';
 import { ImageUploadModal } from './imageUpload';
@@ -42,6 +42,7 @@ interface MediaUrlsData {
 export class GalleryBlock {
     app: App;
     plugin: MediaViewPlugin;
+    sourcePath?: string; // 來源檔案路徑（由 Gallery Block 傳入）
 
     constructor(app: App, plugin: MediaViewPlugin) {
         this.app = app;
@@ -49,7 +50,9 @@ export class GalleryBlock {
     }
 
     // 處理 gallery 區塊
-    async processGalleryBlock(source: string, el: HTMLElement): Promise<void> {
+    async processGalleryBlock(source: string, el: HTMLElement, sourcePath?: string): Promise<void> {
+        this.sourcePath = sourcePath; // 記錄來源路徑，方便後續開啟全螢幕時使用
+        
         if (el.querySelector('.mvgb-media-gallery-grid')) {
             return;
         }
@@ -500,7 +503,7 @@ export class GalleryBlock {
                 addIcon.appendChild(addIconText);
 
                 addContainer.onclick = () => {
-                    const modal = new ImageUploadModal(this.app, this.plugin, galleryDiv);
+                    const modal = new ImageUploadModal(this.app, this.plugin, galleryDiv, this.sourcePath);
                     modal.open();
                 };
 
@@ -562,7 +565,7 @@ export class GalleryBlock {
                     text: t('add_image')
                 });
                 addButton.onclick = () => {
-                    const modal = new ImageUploadModal(this.app, this.plugin, galleryDiv);
+                    const modal = new ImageUploadModal(this.app, this.plugin, galleryDiv, this.sourcePath);
                     modal.open();
                 };
             }
@@ -623,7 +626,7 @@ export class GalleryBlock {
             }
 
             const resolvedFiles = await Promise.all(files);
-            const modal = new ImageUploadModal(this.app, this.plugin, galleryDiv);
+            const modal = new ImageUploadModal(this.app, this.plugin, galleryDiv, this.sourcePath);
             await modal.handleFiles(resolvedFiles);
         });
 
@@ -639,7 +642,7 @@ export class GalleryBlock {
                     .setTitle(t('add_image'))
                     .setIcon("image")
                     .onClick(() => {
-                        const modal = new ImageUploadModal(this.app, this.plugin, galleryDiv);
+                        const modal = new ImageUploadModal(this.app, this.plugin, galleryDiv, this.sourcePath);
                         modal.open();
                     });
             });
@@ -655,7 +658,12 @@ export class GalleryBlock {
                         }
                         
                         // 獲取當前筆記的文件
-                        const activeFile = this.app.workspace.getActiveFile();
+                        // 優先使用來源路徑，若無則使用當前開啟的檔案
+                        let activeFile: TFile | null = null;
+                        activeFile = this.sourcePath 
+                            ? this.app.vault.getAbstractFileByPath(this.sourcePath) as TFile | null
+                            : this.app.workspace.getActiveFile();
+                        
                         if (!activeFile) {
                             new Notice(t('please_open_note'));
                             return;
@@ -713,7 +721,12 @@ export class GalleryBlock {
                         }
                         
                         // 獲取當前筆記的文件
-                        const activeFile = this.app.workspace.getActiveFile();
+                        // 優先使用來源路徑，若無則使用當前開啟的檔案
+                        let activeFile: TFile | null = null;
+                        activeFile = this.sourcePath 
+                            ? this.app.vault.getAbstractFileByPath(this.sourcePath) as TFile | null
+                            : this.app.workspace.getActiveFile();
+                        
                         if (!activeFile) {
                             new Notice(t('please_open_note'));
                             return;
@@ -992,7 +1005,7 @@ export class GalleryBlock {
 
         if ((!this.plugin.settings.disableClickToOpenMediaOnGallery && media.type === 'image') || media.type === 'video') {
             container.onclick = () => {
-                const modal = new FullScreenModal(this.app, this.plugin, 'thumbnail');
+                const modal = new FullScreenModal(this.app, this.plugin, 'thumbnail', this.sourcePath);
                 modal.open();
                 setTimeout(() => {
                     const allUrls = modal.mediaUrls;

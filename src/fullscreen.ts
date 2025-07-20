@@ -1,5 +1,5 @@
 import { App, Modal, getFrontMatterInfo, TFile, Notice } from 'obsidian';
-import MediaViewPlugin from '../main';
+import MediaViewPlugin from './main';
 import { MediaViewSettings } from './settings';
 import { t } from './translations';
 
@@ -25,8 +25,9 @@ export class FullScreenModal extends Modal {
     handleWheel: ((event: WheelEvent) => void) | null;
     autoPlayTimer: number | null; 
     isAutoPlaying: boolean;
+    sourcePath?: string; // 來源檔案路徑（由 Gallery Block 傳入）
 
-    constructor(app: App, plugin: MediaViewPlugin, openType = 'command') {
+    constructor(app: App, plugin: MediaViewPlugin, openType: string = 'command', sourcePath?: string) {
         super(app);
         this.plugin = plugin;
         this.mediaUrls = [];
@@ -38,11 +39,16 @@ export class FullScreenModal extends Modal {
         this.handleWheel = null; //儲存滾輪事件處理程序
         this.autoPlayTimer = null; //儲存自動播放計時器
         this.isAutoPlaying = false; //自動播放狀態
+        this.sourcePath = sourcePath;
     }
 
     async scanMedia(): Promise<Media[]> {
-        // 獲取當前活動的 markdown 文件
-        const activeFile = this.app.workspace.getActiveFile();
+        // 優先使用來源路徑，若無則使用當前開啟的檔案
+        let activeFile: TFile | null = null;
+        activeFile = this.sourcePath 
+            ? this.app.vault.getAbstractFileByPath(this.sourcePath) as TFile | null
+            : this.app.workspace.getActiveFile();
+        
         if (!activeFile) {
             new Notice(t('please_open_note'));
             return [];
@@ -507,7 +513,6 @@ export class FullScreenModal extends Modal {
     }
 
     registerMediaEvents() {
-
         // 點擊預覽區域背景時關閉
         this.fullMediaView.onclick = (event) => {
             // 檢查點擊的是否為預覽區域本身或其直接子元素
@@ -521,19 +526,23 @@ export class FullScreenModal extends Modal {
 
         // 圖片點擊事件（放大）
         this.fullImage.onclick = (event) => {
-            
             // 阻止事件冒泡，避免觸發外層的點擊事件
             event.stopPropagation();
 
-            // 
             if (this.plugin.settings.displayOriginalSize &&
                 this.fullImage.naturalWidth < this.fullMediaView.clientWidth && 
                 this.fullImage.naturalHeight < this.fullMediaView.clientHeight) {
-                    return;
+                return;
             }
             
             if (event.target === this.fullImage) { 
                 if (!this.isZoomed) { // 縮放
+                    // 計算點擊位置相對於圖片的百分比
+                    const rect = this.fullImage.getBoundingClientRect();
+                    const clickX = event.clientX - rect.left;
+                    const clickY = event.clientY - rect.top;
+                    const clickXPercent = clickX / rect.width;
+                    const clickYPercent = clickY / rect.height;
                     
                     if (this.fullMediaView.clientWidth > this.fullMediaView.clientHeight) {
                         if (this.fullImage.naturalHeight < this.fullMediaView.clientHeight) {
@@ -557,9 +566,9 @@ export class FullScreenModal extends Modal {
                         this.fullMediaView.style.overflowY = 'hidden';
 
                         // 將事件處理程序存儲在類別屬性中
-                        this.handleWheel = (event) => {
-                            event.preventDefault();
-                            this.fullMediaView.scrollLeft += event.deltaY;
+                        this.handleWheel = (e) => {
+                            e.preventDefault();
+                            this.fullMediaView.scrollLeft += e.deltaY;
                         };
                         this.fullMediaView.addEventListener('wheel', this.handleWheel);
                     }
@@ -573,6 +582,20 @@ export class FullScreenModal extends Modal {
                     this.fullImage.style.transform = 'none';
                     this.fullImage.style.cursor = 'zoom-out';
                     this.isZoomed = true;
+
+                    // 在下一幀執行滾動，確保圖片已經放大
+                    requestAnimationFrame(() => {
+                        if (this.fullMediaView.scrollWidth > this.fullMediaView.clientWidth) {
+                            // 水平滾動到點擊位置
+                            const scrollX = (this.fullImage.scrollWidth * clickXPercent) - (this.fullMediaView.clientWidth / 2);
+                            this.fullMediaView.scrollLeft = Math.max(0, Math.min(scrollX, this.fullImage.scrollWidth - this.fullMediaView.clientWidth));
+                        }
+                        if (this.fullMediaView.scrollHeight > this.fullMediaView.clientHeight) {
+                            // 垂直滾動到點擊位置
+                            const scrollY = (this.fullImage.scrollHeight * clickYPercent) - (this.fullMediaView.clientHeight / 2);
+                            this.fullMediaView.scrollTop = Math.max(0, Math.min(scrollY, this.fullImage.scrollHeight - this.fullMediaView.clientHeight));
+                        }
+                    });
                 } else {
                     this.resetImageStyles();
                 }
@@ -634,7 +657,12 @@ export class FullScreenModal extends Modal {
 
         const media = this.mediaUrls[index];
         
-        const activeFile = this.app.workspace.getActiveFile();
+        // 優先使用來源路徑，若無則使用當前開啟的檔案
+        let activeFile: TFile | null = null;
+        activeFile = this.sourcePath 
+            ? this.app.vault.getAbstractFileByPath(this.sourcePath) as TFile | null
+            : this.app.workspace.getActiveFile();
+        
         if (!activeFile) {
             return;
         }

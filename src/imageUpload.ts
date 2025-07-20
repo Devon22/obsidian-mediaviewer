@@ -1,17 +1,19 @@
 import { App, Modal, TFile, Notice } from 'obsidian';
-import MediaViewPlugin from '../main';
+import MediaViewPlugin from './main';
 import { t } from './translations';
 
 export class ImageUploadModal extends Modal {
     plugin: MediaViewPlugin;
     galleryElement: HTMLElement;
     insertAtEnd: boolean; // 新增變數來儲存插入位置選項
+    sourcePath?: string; // 新增來源路徑
     
-    constructor(app: App, plugin: MediaViewPlugin, galleryElement: HTMLElement) {
+    constructor(app: App, plugin: MediaViewPlugin, galleryElement: HTMLElement, sourcePath?: string) {
         super(app);
         this.plugin = plugin;
         this.galleryElement = galleryElement; // 儲存觸發上傳的 gallery 元素
         this.insertAtEnd = this.plugin.settings.insertAtEnd; // 初始化為設定中的值
+        this.sourcePath = sourcePath; // 儲存來源路徑
     }
 
     onOpen() {
@@ -66,7 +68,13 @@ export class ImageUploadModal extends Modal {
 
                     if (imageType) {
                         const blob = await item.getType(imageType);
-                        const activeFile = this.app.workspace.getActiveFile();
+                        // 嘗試取得目前的 Markdown 檔案
+                        // 優先使用來源路徑，若無則使用當前開啟的檔案
+                        let activeFile: TFile | null = null;
+                        activeFile = this.sourcePath 
+                            ? this.app.vault.getAbstractFileByPath(this.sourcePath) as TFile | null
+                            : this.app.workspace.getActiveFile();
+                        
                         if (!activeFile) {
                             new Notice(t('please_open_note'));
                             return;
@@ -176,7 +184,13 @@ export class ImageUploadModal extends Modal {
     }
 
     async handleFiles(files: File[]): Promise<void> {
-        const activeFile = this.app.workspace.getActiveFile();
+        // 嘗試取得目前的 Markdown 檔案
+        // 優先使用來源路徑，若無則使用當前開啟的檔案
+        let activeFile: TFile | null = null;
+        activeFile = this.sourcePath 
+            ? this.app.vault.getAbstractFileByPath(this.sourcePath) as TFile | null
+            : this.app.workspace.getActiveFile();
+        
         if (!activeFile) {
             new Notice(t('please_open_note'));
             return;
@@ -331,7 +345,13 @@ export class ImageUploadModal extends Modal {
     }
 
     async handleLinks(links: string[]): Promise<void> {
-        const activeFile = this.app.workspace.getActiveFile();
+        // 嘗試取得目前的 Markdown 檔案
+        // 優先使用來源路徑，若無則使用當前開啟的檔案
+        let activeFile: TFile | null = null;
+        activeFile = this.sourcePath 
+            ? this.app.vault.getAbstractFileByPath(this.sourcePath) as TFile | null
+            : this.app.workspace.getActiveFile();
+        
         if (!activeFile) {
             new Notice(t('please_open_note'));
             return;
