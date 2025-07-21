@@ -77,7 +77,7 @@ export default class MediaViewPlugin extends Plugin {
                         evt.preventDefault();
                         evt.stopPropagation();
 
-                        // 取得GE那裡獲得的 sourcePath
+                        // 取得GE那裡獲得的sourcePath
                         const sourcePath = target.dataset.sourcePath;
 
                         // 開啟 modal

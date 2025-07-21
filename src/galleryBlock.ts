@@ -37,12 +37,12 @@ interface MediaUrlsData {
     items: GalleryItem[];
     containerInfo: ContainerInfo;
     galleryId: string;
+    sourcePath?: string;
 }
 
 export class GalleryBlock {
     app: App;
     plugin: MediaViewPlugin;
-    sourcePath?: string; // 來源檔案路徑（由 Gallery Block 傳入）
 
     constructor(app: App, plugin: MediaViewPlugin) {
         this.app = app;
@@ -51,14 +51,12 @@ export class GalleryBlock {
 
     // 處理 gallery 區塊
     async processGalleryBlock(source: string, el: HTMLElement, sourcePath?: string): Promise<void> {
-        this.sourcePath = sourcePath; // 記錄來源路徑，方便後續開啟全螢幕時使用
-        
         if (el.querySelector('.mvgb-media-gallery-grid')) {
             return;
         }
 
         try {
-            const mediaUrlsData = await this.parseGalleryContent(source);
+            const mediaUrlsData = await this.parseGalleryContent(source, sourcePath);
             const galleryDiv = this.createGalleryElement(mediaUrlsData);
             el.appendChild(galleryDiv);
         } catch (error) {
@@ -67,7 +65,7 @@ export class GalleryBlock {
     }
 
     // 解析 gallery 內容
-    async parseGalleryContent(content: string): Promise<MediaUrlsData> {
+    async parseGalleryContent(content: string, sourcePath?: string): Promise<MediaUrlsData> {
         const items: GalleryItem[] = [];
         const lines = content.split('\n');
         
@@ -389,7 +387,8 @@ export class GalleryBlock {
                 gridSize: gridSize,
                 paginationEnabled: paginationEnabled
             },
-            galleryId: galleryId
+            galleryId: galleryId,
+            sourcePath: sourcePath
         };
     }
 
@@ -404,7 +403,7 @@ export class GalleryBlock {
     }
 
     createGalleryElement(mediaUrlsData: MediaUrlsData) {
-        const { items, containerInfo, galleryId } = mediaUrlsData;
+        const { items, containerInfo, galleryId, sourcePath } = mediaUrlsData;
         const titleDiv = document.createElement('div');
         const galleryDiv = document.createElement('div');
         galleryDiv.className = 'mvgb-media-gallery-grid';
@@ -426,7 +425,7 @@ export class GalleryBlock {
             
             if (containerInfo.title.type === 'text') {
                 // 純文字
-                const textSpan = containerLinkArea.createEl('span', {
+                containerLinkArea.createEl('span', {
                     text: containerInfo.title.text
                 });
             } else {
@@ -471,12 +470,12 @@ export class GalleryBlock {
         // 當 itemsPerPage 為 0 或項目數量不足時，顯示所有項目
         if (itemsPerPage <= 0 || items.length <= itemsPerPage) {
             // 顯示所有項目
-            items.forEach((item: GalleryItem, index: number) => {
+            items.forEach((item: GalleryItem) => {
                 if (item.type === 'note') {
                     const noteContainer = this.createNoteContainer(item);
                     galleryDiv.appendChild(noteContainer);
                 } else {
-                    const mediaContainer = this.createMediaContainer(item, index);
+                    const mediaContainer = this.createMediaContainer(item, sourcePath);
                     galleryDiv.appendChild(mediaContainer);
                 }
             });
@@ -503,7 +502,7 @@ export class GalleryBlock {
                 addIcon.appendChild(addIconText);
 
                 addContainer.onclick = () => {
-                    const modal = new ImageUploadModal(this.app, this.plugin, galleryDiv, this.sourcePath);
+                    const modal = new ImageUploadModal(this.app, this.plugin, galleryDiv, sourcePath);
                     modal.open();
                 };
 
@@ -565,7 +564,7 @@ export class GalleryBlock {
                     text: t('add_image')
                 });
                 addButton.onclick = () => {
-                    const modal = new ImageUploadModal(this.app, this.plugin, galleryDiv, this.sourcePath);
+                    const modal = new ImageUploadModal(this.app, this.plugin, galleryDiv, sourcePath);
                     modal.open();
                 };
             }
@@ -577,7 +576,7 @@ export class GalleryBlock {
             container.appendChild(controlsDiv);
 
             // 初始化第一頁
-            this.updateGalleryPage(galleryDiv, items, currentPage, itemsPerPage);
+            this.updateGalleryPage(galleryDiv, items, currentPage, itemsPerPage, sourcePath);
         }
         
         // 加入拖曳事件處理
@@ -626,7 +625,7 @@ export class GalleryBlock {
             }
 
             const resolvedFiles = await Promise.all(files);
-            const modal = new ImageUploadModal(this.app, this.plugin, galleryDiv, this.sourcePath);
+            const modal = new ImageUploadModal(this.app, this.plugin, galleryDiv, sourcePath);
             await modal.handleFiles(resolvedFiles);
         });
 
@@ -642,7 +641,7 @@ export class GalleryBlock {
                     .setTitle(t('add_image'))
                     .setIcon("image")
                     .onClick(() => {
-                        const modal = new ImageUploadModal(this.app, this.plugin, galleryDiv, this.sourcePath);
+                        const modal = new ImageUploadModal(this.app, this.plugin, galleryDiv, sourcePath);
                         modal.open();
                     });
             });
@@ -660,8 +659,8 @@ export class GalleryBlock {
                         // 獲取當前筆記的文件
                         // 優先使用來源路徑，若無效則使用當前開啟的檔案
                         let activeFile: TFile | null = null;
-                        if (this.sourcePath) {
-                            activeFile = this.app.vault.getAbstractFileByPath(this.sourcePath) as TFile | null;
+                        if (sourcePath) {
+                            activeFile = this.app.vault.getAbstractFileByPath(sourcePath) as TFile | null;
                         }
                         
                         if (!activeFile) {
@@ -726,8 +725,8 @@ export class GalleryBlock {
                         // 獲取當前筆記的文件
                         // 優先使用來源路徑，若無效則使用當前開啟的檔案
                         let activeFile: TFile | null = null;
-                        if (this.sourcePath) {
-                            activeFile = this.app.vault.getAbstractFileByPath(this.sourcePath) as TFile | null;
+                        if (sourcePath) {
+                            activeFile = this.app.vault.getAbstractFileByPath(sourcePath) as TFile | null;
                         }
                         
                         if (!activeFile) {
@@ -851,7 +850,7 @@ export class GalleryBlock {
         return container;
     }
 
-    updateGalleryPage(galleryDiv: HTMLElement, items: GalleryItem[], page: number, itemsPerPage: number) {
+    updateGalleryPage(galleryDiv: HTMLElement, items: GalleryItem[], page: number, itemsPerPage: number, sourcePath?: string) {
         const start = (page - 1) * itemsPerPage;
         const end = start + itemsPerPage;
         const currentPageItems = items.slice(start, end);
@@ -863,12 +862,12 @@ export class GalleryBlock {
         galleryDiv.replaceChildren();
         
         // 新增新的項目
-        currentPageItems.forEach((item: GalleryItem, index: number) => {
+        currentPageItems.forEach((item: GalleryItem) => {
             if (item.type === 'note') {
                 const noteContainer = this.createNoteContainer(item);
                 galleryDiv.appendChild(noteContainer);
             } else {
-                const mediaContainer = this.createMediaContainer(item, start + index);
+                const mediaContainer = this.createMediaContainer(item, sourcePath);
                 galleryDiv.appendChild(mediaContainer);
             }
         });
@@ -896,7 +895,7 @@ export class GalleryBlock {
         }
     }
     
-    createMediaContainer(media: GalleryItem, index: number) {
+    createMediaContainer(media: GalleryItem, sourcePath?: string) {
         const container = document.createElement('div');
         container.className = 'mv-media-thumbnail-container';
         
@@ -1011,7 +1010,7 @@ export class GalleryBlock {
 
         if ((!this.plugin.settings.disableClickToOpenMediaOnGallery && media.type === 'image') || media.type === 'video') {
             container.onclick = () => {
-                const modal = new FullScreenModal(this.app, this.plugin, 'thumbnail', this.sourcePath);
+                const modal = new FullScreenModal(this.app, this.plugin, 'thumbnail', sourcePath);
                 modal.open();
                 setTimeout(() => {
                     const allUrls = modal.mediaUrls;
