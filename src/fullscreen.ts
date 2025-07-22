@@ -26,6 +26,13 @@ export class FullScreenModal extends Modal {
     autoPlayTimer: number | null; 
     isAutoPlaying: boolean;
     sourcePath?: string; // 來源檔案路徑（由 Gallery Block 傳入）
+    // 觸控拖曳相關屬性
+    private touchStartX = 0;
+    private touchStartY = 0;
+    private touchStartTime = 0;
+    private isDragging = false;
+    private minSwipeDistance = 50; // 最小滑動距離
+    private maxSwipeTime = 300; // 最大滑動時間（毫秒）
 
     constructor(app: App, plugin: MediaViewPlugin, openType: string = 'command', sourcePath?: string) {
         super(app);
@@ -305,6 +312,9 @@ export class FullScreenModal extends Modal {
 
         // 註冊事件監聽
         this.registerMediaEvents();
+        
+        // 註冊觸控事件（行動裝置拖曳翻頁）
+        this.registerTouchEvents(this.fullMediaView);
 
         // 根據類型決定是否自動顯示一張圖片
         if (this.openType === 'command') {
@@ -611,11 +621,12 @@ export class FullScreenModal extends Modal {
             
             e.preventDefault();
             if (e.deltaY < 0) {
-                this.currentIndex = (this.currentIndex - 1 + this.mediaUrls.length) % this.mediaUrls.length;
+                // 切換到上一個媒體
+                this.showPrevMedia();
             } else {
-                this.currentIndex = (this.currentIndex + 1) % this.mediaUrls.length;
+                // 切換到下一個媒體
+                this.showNextMedia();
             }
-            this.showMedia(this.currentIndex);
         };
 
         // 鍵盤事件
@@ -626,8 +637,7 @@ export class FullScreenModal extends Modal {
                 evt.preventDefault();
             } else {
                 // 普通左方向鍵：切換到上一個媒體
-                this.currentIndex = (this.currentIndex - 1 + this.mediaUrls.length) % this.mediaUrls.length;
-                this.showMedia(this.currentIndex);
+                this.showPrevMedia();
             }
         });
 
@@ -638,8 +648,7 @@ export class FullScreenModal extends Modal {
                 evt.preventDefault();
             } else {
                 // 普通右方向鍵：切換到下一個媒體
-                this.currentIndex = (this.currentIndex + 1) % this.mediaUrls.length;
-                this.showMedia(this.currentIndex);
+                this.showNextMedia();
             }
         });
 
@@ -650,6 +659,78 @@ export class FullScreenModal extends Modal {
         this.scope.register(null, 'Escape', () => {
             this.hideMedia();
         });
+    }
+
+    // 顯示上一個媒體
+    showPrevMedia() {
+        this.currentIndex = (this.currentIndex - 1 + this.mediaUrls.length) % this.mediaUrls.length;
+        this.showMedia(this.currentIndex);
+    }
+
+    // 顯示下一個媒體
+    showNextMedia() {
+        this.currentIndex = (this.currentIndex + 1) % this.mediaUrls.length;
+        this.showMedia(this.currentIndex);
+    }
+
+    // 註冊觸控事件處理器（行動裝置拖曳翻頁）
+    private registerTouchEvents(element: HTMLElement) {
+        element.addEventListener('touchstart', (e) => {
+            // 只有在非縮放狀態下才處理觸控事件
+            if (this.isZoomed) return;
+            
+            const touch = e.touches[0];
+            this.touchStartX = touch.clientX;
+            this.touchStartY = touch.clientY;
+            this.touchStartTime = Date.now();
+            this.isDragging = false;
+        }, { passive: true });
+        
+        element.addEventListener('touchmove', (e) => {
+            // 只有在非縮放狀態下才處理觸控事件
+            if (this.isZoomed) return;
+            
+            const touch = e.touches[0];
+            const deltaX = Math.abs(touch.clientX - this.touchStartX);
+            const deltaY = Math.abs(touch.clientY - this.touchStartY);
+            
+            // 如果水平移動距離大於垂直移動距離，則認為是水平拖曳
+            if (deltaX > deltaY && deltaX > 10) {
+                this.isDragging = true;
+                // 阻止預設的滾動行為
+                e.preventDefault();
+            }
+        }, { passive: false });
+        
+        element.addEventListener('touchend', (e) => {
+            // 只有在非縮放狀態下才處理觸控事件
+            if (this.isZoomed) return;
+            
+            if (!this.isDragging) return;
+            
+            const touch = e.changedTouches[0];
+            const deltaX = touch.clientX - this.touchStartX;
+            const deltaY = touch.clientY - this.touchStartY;
+            const deltaTime = Date.now() - this.touchStartTime;
+            
+            // 檢查是否符合滑動條件
+            const isHorizontalSwipe = Math.abs(deltaX) > Math.abs(deltaY);
+            const isValidDistance = Math.abs(deltaX) >= this.minSwipeDistance;
+            const isValidTime = deltaTime <= this.maxSwipeTime;
+            
+            if (isHorizontalSwipe && isValidDistance && isValidTime) {
+                if (deltaX > 0) {
+                    // 向右滑動 - 顯示上一個媒體
+                    this.showPrevMedia();
+                } else {
+                    // 向左滑動 - 顯示下一個媒體
+                    this.showNextMedia();
+                }
+            }
+            
+            // 重置拖曳狀態
+            this.isDragging = false;
+        }, { passive: true });
     }
 
     // 刪除媒體檔案
