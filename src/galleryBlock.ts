@@ -543,7 +543,7 @@ export class GalleryBlock {
                 if (currentPage !== 0) {
                     const newPage = currentPage === 1 ? totalPages : currentPage - 1;
                     paginationDiv.dataset.currentPage = newPage.toString();
-                    this.updateGalleryPage(galleryDiv, items, newPage, itemsPerPage);
+                    this.updateGalleryPage(galleryDiv, items, newPage, itemsPerPage, sourcePath);
                 }
             };
             
@@ -553,7 +553,7 @@ export class GalleryBlock {
                 if (currentPage !== 0) {
                     const newPage = currentPage === totalPages ? 1 : currentPage + 1;
                     paginationDiv.dataset.currentPage = newPage.toString();
-                    this.updateGalleryPage(galleryDiv, items, newPage, itemsPerPage);
+                    this.updateGalleryPage(galleryDiv, items, newPage, itemsPerPage, sourcePath);
                 }
             };
 
