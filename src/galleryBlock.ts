@@ -584,19 +584,40 @@ export class GalleryBlock {
             e.preventDefault();
             e.stopPropagation();
             galleryDiv.addClass('drag-over');
+            // 根據滑鼠位置決定左右區域並加上對應樣式
+            const rect = galleryDiv.getBoundingClientRect();
+            const midX = rect.left + rect.width / 2;
+            const clientX = (e as DragEvent).clientX;
+            if (clientX < midX) {
+                galleryDiv.addClass('drag-left');
+                galleryDiv.removeClass('drag-right');
+            } else {
+                galleryDiv.addClass('drag-right');
+                galleryDiv.removeClass('drag-left');
+            }
         });
 
         galleryDiv.addEventListener('dragleave', (e) => {
             e.preventDefault();
             e.stopPropagation();
             galleryDiv.removeClass('drag-over');
+            galleryDiv.removeClass('drag-left');
+            galleryDiv.removeClass('drag-right');
         });
 
         galleryDiv.addEventListener('drop', async (e) => {
             e.preventDefault();
             e.stopPropagation();
             galleryDiv.removeClass('drag-over');
-            
+            galleryDiv.removeClass('drag-left');
+            galleryDiv.removeClass('drag-right');
+
+            // 計算是否落在右側（右側代表加到最後，左側代表加到最前）
+            const rect = galleryDiv.getBoundingClientRect();
+            const midX = rect.left + rect.width / 2;
+            const clientX = (e as DragEvent).clientX;
+            const insertAtEnd = clientX >= midX;
+
             const files = [];
             
             // 處理所有拖放的項目
@@ -626,6 +647,8 @@ export class GalleryBlock {
 
             const resolvedFiles = await Promise.all(files);
             const modal = new ImageUploadModal(this.app, this.plugin, galleryDiv, sourcePath);
+            // 依左右區域設定插入位置
+            modal.insertAtEnd = insertAtEnd;
             await modal.handleFiles(resolvedFiles);
         });
 
@@ -1006,6 +1029,31 @@ export class GalleryBlock {
             }
             
             container.appendChild(linkArea);
+        }
+
+        // 使媒體縮圖可拖曳為 URI（包含影片/圖片/音訊）。在行動裝置上略過。
+        if (!Platform.isMobile && media.url && media.type === 'video') {
+            container.draggable = true;
+            container.addEventListener('dragstart', (e: DragEvent) => {
+                if (!e.dataTransfer) return;
+                // 避免父層或 Obsidian 其他處理器攔截
+                e.stopPropagation();
+                try {
+                    // 針對內部檔案輸出 Obsidian URI；外部連結則維持原本 URL
+                    const isHttp = /^https?:\/\//i.test(media.url as string);
+                    let outUri = media.url as string;
+                    if (!isHttp && media.path) {
+                        const vaultName = this.app.vault.getName();
+                        outUri = `obsidian://open?vault=${encodeURIComponent(vaultName)}&file=${encodeURIComponent(media.path)}`;
+                    }
+                    // 主要提供 URI，並以純文字作為備援
+                    e.dataTransfer.setData('text/uri-list', outUri);
+                    e.dataTransfer.setData('text/plain', outUri);
+                    e.dataTransfer.effectAllowed = 'copy';
+                } catch (err) {
+                    // 忽略 setData 可能的例外
+                }
+            });
         }
 
         if ((!this.plugin.settings.disableClickToOpenMediaOnGallery && media.type === 'image') || media.type === 'video') {

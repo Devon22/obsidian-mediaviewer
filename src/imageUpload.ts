@@ -147,21 +147,43 @@ export class ImageUploadModal extends Modal {
             this.insertAtEnd = insertPositionDropdown.value === 'true';
         });
 
-        // 處理拖放事件
+        // 處理拖放事件（加入左右分區效果）
         dropZone.addEventListener('dragover', (e) => {
             e.preventDefault();
             dropZone.addClass('drag-over');
+            const rect = dropZone.getBoundingClientRect();
+            const midX = rect.left + rect.width / 2;
+            const clientX = (e as DragEvent).clientX;
+            if (clientX < midX) {
+                dropZone.addClass('drag-left');
+                dropZone.removeClass('drag-right');
+                this.insertAtEnd = false; // 左側 -> 插入最前
+            } else {
+                dropZone.addClass('drag-right');
+                dropZone.removeClass('drag-left');
+                this.insertAtEnd = true;  // 右側 -> 插入最後
+            }
         });
 
         dropZone.addEventListener('dragleave', () => {
             dropZone.removeClass('drag-over');
+            dropZone.removeClass('drag-left');
+            dropZone.removeClass('drag-right');
         });
 
         dropZone.addEventListener('drop', async (e) => {
             e.preventDefault();
             dropZone.removeClass('drag-over');
+            dropZone.removeClass('drag-left');
+            dropZone.removeClass('drag-right');
             
             if (e.dataTransfer === null) return;
+            // 依左右區域設定插入位置
+            const rect = dropZone.getBoundingClientRect();
+            const midX = rect.left + rect.width / 2;
+            const clientX = (e as DragEvent).clientX;
+            this.insertAtEnd = clientX >= midX;
+
             const files = (e.dataTransfer.files as any);
             await this.handleFiles(files);
         });

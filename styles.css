@@ -709,3 +709,12 @@
     background-color: var(--background-primary);
     color: var(--text-normal);
 }
+
+.mvgb-media-gallery-grid.drag-over.drag-left,
+.mvgb-upload-dropzone.drag-over.drag-left {
+    box-shadow: inset 6px 0 0 0 var(--interactive-accent);
+}
+.mvgb-media-gallery-grid.drag-over.drag-right,
+.mvgb-upload-dropzone.drag-over.drag-right {
+    box-shadow: inset -6px 0 0 0 var(--interactive-accent);
+}
