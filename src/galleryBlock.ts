@@ -935,21 +935,25 @@ export class GalleryBlock {
                 // 處理影片檔案
                 if (media.path.toLowerCase().match(/\.(mp4|mkv|mov|webm)$/)) {
                     const video = document.createElement('video') as HTMLVideoElement;
-                    video.src = media.url;
+                    if (!Platform.isAndroidApp) {
+                        video.src = media.url;
+                    }
                     video.style.pointerEvents = 'none';
                     container.appendChild(video);
                     
-                    const videoIcon = document.createElement('div');
-                    videoIcon.className = 'mv-video-indicator';
-                    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                    svg.setAttribute('viewBox', '0 0 24 24');
-                    svg.setAttribute('width', '24');
-                    svg.setAttribute('height', '24');
-                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                    path.setAttribute('d', 'M8 5v14l11-7z');
-                    svg.appendChild(path);
-                    videoIcon.appendChild(svg);
-                    container.appendChild(videoIcon);
+                    if (!Platform.isAndroidApp) {
+                        const videoIcon = document.createElement('div');
+                        videoIcon.className = 'mv-video-indicator';
+                        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                        svg.setAttribute('viewBox', '0 0 24 24');
+                        svg.setAttribute('width', '24');
+                        svg.setAttribute('height', '24');
+                        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                        path.setAttribute('d', 'M8 5v14l11-7z');
+                        svg.appendChild(path);
+                        videoIcon.appendChild(svg);
+                        container.appendChild(videoIcon);
+                    }   
                 } else {
                     // 處理音樂檔案
                     const audio = document.createElement('audio') as HTMLAudioElement;

@@ -1,4 +1,4 @@
-import { App, Modal, getFrontMatterInfo, TFile, Notice } from 'obsidian';
+import { App, Modal, getFrontMatterInfo, TFile, Notice, Platform } from 'obsidian';
 import MediaViewPlugin from './main';
 import { MediaViewSettings } from './settings';
 import { t } from './translations';
@@ -229,18 +229,20 @@ export class FullScreenModal extends Modal {
             } else {
                 if (media.url.match(/\.(mp4|mkv|mov|webm)/i)) {
                     const video = container.createEl('video');
-                    video.src = media.url;
                     video.onclick = () => this.showMedia(index);
-                    const videoIcon = container.createDiv('mv-video-indicator');
-                    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                    svg.setAttribute('viewBox', '0 0 24 24');
-                    svg.setAttribute('width', '24');
-                    svg.setAttribute('height', '24');
-                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                    path.setAttribute('fill', 'currentColor');
-                    path.setAttribute('d', 'M8 5v14l11-7z');
-                    svg.appendChild(path);
-                    videoIcon.appendChild(svg);
+                    if (!Platform.isAndroidApp) {
+                        video.src = media.url;
+                        const videoIcon = container.createDiv('mv-video-indicator');
+                        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                        svg.setAttribute('viewBox', '0 0 24 24');
+                        svg.setAttribute('width', '24');
+                        svg.setAttribute('height', '24');
+                        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                        path.setAttribute('fill', 'currentColor');
+                        path.setAttribute('d', 'M8 5v14l11-7z');
+                        svg.appendChild(path);
+                        videoIcon.appendChild(svg);
+                    }
                 } else {
                     const audio = container.createEl('audio');
                     audio.src = media.url;
@@ -818,17 +820,19 @@ export class FullScreenModal extends Modal {
                 } else {
                     if (media.url.match(/\.(mp4|mkv|mov|webm)/i)) {
                         const video = container.createEl('video');
-                        video.src = media.url;
                         video.onclick = () => this.showMedia(idx);
-                        const videoIcon = container.createDiv('mv-video-indicator');
-                        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                        svg.setAttribute('viewBox', '0 0 24 24');
-                        svg.setAttribute('width', '24');
-                        svg.setAttribute('height', '24');
-                        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                        path.setAttribute('d', 'M8 5v14l11-7z');
-                        svg.appendChild(path);
-                        videoIcon.appendChild(svg);
+                        if (!Platform.isAndroidApp) {
+                            video.src = media.url;
+                            const videoIcon = container.createDiv('mv-video-indicator');
+                            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                            svg.setAttribute('viewBox', '0 0 24 24');
+                            svg.setAttribute('width', '24');
+                            svg.setAttribute('height', '24');
+                            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                            path.setAttribute('d', 'M8 5v14l11-7z');
+                            svg.appendChild(path);
+                            videoIcon.appendChild(svg);
+                        }
                     } else {
                         const audio = container.createEl('audio');
                         audio.src = media.url;
