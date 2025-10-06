@@ -73,6 +73,12 @@ export default class MediaViewPlugin extends Plugin {
                         !target.closest('pre') && 
                         !target.closest('.mv-media-viewer-modal') &&
                         !target.closest('.mvgb-media-gallery-grid')) {
+
+                        // 檢查是否為 excalidraw 的圖片
+                        if (target.classList.contains('excalidraw-embedded-img')) {
+                            return;
+                        }
+                        
                         // 阻止預設行為
                         evt.preventDefault();
                         evt.stopPropagation();
