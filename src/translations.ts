@@ -2,7 +2,7 @@ import { getLanguage } from 'obsidian';
 
 interface Translations {
     'zh-TW': { [key: string]: string };
-    'en': { [key: string]: string }; 
+    'en': { [key: string]: string };
     'zh': { [key: string]: string };
     'ja': { [key: string]: string };
 }
@@ -39,6 +39,8 @@ const TRANSLATIONS: Translations = {
         'add_image': '新增圖片',
         'auto_play': '自動播放',
         'stop_auto_play': '停止播放',
+        'move_left': '向左移動',
+        'move_right': '向右移動',
 
         // 設定
         'allow_media_deletion': '允許刪除媒體檔案',
@@ -109,6 +111,8 @@ const TRANSLATIONS: Translations = {
         'add_image': 'Add image',
         'auto_play': 'Auto Play',
         'stop_auto_play': 'Stop Auto Play',
+        'move_left': 'Move Left',
+        'move_right': 'Move Right',
 
         // Settings
         'allow_media_deletion': 'Allow media deletion',
@@ -179,6 +183,8 @@ const TRANSLATIONS: Translations = {
         'add_image': '新增图片',
         'auto_play': '自动播放',
         'stop_auto_play': '停止播放',
+        'move_left': '向左移动',
+        'move_right': '向右移动',
 
         // 设置
         'allow_media_deletion': '允许删除媒体文件',
@@ -247,6 +253,8 @@ const TRANSLATIONS: Translations = {
         'drag_and_drop': '画像をドラッグ＆ドロップするか、クリックしてファイルを選択',
         'paste_from_clipboard': 'クリップボードから画像を貼り付け',
         'add_image': '画像を追加',
+        'move_left': '左に移動',
+        'move_right': '右に移動',
 
         // 設定
         'allow_media_deletion': 'メディア削除を許可',
