@@ -946,6 +946,72 @@ export class GalleryBlock {
             container.appendChild(controls);
         }
 
+        // 右鍵選單
+        container.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const menu = new Menu();
+
+            if (index > 0) {
+                menu.addItem((menuItem) => {
+                    menuItem
+                        .setTitle(t('move_left') || 'Move Left')
+                        .setIcon('arrow-left')
+                        .onClick(async () => {
+                            // 從 DOM 獲取當前頁碼
+                            const galleryDiv = container.closest('.mvgb-media-gallery-grid');
+                            let currentPage = 1;
+                            if (galleryDiv) {
+                                const paginationDiv = galleryDiv.parentElement?.querySelector('.mvgb-pagination');
+                                if (paginationDiv && paginationDiv instanceof HTMLElement && paginationDiv.dataset.currentPage) {
+                                    currentPage = parseInt(paginationDiv.dataset.currentPage);
+                                }
+                            }
+                            await this.swapGalleryItems(galleryId, item, allItems[index - 1], sourcePath, currentPage);
+                        });
+                });
+            }
+
+            if (index < allItems.length - 1) {
+                menu.addItem((menuItem) => {
+                    menuItem
+                        .setTitle(t('move_right') || 'Move Right')
+                        .setIcon('arrow-right')
+                        .onClick(async () => {
+                            // 從 DOM 獲取當前頁碼
+                            const galleryDiv = container.closest('.mvgb-media-gallery-grid');
+                            let currentPage = 1;
+                            if (galleryDiv) {
+                                const paginationDiv = galleryDiv.parentElement?.querySelector('.mvgb-pagination');
+                                if (paginationDiv && paginationDiv instanceof HTMLElement && paginationDiv.dataset.currentPage) {
+                                    currentPage = parseInt(paginationDiv.dataset.currentPage);
+                                }
+                            }
+                            await this.swapGalleryItems(galleryId, item, allItems[index + 1], sourcePath, currentPage);
+                        });
+                });
+            }
+
+            menu.addItem((menuItem) => {
+                menuItem
+                    .setTitle(t('delete'))
+                    .setIcon("trash")
+                    .onClick(() => {
+                        // 從 DOM 獲取當前頁碼
+                        const galleryDiv = container.closest('.mvgb-media-gallery-grid');
+                        let currentPage = 1;
+                        if (galleryDiv) {
+                            const paginationDiv = galleryDiv.parentElement?.querySelector('.mvgb-pagination');
+                            if (paginationDiv && paginationDiv instanceof HTMLElement && paginationDiv.dataset.currentPage) {
+                                currentPage = parseInt(paginationDiv.dataset.currentPage);
+                            }
+                        }
+                        this.deleteGalleryItem(galleryId, item, sourcePath, currentPage);
+                    });
+            });
+            menu.showAtMouseEvent(e);
+        });
+
         return container;
     }
 
@@ -1160,6 +1226,70 @@ export class GalleryBlock {
             container.appendChild(controls);
         }
 
+        // 右鍵選單
+        container.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const menu = new Menu();
+
+            if (index > 0) {
+                menu.addItem((menuItem) => {
+                    menuItem
+                        .setTitle(t('move_left') || 'Move Left')
+                        .setIcon('arrow-left')
+                        .onClick(async () => {
+                            const galleryDiv = container.closest('.mvgb-media-gallery-grid');
+                            let currentPage = 1;
+                            if (galleryDiv) {
+                                const paginationDiv = galleryDiv.parentElement?.querySelector('.mvgb-pagination');
+                                if (paginationDiv && paginationDiv instanceof HTMLElement && paginationDiv.dataset.currentPage) {
+                                    currentPage = parseInt(paginationDiv.dataset.currentPage);
+                                }
+                            }
+                            await this.swapGalleryItems(galleryId, media, allItems[index - 1], sourcePath, currentPage);
+                        });
+                });
+            }
+
+            if (index < allItems.length - 1) {
+                menu.addItem((menuItem) => {
+                    menuItem
+                        .setTitle(t('move_right') || 'Move Right')
+                        .setIcon('arrow-right')
+                        .onClick(async () => {
+                            const galleryDiv = container.closest('.mvgb-media-gallery-grid');
+                            let currentPage = 1;
+                            if (galleryDiv) {
+                                const paginationDiv = galleryDiv.parentElement?.querySelector('.mvgb-pagination');
+                                if (paginationDiv && paginationDiv instanceof HTMLElement && paginationDiv.dataset.currentPage) {
+                                    currentPage = parseInt(paginationDiv.dataset.currentPage);
+                                }
+                            }
+                            await this.swapGalleryItems(galleryId, media, allItems[index + 1], sourcePath, currentPage);
+                        });
+                });
+            }
+
+            menu.addItem((menuItem) => {
+                menuItem
+                    .setTitle(t('delete'))
+                    .setIcon("trash")
+                    .onClick(() => {
+                        // 從 DOM 獲取當前頁碼
+                        const galleryDiv = container.closest('.mvgb-media-gallery-grid');
+                        let currentPage = 1;
+                        if (galleryDiv) {
+                            const paginationDiv = galleryDiv.parentElement?.querySelector('.mvgb-pagination');
+                            if (paginationDiv && paginationDiv instanceof HTMLElement && paginationDiv.dataset.currentPage) {
+                                currentPage = parseInt(paginationDiv.dataset.currentPage);
+                            }
+                        }
+                        this.deleteGalleryItem(galleryId, media, sourcePath, currentPage);
+                    });
+            });
+            menu.showAtMouseEvent(e);
+        });
+
         return container;
     }
 
@@ -1272,6 +1402,59 @@ export class GalleryBlock {
                     ];
 
                     const newBlockContent = newLines.join('\n');
+
+                    // 如果提供了當前頁碼，則為重構後的 Gallery ID 儲存分頁狀態
+                    if (currentPage) {
+                        const newId = 'gallery-' + this.hashString(newBlockContent.trim());
+                        GalleryBlock.paginationState.set(newId, currentPage);
+                    }
+
+                    const matchStart = match.index;
+                    const matchEnd = match.index + match[0].length;
+                    const newBlock = '```gallery\n' + newBlockContent + '```';
+
+                    // 更新 Obsidian 文件內容
+                    await this.app.vault.process(activeFile, (fileContent) => {
+                        return fileContent.substring(0, matchStart) +
+                            newBlock +
+                            fileContent.substring(matchEnd);
+                    });
+                }
+                break;
+            }
+        }
+    }
+
+    async deleteGalleryItem(galleryId: string, item: GalleryItem, sourcePath?: string, currentPage?: number) {
+        // 獲取當前文件
+        let activeFile: TFile | null = null;
+        if (sourcePath) {
+            activeFile = this.app.vault.getAbstractFileByPath(sourcePath) as TFile | null;
+        }
+
+        if (!activeFile) {
+            activeFile = this.app.workspace.getActiveFile();
+            if (!activeFile) return;
+        }
+
+        const content = await this.app.vault.read(activeFile);
+        const galleryBlockRegex = /```gallery\n([\s\S]*?)```/g;
+        let match;
+
+        while ((match = galleryBlockRegex.exec(content)) !== null) {
+            const blockContent = match[1];
+            const blockId = 'gallery-' + this.hashString(blockContent.trim());
+
+            if (blockId === galleryId) {
+                if (item.loc) {
+                    const lines = blockContent.split('\n');
+                    const start = item.loc.start;
+                    const end = item.loc.end;
+
+                    // Remove the lines
+                    lines.splice(start, end - start + 1);
+
+                    const newBlockContent = lines.join('\n');
 
                     // 如果提供了當前頁碼，則為重構後的 Gallery ID 儲存分頁狀態
                     if (currentPage) {
