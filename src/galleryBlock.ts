@@ -5,6 +5,7 @@ import { MediaViewSettings } from './settings';
 import { ImageUploadModal } from './imageUpload';
 import { GalleryBlockGenerateModal } from './galleryBlockGenerate';
 import { t } from './translations';
+import { captureScrollRestore } from './scrollHelper';
 
 interface GalleryItem {
     type: 'image' | 'video' | 'note' | string;
@@ -877,7 +878,6 @@ export class GalleryBlock {
         const notePreview = document.createElement('div');
         notePreview.className = 'mvgb-note-preview';
 
-
         // 如果有縮圖，使用縮圖
         if (item.thumbnail) {
             const img = document.createElement('img');
@@ -1402,10 +1402,10 @@ export class GalleryBlock {
                     ];
 
                     const newBlockContent = newLines.join('\n');
+                    const newId = 'gallery-' + this.hashString(newBlockContent.trim());
 
                     // 如果提供了當前頁碼，則為重構後的 Gallery ID 儲存分頁狀態
                     if (currentPage) {
-                        const newId = 'gallery-' + this.hashString(newBlockContent.trim());
                         GalleryBlock.paginationState.set(newId, currentPage);
                     }
 
@@ -1414,11 +1414,13 @@ export class GalleryBlock {
                     const newBlock = '```gallery\n' + newBlockContent + '```';
 
                     // 更新 Obsidian 文件內容
+                    const restoreScroll = captureScrollRestore(this.app, galleryId);
                     await this.app.vault.process(activeFile, (fileContent) => {
                         return fileContent.substring(0, matchStart) +
                             newBlock +
                             fileContent.substring(matchEnd);
                     });
+                    restoreScroll(newId);
                 }
                 break;
             }
@@ -1455,10 +1457,10 @@ export class GalleryBlock {
                     lines.splice(start, end - start + 1);
 
                     const newBlockContent = lines.join('\n');
+                    const newId = 'gallery-' + this.hashString(newBlockContent.trim());
 
                     // 如果提供了當前頁碼，則為重構後的 Gallery ID 儲存分頁狀態
                     if (currentPage) {
-                        const newId = 'gallery-' + this.hashString(newBlockContent.trim());
                         GalleryBlock.paginationState.set(newId, currentPage);
                     }
 
@@ -1467,11 +1469,13 @@ export class GalleryBlock {
                     const newBlock = '```gallery\n' + newBlockContent + '```';
 
                     // 更新 Obsidian 文件內容
+                    const restoreScroll = captureScrollRestore(this.app, galleryId);
                     await this.app.vault.process(activeFile, (fileContent) => {
                         return fileContent.substring(0, matchStart) +
                             newBlock +
                             fileContent.substring(matchEnd);
                     });
+                    restoreScroll(newId);
                 }
                 break;
             }

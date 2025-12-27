@@ -80,6 +80,13 @@
     margin: 0;
 }
 
+.mvgb-media-gallery-grid .mv-media-thumbnail-container,
+.mvgb-media-gallery-grid .mvgb-note-title {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+}
+
 .mv-media-thumbnail-container:hover {
     transform: scale(1.05);
 }
