@@ -544,6 +544,9 @@
     font-size: 14px;
     color: var(--text-normal);
     overflow: hidden;
+    display: flex;
+    align-items: center;
+    min-height: 1.5em;
     text-overflow: ellipsis;
     display: -webkit-box;
     line-clamp: 2;
