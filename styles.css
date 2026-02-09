@@ -508,7 +508,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 15px;
     height: 100%;
 }
 
@@ -520,7 +519,6 @@
     flex-direction: column;
     align-items: center;
     justify-content: space-between;
-    gap: 10px;
 }
 
 .mvgb-note-thumbnail-image {
@@ -531,20 +529,20 @@
 }
 
 .mvgb-note-icon {
-    margin: auto 0;
-    transition: transform 0.2s;
-    flex-grow: 1;
+    height: calc(100% - 50px);
+    /* 佔用與圖片相同的預留空間 */
+    width: 100%;
     display: flex;
     align-items: center;
-    margin-bottom: 10px;
+    justify-content: center;
     transition: transform 0.2s;
+    flex-shrink: 0;
 }
 
 .mvgb-note-title {
-    font-size: 14px;
+	font-size: 0.85em;
     color: var(--text-normal);
     overflow: hidden;
-    display: flex;
     align-items: center;
     min-height: 1.5em;
     text-overflow: ellipsis;
@@ -553,7 +551,10 @@
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     width: 100%;
-    margin-top: auto;
+    margin: auto;
+    padding: 1px 7px;
+    line-height: 1.4;
+    max-height: 2.8em;
 }
 
 .mvgb-invalid-link {
