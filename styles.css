@@ -264,6 +264,11 @@
     top: calc(var(--safe-area-inset-top) + 15px);
 }
 
+/* 隱藏行動裝置上 Obsidian 預設的 modal 關閉按鈕 */
+.is-mobile .mv-media-viewer-modal .modal-close-button {
+    display: none !important;
+}
+
 .mv-info-item {
     display: inline-block;
     margin-right: 10px;
