@@ -23,7 +23,7 @@ export class FullScreenModal extends Modal {
     fullVideo: HTMLVideoElement;
     galleryCloseButton: HTMLButtonElement;
     handleWheel: ((event: WheelEvent) => void) | null;
-    autoPlayTimer: number | null; 
+    autoPlayTimer: number | null;
     isAutoPlaying: boolean;
     sourcePath?: string; // 來源檔案路徑（由 Gallery Block 傳入）
     // 觸控拖曳相關屬性
@@ -55,7 +55,7 @@ export class FullScreenModal extends Modal {
         if (this.sourcePath) {
             activeFile = this.app.vault.getAbstractFileByPath(this.sourcePath) as TFile | null;
         }
-        
+
         if (!activeFile) {
             activeFile = this.app.workspace.getActiveFile();
             if (!activeFile) {
@@ -67,11 +67,11 @@ export class FullScreenModal extends Modal {
         try {
             // 讀取文件內容
             const content = await this.app.vault.read(activeFile);
-            
+
             // 移除 frontmatter 區域
             const frontMatterInfo = getFrontMatterInfo(content);
             const contentWithoutFrontmatter = content.substring(frontMatterInfo.contentStart);
-            
+
             // 使用單一正則表達式同時匹配兩種格式：
             // 1. ![[image.jpg]] - Obsidian 內部連結
             // 2. ![alt](path) - 標準 Markdown
@@ -86,7 +86,7 @@ export class FullScreenModal extends Modal {
                 const [fullMatch, internalLink, , markdownLink] = match;
                 let url = null;
                 let file = null;
-                
+
                 if (internalLink) {
                     // 處理 Obsidian 內部連結
                     try {
@@ -123,7 +123,7 @@ export class FullScreenModal extends Modal {
                         }
                     }
                 }
-                
+
                 if (url) {
                     let type = 'image';
                     const urlExtension = url.split('.').pop()?.toLowerCase();
@@ -140,10 +140,10 @@ export class FullScreenModal extends Modal {
                         } else if (!urlExtension.match(/^(jpg|jpeg|png|gif|webp)$/)) {
                             // 檢查 URL 是否包含圖片格式的查詢參數
                             const urlLower = url.toLowerCase();
-                            if (urlLower.includes('format=jpg') || 
-                                urlLower.includes('format=jpeg') || 
-                                urlLower.includes('format=png') || 
-                                urlLower.includes('format=gif') || 
+                            if (urlLower.includes('format=jpg') ||
+                                urlLower.includes('format=jpeg') ||
+                                urlLower.includes('format=png') ||
+                                urlLower.includes('format=gif') ||
                                 urlLower.includes('format=webp') ||
                                 // 檢查 URL 路徑中是否包含圖片擴展名
                                 urlLower.match(/\.(jpg|jpeg|png|gif|webp)(\?|&|#|!|$)/)) {
@@ -153,7 +153,7 @@ export class FullScreenModal extends Modal {
                             }
                         }
                     }
-                    
+
                     // 如果這個 URL 已經存在，將新的連結文字加入到現有的列表中
                     if (mediaLinks.has(url)) {
                         mediaLinks.get(url).push(fullMatch);
@@ -191,14 +191,14 @@ export class FullScreenModal extends Modal {
 
         // 建立基本 UI 結構
         const { contentEl } = this;
-        
+
         contentEl.empty();
         contentEl.style.width = '100%'; // 設定寬度佈滿整個空間
         contentEl.style.height = '100%'; // 設定高度佈滿整個空間
 
         contentEl.addEventListener('click', (e) => {
             if (e.target === contentEl) {
-            this.close();
+                this.close();
             }
         });
 
@@ -217,11 +217,11 @@ export class FullScreenModal extends Modal {
                 this.close();
             }
         });
-        
+
         this.mediaUrls.forEach((media, index) => {
             const container = galleryContent.createDiv('mv-media-thumbnail-container');
             container.addClass('mv-media-thumbnail');
-            
+
             if (media.type === 'image') {
                 const img = container.createEl('img');
                 img.src = media.url;
@@ -276,7 +276,7 @@ export class FullScreenModal extends Modal {
             text: '×'
         });
         closeButton.onclick = () => this.close();
-        this.galleryCloseButton = closeButton; 
+        this.galleryCloseButton = closeButton;
 
         // 建立全屏預覽區域
         this.fullMediaView = contentEl.createDiv('mv-full-media-view') as HTMLDivElement;
@@ -300,7 +300,7 @@ export class FullScreenModal extends Modal {
         };
 
         this.fullImage = this.fullMediaView.createEl('img', { cls: 'mv-full-image' });
-        this.fullVideo = this.fullMediaView.createEl('video', { 
+        this.fullVideo = this.fullMediaView.createEl('video', {
             cls: 'mv-full-video',
             attr: { controls: true }
         });
@@ -314,7 +314,7 @@ export class FullScreenModal extends Modal {
 
         // 註冊事件監聽
         this.registerMediaEvents();
-        
+
         // 註冊觸控事件（行動裝置拖曳翻頁）
         this.registerTouchEvents(this.fullMediaView);
 
@@ -340,7 +340,7 @@ export class FullScreenModal extends Modal {
 
         // 記住當前的自動播放狀態
         const wasAutoPlaying = this.isAutoPlaying;
-        
+
         // 清除現有的自動播放計時器（如果存在）
         this.clearAutoPlayTimer();
 
@@ -353,10 +353,11 @@ export class FullScreenModal extends Modal {
         this.fullMediaView.style.display = 'block';
 
         const media = mediaItems[index];
-        
-        this.fullVideo.pause();
         this.isImage = media.type === 'image';
-        
+        this.fullMediaView.classList.toggle('is-video', !this.isImage);
+
+        this.fullVideo.pause();
+
         if (this.isImage) {
             this.fullImage.src = media.url;
             this.fullImage.onload = () => {
@@ -379,7 +380,7 @@ export class FullScreenModal extends Modal {
         if (this.plugin.settings.showImageInfo || this.plugin.settings.allowMediaDeletion || this.plugin.settings.autoPlayInterval > 0) {
             this.showImageInfo(media);
         }
-        
+
         // 如果之前是自動播放狀態，則繼續自動播放
         if (wasAutoPlaying) {
             this.startAutoPlay();
@@ -404,14 +405,14 @@ export class FullScreenModal extends Modal {
                 await this.deleteMedia(this.currentIndex);
             };
         }
-        
+
         // 添加自動播放按鈕（只在設定值不為 0 時顯示）
         if (this.plugin.settings.autoPlayInterval > 0) {
             const autoPlayButton = infoPanel.createEl('a', {
                 // 根據當前的自動播放狀態設定按鈕文字
                 text: this.isAutoPlaying ? t('stop_auto_play') : t('auto_play'),
                 cls: 'mv-info-item',
-                attr: { 
+                attr: {
                     href: '#',
                     'data-action': 'autoplay' // 新增 data-action 屬性以便於選取
                 }
@@ -435,13 +436,13 @@ export class FullScreenModal extends Modal {
             if (!fileName) return;
             const cleanFileName = fileName.split('?')[0]; // 移除檔案名稱中 ? 後面的部分
             const decodedFileName = decodeURIComponent(cleanFileName);
-            
+
             // 添加檔案編號
             infoPanel.createEl('span', {
                 text: `${this.currentIndex + 1}/${this.mediaUrls.length}`,
                 cls: 'mv-info-item'
             });
-            
+
             // 添加檔案名稱
             infoPanel.createEl('span', {
                 text: decodedFileName,
@@ -476,6 +477,7 @@ export class FullScreenModal extends Modal {
         this.stopAutoPlay();
 
         this.fullMediaView.style.display = 'none';
+        this.fullMediaView.classList.remove('is-video');
         this.galleryCloseButton.style.display = 'flex';
         this.isZoomed = false;
         this.fullVideo.pause();
@@ -490,9 +492,9 @@ export class FullScreenModal extends Modal {
 
         this.fullImage.style.width = 'auto';
         this.fullImage.style.height = 'auto';
-        
+
         if (this.plugin.settings.displayOriginalSize &&
-            this.fullImage.naturalWidth < this.fullMediaView.clientWidth && 
+            this.fullImage.naturalWidth < this.fullMediaView.clientWidth &&
             this.fullImage.naturalHeight < this.fullMediaView.clientHeight) {
             // 以原始尺寸顯示
             this.fullImage.style.maxWidth = `${this.fullImage.naturalWidth}px`;
@@ -509,7 +511,7 @@ export class FullScreenModal extends Modal {
         this.fullImage.style.left = '50%';
         this.fullImage.style.top = '50%';
         this.fullImage.style.transform = 'translate(-50%, -50%)';
-        
+
         this.fullMediaView.style.overflowX = 'hidden';
         this.fullMediaView.style.overflowY = 'hidden';
         this.isZoomed = false;
@@ -531,10 +533,10 @@ export class FullScreenModal extends Modal {
         // 點擊預覽區域背景時關閉
         this.fullMediaView.onclick = (event) => {
             // 檢查點擊的是否為預覽區域本身或其直接子元素
-            if (event.target === this.fullMediaView || 
-                ((event.target as Element).parentElement === this.fullMediaView && 
-                event.target !== this.fullImage && 
-                event.target !== this.fullVideo)) {
+            if (event.target === this.fullMediaView ||
+                ((event.target as Element).parentElement === this.fullMediaView &&
+                    event.target !== this.fullImage &&
+                    event.target !== this.fullVideo)) {
                 this.hideMedia();
             }
         };
@@ -545,12 +547,12 @@ export class FullScreenModal extends Modal {
             event.stopPropagation();
 
             if (this.plugin.settings.displayOriginalSize &&
-                this.fullImage.naturalWidth < this.fullMediaView.clientWidth && 
+                this.fullImage.naturalWidth < this.fullMediaView.clientWidth &&
                 this.fullImage.naturalHeight < this.fullMediaView.clientHeight) {
                 return;
             }
-            
-            if (event.target === this.fullImage) { 
+
+            if (event.target === this.fullImage) {
                 if (!this.isZoomed) { // 縮放
                     // 計算點擊位置相對於圖片的百分比
                     const rect = this.fullImage.getBoundingClientRect();
@@ -558,7 +560,7 @@ export class FullScreenModal extends Modal {
                     const clickY = event.clientY - rect.top;
                     const clickXPercent = clickX / rect.width;
                     const clickYPercent = clickY / rect.height;
-                    
+
                     if (this.fullMediaView.clientWidth > this.fullMediaView.clientHeight) {
                         if (this.fullImage.naturalHeight < this.fullMediaView.clientHeight) {
                             this.fullImage.style.maxWidth = 'none';
@@ -587,7 +589,7 @@ export class FullScreenModal extends Modal {
                         };
                         this.fullMediaView.addEventListener('wheel', this.handleWheel);
                     }
-                    
+
                     this.fullImage.style.maxWidth = 'none';
                     this.fullImage.style.maxHeight = 'none';
                     this.fullImage.style.position = 'relative';
@@ -620,7 +622,7 @@ export class FullScreenModal extends Modal {
         // 滾輪事件
         this.fullMediaView.onwheel = (e) => {
             if (this.isZoomed) return;
-            
+
             e.preventDefault();
             if (e.deltaY < 0) {
                 // 切換到上一個媒體
@@ -680,22 +682,22 @@ export class FullScreenModal extends Modal {
         element.addEventListener('touchstart', (e) => {
             // 只有在非縮放狀態下才處理觸控事件
             if (this.isZoomed) return;
-            
+
             const touch = e.touches[0];
             this.touchStartX = touch.clientX;
             this.touchStartY = touch.clientY;
             this.touchStartTime = Date.now();
             this.isDragging = false;
         }, { passive: true });
-        
+
         element.addEventListener('touchmove', (e) => {
             // 只有在非縮放狀態下才處理觸控事件
             if (this.isZoomed) return;
-            
+
             const touch = e.touches[0];
             const deltaX = Math.abs(touch.clientX - this.touchStartX);
             const deltaY = Math.abs(touch.clientY - this.touchStartY);
-            
+
             // 如果水平移動距離大於垂直移動距離，則認為是水平拖曳
             // 如果垂直移動距離大於水平移動距離，則認為是垂直拖曳
             if ((deltaX > deltaY && deltaX > 10) || (deltaY > deltaX && deltaY > 10)) {
@@ -704,24 +706,24 @@ export class FullScreenModal extends Modal {
                 e.preventDefault();
             }
         }, { passive: false });
-        
+
         element.addEventListener('touchend', (e) => {
             // 只有在非縮放狀態下才處理觸控事件
             if (this.isZoomed) return;
-            
+
             if (!this.isDragging) return;
-            
+
             const touch = e.changedTouches[0];
             const deltaX = touch.clientX - this.touchStartX;
             const deltaY = touch.clientY - this.touchStartY;
             const deltaTime = Date.now() - this.touchStartTime;
-            
+
             // 檢查是否符合滑動條件
             const isHorizontalSwipe = Math.abs(deltaX) > Math.abs(deltaY);
             const isVerticalSwipe = Math.abs(deltaY) > Math.abs(deltaX);
             const isValidDistance = Math.abs(deltaX) >= this.minSwipeDistance || Math.abs(deltaY) >= this.minSwipeDistance;
             const isValidTime = deltaTime <= this.maxSwipeTime;
-            
+
             if (isValidDistance && isValidTime) {
                 if (isHorizontalSwipe) {
                     if (deltaX > 0) {
@@ -736,7 +738,7 @@ export class FullScreenModal extends Modal {
                     this.hideMedia();
                 }
             }
-            
+
             // 重置拖曳狀態
             this.isDragging = false;
         }, { passive: true });
@@ -749,28 +751,28 @@ export class FullScreenModal extends Modal {
         }
 
         const media = this.mediaUrls[index];
-        
+
         // 優先使用來源路徑，若無效則使用當前開啟的檔案
         let activeFile: TFile | null = null;
         if (this.sourcePath) {
             activeFile = this.app.vault.getAbstractFileByPath(this.sourcePath) as TFile | null;
         }
-        
+
         if (!activeFile) {
             activeFile = this.app.workspace.getActiveFile();
             if (!activeFile) {
                 return;
             }
         }
-        
+
         try {
             // 讀取當前文件內容
             let content = await this.app.vault.read(activeFile);
-            
+
             const frontMatterInfo = getFrontMatterInfo(content);
             const frontmatter = frontMatterInfo.frontmatter;
             let mainContent = content.substring(frontMatterInfo.contentStart);
-            
+
             // 只在主要內容中移除媒體連結
             media.links?.forEach(link => {
                 mainContent = mainContent.replace(link, '');
@@ -784,11 +786,11 @@ export class FullScreenModal extends Modal {
 
             // 從陣列中移除該媒體
             this.mediaUrls.splice(index, 1);
-            
+
             // 清空當前內容
             const { contentEl } = this;
             contentEl.empty();
-            
+
             // 如果沒有更多媒體，關閉視窗
             if (this.mediaUrls.length === 0) {
                 new Notice(t('media_deleted'));
@@ -798,7 +800,7 @@ export class FullScreenModal extends Modal {
 
             // 重新建立基本 UI 結構
             this.modalEl.addClass('media-viewer-modal');
-            
+
             contentEl.addEventListener('click', (e) => {
                 if (e.target === contentEl) {
                     this.close();
@@ -807,7 +809,7 @@ export class FullScreenModal extends Modal {
 
             // 重新建立縮圖區域
             const galleryContent = contentEl.createDiv('mv-gallery-content');
-            
+
             galleryContent.addEventListener('click', (e) => {
                 const isMediaThumbnail = (e.target as Element).closest('.mv-media-thumbnail');
                 if (!isMediaThumbnail) {
@@ -819,7 +821,7 @@ export class FullScreenModal extends Modal {
             this.mediaUrls.forEach((media, idx) => {
                 const container = galleryContent.createDiv('mv-media-thumbnail-container');
                 container.addClass('mv-media-thumbnail');
-                
+
                 if (media.type === 'image') {
                     const img = container.createEl('img');
                     img.src = media.url;
@@ -896,7 +898,7 @@ export class FullScreenModal extends Modal {
             };
 
             this.fullImage = this.fullMediaView.createEl('img', { cls: 'mv-full-image' });
-            this.fullVideo = this.fullMediaView.createEl('video', { 
+            this.fullVideo = this.fullMediaView.createEl('video', {
                 cls: 'mv-full-video',
                 attr: { controls: true }
             });
@@ -928,7 +930,7 @@ export class FullScreenModal extends Modal {
     startAutoPlay() {
         // 清除現有計時器（如果存在）
         this.clearAutoPlayTimer();
-        
+
         // 檢查是否啟用自動播放
         const interval = this.plugin.settings.autoPlayInterval;
         if (interval > 0) {
@@ -938,10 +940,10 @@ export class FullScreenModal extends Modal {
                 const nextIndex = (this.currentIndex + 1) % this.mediaUrls.length;
                 this.showMedia(nextIndex);
             }, interval * 1000) as number; // 轉換為毫秒，並確保類型為 number
-            
+
             // 設定自動播放狀態為開啟
             this.isAutoPlaying = true;
-            
+
             // 更新按鈕文字（如果存在）
             const autoPlayButton = this.fullMediaView.querySelector('.mv-info-item[data-action="autoplay"]');
             if (autoPlayButton) {
@@ -949,12 +951,12 @@ export class FullScreenModal extends Modal {
             }
         }
     }
-    
+
     // 停止自動播放
     stopAutoPlay() {
         this.clearAutoPlayTimer();
         this.isAutoPlaying = false;
-        
+
         // 更新按鈕文字（如果存在）
         if (this.fullMediaView) {
             const autoPlayButton = this.fullMediaView.querySelector('.mv-info-item[data-action="autoplay"]');
@@ -963,7 +965,7 @@ export class FullScreenModal extends Modal {
             }
         }
     }
-    
+
     // 清除自動播放計時器
     clearAutoPlayTimer() {
         if (this.autoPlayTimer) {
@@ -975,7 +977,7 @@ export class FullScreenModal extends Modal {
     onClose() {
         // 確保關閉時清除計時器
         this.stopAutoPlay();
-        
+
         const { contentEl } = this;
         contentEl.empty();
     }
