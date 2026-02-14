@@ -1,4 +1,4 @@
-import { App, Modal, getFrontMatterInfo, TFile, Notice, Platform } from 'obsidian';
+import { App, Modal, getFrontMatterInfo, TFile, Notice, Platform, Menu } from 'obsidian';
 import MediaViewPlugin from './main';
 import { MediaViewSettings } from './settings';
 import { t } from './translations';
@@ -9,6 +9,7 @@ interface Media {
     links?: string[];
     path?: string;
     title?: string;
+    file?: TFile;
 }
 
 export class FullScreenModal extends Modal {
@@ -161,7 +162,9 @@ export class FullScreenModal extends Modal {
                         mediaLinks.set(url, [fullMatch]);
                         mediaUrls.push({
                             type: type,
-                            url: url
+                            url: url,
+                            path: file ? file.path : undefined,
+                            file: file || undefined
                         });
                     }
                 }
@@ -226,10 +229,24 @@ export class FullScreenModal extends Modal {
                 const img = container.createEl('img');
                 img.src = media.url;
                 img.onclick = () => this.showMedia(index);
+                img.oncontextmenu = (e) => {
+                    if (media.file) {
+                        const menu = new Menu();
+                        this.app.workspace.trigger('file-menu', menu, media.file, 'media-viewer');
+                        menu.showAtMouseEvent(e);
+                    }
+                };
             } else {
                 if (media.url.match(/\.(mp4|mkv|mov|webm)/i)) {
                     const video = container.createEl('video');
                     video.onclick = () => this.showMedia(index);
+                    video.oncontextmenu = (e) => {
+                        if (media.file) {
+                            const menu = new Menu();
+                            this.app.workspace.trigger('file-menu', menu, media.file, 'media-viewer');
+                            menu.showAtMouseEvent(e);
+                        }
+                    };
                     if (!Platform.isAndroidApp) {
                         video.src = media.url;
                         const videoIcon = container.createDiv('mv-video-indicator');
@@ -561,17 +578,13 @@ export class FullScreenModal extends Modal {
                     const clickXPercent = clickX / rect.width;
                     const clickYPercent = clickY / rect.height;
 
-                    if (this.fullMediaView.clientWidth > this.fullMediaView.clientHeight) {
-                        if (this.fullImage.naturalHeight < this.fullMediaView.clientHeight) {
-                            this.fullImage.style.maxWidth = 'none';
-                        }
-                    } else {
-                        if (this.fullImage.naturalWidth < this.fullMediaView.clientWidth) {
-                            this.fullImage.style.maxHeight = 'none';
-                        }
-                    }
+                    // 根據圖片與視窗的長寬比來決定放大模式
+                    const imageAspect = this.fullImage.naturalWidth / this.fullImage.naturalHeight;
+                    const screenAspect = this.fullMediaView.clientWidth / this.fullMediaView.clientHeight;
 
-                    if (this.fullImage.offsetWidth < this.fullMediaView.clientWidth) {
+                    // 如果圖片比視窗更"細長" (Aspect Ratio 較小)，則寬度填滿 (Fit Width)，垂直捲動
+                    // 如果圖片比視窗更"扁平" (Aspect Ratio 較大)，則高度填滿 (Fit Height)，水平捲動
+                    if (imageAspect < screenAspect) {
                         this.fullImage.style.width = '100vw';
                         this.fullImage.style.height = 'auto';
                         this.fullMediaView.style.overflowX = 'hidden';
@@ -663,6 +676,25 @@ export class FullScreenModal extends Modal {
         this.scope.register(null, 'Escape', () => {
             this.hideMedia();
         });
+
+        // 右鍵選單
+        this.fullImage.oncontextmenu = (e) => {
+            const media = this.mediaUrls[this.currentIndex];
+            if (media.file) {
+                const menu = new Menu();
+                this.app.workspace.trigger('file-menu', menu, media.file, 'media-viewer');
+                menu.showAtMouseEvent(e);
+            }
+        };
+
+        this.fullVideo.oncontextmenu = (e) => {
+            const media = this.mediaUrls[this.currentIndex];
+            if (media.file) {
+                const menu = new Menu();
+                this.app.workspace.trigger('file-menu', menu, media.file, 'media-viewer');
+                menu.showAtMouseEvent(e);
+            }
+        };
     }
 
     // 顯示上一個媒體
@@ -826,10 +858,24 @@ export class FullScreenModal extends Modal {
                     const img = container.createEl('img');
                     img.src = media.url;
                     img.onclick = () => this.showMedia(idx);
+                    img.oncontextmenu = (e) => {
+                        if (media.file) {
+                            const menu = new Menu();
+                            this.app.workspace.trigger('file-menu', menu, media.file, 'media-viewer');
+                            menu.showAtMouseEvent(e);
+                        }
+                    };
                 } else {
                     if (media.url.match(/\.(mp4|mkv|mov|webm)/i)) {
                         const video = container.createEl('video');
                         video.onclick = () => this.showMedia(idx);
+                        video.oncontextmenu = (e) => {
+                            if (media.file) {
+                                const menu = new Menu();
+                                this.app.workspace.trigger('file-menu', menu, media.file, 'media-viewer');
+                                menu.showAtMouseEvent(e);
+                            }
+                        };
                         if (!Platform.isAndroidApp) {
                             video.src = media.url;
                             const videoIcon = container.createDiv('mv-video-indicator');
