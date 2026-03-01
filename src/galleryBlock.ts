@@ -314,6 +314,24 @@ export class GalleryBlock {
                                 path: file.path,
                                 title: currentTitle,
                                 linkUrl: currentLinkUrl,
+                                thumbnail: currentThumbnail,
+                                originalBlock: originalBlock,
+                                loc: { start: tempStartLine, end: i }
+                            });
+                        }
+                    }
+                } else if (isImage && currentThumbnail) {
+                    // 處理帶有 img 參數的影片連結
+                    if (file) {
+                        const extension = file.extension.toLowerCase();
+                        if (extension.match(/^(mp4|mkv|mov|webm|mp3|m4a|flac|ogg|wav|3gp)$/)) {
+                            items.push({
+                                type: 'video',
+                                url: this.app.vault.getResourcePath(file),
+                                path: file.path,
+                                title: currentTitle,
+                                linkUrl: currentLinkUrl,
+                                thumbnail: currentThumbnail,
                                 originalBlock: originalBlock,
                                 loc: { start: tempStartLine, end: i }
                             });
@@ -373,6 +391,7 @@ export class GalleryBlock {
                                     path: text || fileByPath.path,
                                     title: currentTitle,
                                     linkUrl: currentLinkUrl,
+                                    thumbnail: currentThumbnail,
                                     originalBlock: originalBlock,
                                     loc: { start: tempStartLine, end: i }
                                 });
@@ -385,6 +404,7 @@ export class GalleryBlock {
                                 path: text || file.path,
                                 title: currentTitle,
                                 linkUrl: currentLinkUrl,
+                                thumbnail: currentThumbnail,
                                 originalBlock: originalBlock,
                                 loc: { start: tempStartLine, end: i }
                             });
@@ -398,9 +418,62 @@ export class GalleryBlock {
                             path: text,
                             title: currentTitle,
                             linkUrl: currentLinkUrl,
+                            thumbnail: currentThumbnail,
                             originalBlock: originalBlock,
                             loc: { start: tempStartLine, end: i }
                         });
+                    }
+                } else if (isImage && currentThumbnail) {
+                    // 處理帶有 img 參數的影片連結
+                    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                        const file = this.app.metadataCache.getFirstLinkpathDest(url, '');
+                        if (!file) {
+                            const fileByPath = this.app.vault.getAbstractFileByPath(url);
+                            if (fileByPath && fileByPath instanceof TFile) {
+                                const extension = fileByPath.extension.toLowerCase();
+                                if (extension.match(/\.(mp4|mkv|mov|webm|mp3|m4a|flac|ogg|wav|3gp)$/)) {
+                                    items.push({
+                                        type: 'video',
+                                        url: this.app.vault.getResourcePath(fileByPath),
+                                        path: text || fileByPath.path,
+                                        title: currentTitle,
+                                        linkUrl: currentLinkUrl,
+                                        thumbnail: currentThumbnail,
+                                        originalBlock: originalBlock,
+                                        loc: { start: tempStartLine, end: i }
+                                    });
+                                }
+                            }
+                        } else {
+                            const extension = file.extension.toLowerCase();
+                            if (extension.match(/^(mp4|mkv|mov|webm|mp3|m4a|flac|ogg|wav|3gp)$/)) {
+                                items.push({
+                                    type: 'video',
+                                    url: this.app.vault.getResourcePath(file),
+                                    path: text || file.path,
+                                    title: currentTitle,
+                                    linkUrl: currentLinkUrl,
+                                    thumbnail: currentThumbnail,
+                                    originalBlock: originalBlock,
+                                    loc: { start: tempStartLine, end: i }
+                                });
+                            }
+                        }
+                    } else {
+                        const urlForTypeCheck = url.split(' "')[0].split('?')[0].toLowerCase();
+                        const isVideoFile = urlForTypeCheck.match(/\.(mp4|mkv|mov|webm|mp3|m4a|flac|ogg|wav|3gp)$/);
+                        if (isVideoFile) {
+                            items.push({
+                                type: 'video',
+                                url: url.split(' "')[0],
+                                path: text,
+                                title: currentTitle,
+                                linkUrl: currentLinkUrl,
+                                thumbnail: currentThumbnail,
+                                originalBlock: originalBlock,
+                                loc: { start: tempStartLine, end: i }
+                            });
+                        }
                     }
                 } else {
                     // 處理一般連結
@@ -1080,12 +1153,21 @@ export class GalleryBlock {
             if (media.path && media.url) {
                 // 處理影片檔案
                 if (media.path.toLowerCase().match(/\.(mp4|mkv|mov|webm)$/)) {
-                    const video = document.createElement('video') as HTMLVideoElement;
-                    if (!Platform.isAndroidApp) {
-                        video.src = media.url;
+                    // 如果有自訂縮圖，使用縮圖顯示
+                    if (media.thumbnail) {
+                        const img = document.createElement('img') as HTMLImageElement;
+                        img.src = media.thumbnail;
+                        img.alt = media.path || '';
+                        img.className = 'mvgb-video-thumbnail';
+                        container.appendChild(img);
+                    } else {
+                        const video = document.createElement('video') as HTMLVideoElement;
+                        if (!Platform.isAndroidApp) {
+                            video.src = media.url;
+                        }
+                        video.style.pointerEvents = 'none';
+                        container.appendChild(video);
                     }
-                    video.style.pointerEvents = 'none';
-                    container.appendChild(video);
 
                     if (!Platform.isAndroidApp) {
                         const videoIcon = document.createElement('div');
