@@ -30,10 +30,13 @@ const TRANSLATIONS: Translations = {
         'gallery_not_found': '無法找到對應的 Gallery 區塊',
         'error_adding_file': '新增檔案時發生錯誤',
         'clipboard_error': '讀取剪貼簿時發生錯誤',
+        'error_renaming_file': '重新命名檔案時發生錯誤',
+        'file_renamed': '檔案已重新命名',
 
         // 按鈕和標籤
         'delete': '刪除',
         'confirm': '確認',
+        'cancel': '取消',
         'drag_and_drop': '拖曳圖片到這裡或點擊選擇檔案',
         'paste_from_clipboard': '從剪貼簿貼上圖片',
         'add_image': '新增圖片',
@@ -41,6 +44,8 @@ const TRANSLATIONS: Translations = {
         'stop_auto_play': '停止播放',
         'move_left': '向左移動',
         'move_right': '向右移動',
+        'rename': '重新命名',
+        'new_filename': '新的檔案名稱',
 
         // 設定
         'allow_media_deletion': '允許刪除媒體檔案',
@@ -102,10 +107,13 @@ const TRANSLATIONS: Translations = {
         'gallery_not_found': 'Gallery block not found',
         'error_adding_file': 'Error adding file',
         'clipboard_error': 'Error reading clipboard',
+        'error_renaming_file': 'Error renaming file',
+        'file_renamed': 'File renamed',
 
         // Buttons and Labels
         'delete': 'Delete',
         'confirm': 'Confirm',
+        'cancel': 'Cancel',
         'drag_and_drop': 'Drag and drop images here or click to select files',
         'paste_from_clipboard': 'Paste image from clipboard',
         'add_image': 'Add image',
@@ -113,6 +121,8 @@ const TRANSLATIONS: Translations = {
         'stop_auto_play': 'Stop Auto Play',
         'move_left': 'Move Left',
         'move_right': 'Move Right',
+        'rename': 'Rename',
+        'new_filename': 'New filename',
 
         // Settings
         'allow_media_deletion': 'Allow media deletion',
@@ -174,10 +184,13 @@ const TRANSLATIONS: Translations = {
         'gallery_not_found': '无法找到对应的 Gallery 区块',
         'error_adding_file': '新增档案时发生错误',
         'clipboard_error': '读取剪贴板时发生错误',
+        'error_renaming_file': '重命名文件时出错',
+        'file_renamed': '文件已重命名',
 
         // 按钮和标签
         'delete': '删除',
         'confirm': '确认',
+        'cancel': '取消',
         'drag_and_drop': '拖曳图片到这裡或点击选择图片',
         'paste_from_clipboard': '从剪贴板粘贴图片',
         'add_image': '新增图片',
@@ -185,6 +198,8 @@ const TRANSLATIONS: Translations = {
         'stop_auto_play': '停止播放',
         'move_left': '向左移动',
         'move_right': '向右移动',
+        'rename': '重命名',
+        'new_filename': '新的文件名',
 
         // 设置
         'allow_media_deletion': '允许删除媒体文件',
@@ -246,15 +261,20 @@ const TRANSLATIONS: Translations = {
         'gallery_not_found': 'ギャラリーブロックが見つかりません',
         'error_adding_file': 'ファイルを追加する際にエラーが発生しました',
         'clipboard_error': 'クリップボードの読み取り時にエラーが発生しました',
+        'error_renaming_file': 'ファイル名の変更中にエラーが発生しました',
+        'file_renamed': 'ファイル名を変更しました',
 
         // ボタンとラベル
         'delete': '削除',
         'confirm': '確認',
+        'cancel': 'キャンセル',
         'drag_and_drop': '画像をドラッグ＆ドロップするか、クリックしてファイルを選択',
         'paste_from_clipboard': 'クリップボードから画像を貼り付け',
         'add_image': '画像を追加',
         'move_left': '左に移動',
         'move_right': '右に移動',
+        'rename': '名前を変更',
+        'new_filename': '新しいファイル名',
 
         // 設定
         'allow_media_deletion': 'メディア削除を許可',

@@ -1,4 +1,4 @@
-import { App, TFile, Menu, Notice, Platform } from 'obsidian';
+import { App, TFile, Menu, Notice, Platform, Modal, Setting } from 'obsidian';
 import MediaViewPlugin from './main';
 import { FullScreenModal } from './fullscreen';
 import { MediaViewSettings } from './settings';
@@ -6,6 +6,54 @@ import { ImageUploadModal } from './imageUpload';
 import { GalleryBlockGenerateModal } from './galleryBlockGenerate';
 import { t } from './translations';
 import { captureScrollRestore } from './scrollHelper';
+
+// 重新命名對話框
+class RenameModal extends Modal {
+    newName: string;
+    onConfirm: (newName: string) => void;
+    currentName: string;
+
+    constructor(app: App, currentName: string, onConfirm: (newName: string) => void) {
+        super(app);
+        this.currentName = currentName;
+        this.newName = currentName;
+        this.onConfirm = onConfirm;
+    }
+
+    onOpen() {
+        const { contentEl } = this;
+        contentEl.createEl('h2', { text: t('rename') });
+
+        new Setting(contentEl)
+            .setName(t('new_filename'))
+            .addText(text => text
+                .setValue(this.currentName)
+                .onChange(value => this.newName = value)
+                .inputEl.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        this.onConfirm(this.newName);
+                        this.close();
+                    }
+                }));
+
+        new Setting(contentEl)
+            .addButton(button => button
+                .setButtonText(t('confirm'))
+                .setCta()
+                .onClick(() => {
+                    this.onConfirm(this.newName);
+                    this.close();
+                }))
+            .addButton(button => button
+                .setButtonText(t('cancel') || 'Cancel')
+                .onClick(() => this.close()));
+    }
+
+    onClose() {
+        const { contentEl } = this;
+        contentEl.empty();
+    }
+}
 
 interface GalleryItem {
     type: 'image' | 'video' | 'note' | string;
@@ -312,6 +360,7 @@ export class GalleryBlock {
                                 type: extension.match(/^(jpg|jpeg|png|gif|webp)$/) ? 'image' : 'video',
                                 url: this.app.vault.getResourcePath(file),
                                 path: file.path,
+                                file: file,
                                 title: currentTitle,
                                 linkUrl: currentLinkUrl,
                                 thumbnail: currentThumbnail,
@@ -329,6 +378,7 @@ export class GalleryBlock {
                                 type: 'video',
                                 url: this.app.vault.getResourcePath(file),
                                 path: file.path,
+                                file: file,
                                 title: currentTitle,
                                 linkUrl: currentLinkUrl,
                                 thumbnail: currentThumbnail,
@@ -389,6 +439,7 @@ export class GalleryBlock {
                                     type: extension.match(/\.(mp4|mkv|mov|webm|mp3|m4a|flac|ogg|wav|3gp)$/) ? 'video' : 'image',
                                     url: this.app.vault.getResourcePath(fileByPath),
                                     path: text || fileByPath.path,
+                                    file: fileByPath,
                                     title: currentTitle,
                                     linkUrl: currentLinkUrl,
                                     thumbnail: currentThumbnail,
@@ -402,6 +453,7 @@ export class GalleryBlock {
                                 type: extension.match(/^(mp4|mkv|mov|webm|mp3|m4a|flac|ogg|wav|3gp)$/) ? 'video' : 'image',
                                 url: this.app.vault.getResourcePath(file),
                                 path: text || file.path,
+                                file: file,
                                 title: currentTitle,
                                 linkUrl: currentLinkUrl,
                                 thumbnail: currentThumbnail,
@@ -436,6 +488,7 @@ export class GalleryBlock {
                                         type: 'video',
                                         url: this.app.vault.getResourcePath(fileByPath),
                                         path: text || fileByPath.path,
+                                        file: fileByPath,
                                         title: currentTitle,
                                         linkUrl: currentLinkUrl,
                                         thumbnail: currentThumbnail,
@@ -451,6 +504,7 @@ export class GalleryBlock {
                                     type: 'video',
                                     url: this.app.vault.getResourcePath(file),
                                     path: text || file.path,
+                                    file: file,
                                     title: currentTitle,
                                     linkUrl: currentLinkUrl,
                                     thumbnail: currentThumbnail,
@@ -1065,6 +1119,25 @@ export class GalleryBlock {
                 });
             }
 
+            if (item.file) {
+                menu.addItem((menuItem) => {
+                    menuItem
+                        .setTitle(t('rename'))
+                        .setIcon("pencil")
+                        .onClick(() => {
+                            const galleryDiv = container.closest('.mvgb-media-gallery-grid');
+                            let currentPage = 1;
+                            if (galleryDiv) {
+                                const paginationDiv = galleryDiv.parentElement?.querySelector('.mvgb-pagination');
+                                if (paginationDiv && paginationDiv instanceof HTMLElement && paginationDiv.dataset.currentPage) {
+                                    currentPage = parseInt(paginationDiv.dataset.currentPage);
+                                }
+                            }
+                            this.renameGalleryItem(galleryId, item, sourcePath, currentPage);
+                        });
+                });
+            }
+
             menu.addItem((menuItem) => {
                 menuItem
                     .setTitle(t('delete'))
@@ -1169,7 +1242,7 @@ export class GalleryBlock {
                         container.appendChild(video);
                     }
 
-                    if (!Platform.isAndroidApp) {
+                    if (!Platform.isAndroidApp || media.thumbnail) {
                         const videoIcon = document.createElement('div');
                         videoIcon.className = 'mv-video-indicator';
                         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -1184,33 +1257,42 @@ export class GalleryBlock {
                     }
                 } else {
                     // 處理音樂檔案
-                    const audio = document.createElement('audio') as HTMLAudioElement;
-                    audio.src = media.url;
-                    audio.style.pointerEvents = 'none';
-                    container.appendChild(audio);
+                    // 如果有自訂縮圖，使用縮圖顯示
+                    if (media.thumbnail) {
+                        const img = document.createElement('img') as HTMLImageElement;
+                        img.src = media.thumbnail;
+                        img.alt = media.path || '';
+                        img.className = 'mvgb-video-thumbnail';
+                        container.appendChild(img);
+                    } else {
+                        const audio = document.createElement('audio') as HTMLAudioElement;
+                        audio.src = media.url;
+                        audio.style.pointerEvents = 'none';
+                        container.appendChild(audio);
+                    }
 
-                    const audioIcon = document.createElement('div');
-                    audioIcon.className = 'mv-audio-indicator';
-                    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                    svg.setAttribute('viewBox', '0 0 24 24');
-                    svg.setAttribute('width', '24');
-                    svg.setAttribute('height', '24');
-                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                    path.setAttribute('fill', 'currentColor');
-                    path.setAttribute('d', 'M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z');
-                    svg.appendChild(path);
-                    audioIcon.appendChild(svg);
-                    container.appendChild(audioIcon);
+                    if (!Platform.isAndroidApp || media.thumbnail) {
+                        const audioIcon = document.createElement('div');
+                        audioIcon.className = 'mv-audio-indicator';
+                        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                        svg.setAttribute('viewBox', '0 0 24 24');
+                        svg.setAttribute('width', '24');
+                        svg.setAttribute('height', '24');
+                        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                        path.setAttribute('fill', 'currentColor');
+                        path.setAttribute('d', 'M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z');
+                        svg.appendChild(path);
+                        audioIcon.appendChild(svg);
+                        container.appendChild(audioIcon);
+                    }
 
                     // 添加檔案名稱顯示
                     const filenameDiv = document.createElement('div');
                     filenameDiv.className = 'mv-audio-filename';
                     let filename = '';
                     if (media.path) {
-                        // 從路徑中提取檔案名稱
                         const pathParts = media.path.split('/');
                         filename = pathParts[pathParts.length - 1];
-                        // 移除副檔名
                         filename = filename.replace(/\.[^/.]+$/, '');
                     }
                     filenameDiv.textContent = filename;
@@ -1348,6 +1430,25 @@ export class GalleryBlock {
                                 }
                             }
                             await this.swapGalleryItems(galleryId, media, allItems[index + 1], sourcePath, currentPage);
+                        });
+                });
+            }
+
+            if (media.file) {
+                menu.addItem((menuItem) => {
+                    menuItem
+                        .setTitle(t('rename'))
+                        .setIcon("pencil")
+                        .onClick(() => {
+                            const galleryDiv = container.closest('.mvgb-media-gallery-grid');
+                            let currentPage = 1;
+                            if (galleryDiv) {
+                                const paginationDiv = galleryDiv.parentElement?.querySelector('.mvgb-pagination');
+                                if (paginationDiv && paginationDiv instanceof HTMLElement && paginationDiv.dataset.currentPage) {
+                                    currentPage = parseInt(paginationDiv.dataset.currentPage);
+                                }
+                            }
+                            this.renameGalleryItem(galleryId, media, sourcePath, currentPage);
                         });
                 });
             }
@@ -1535,7 +1636,7 @@ export class GalleryBlock {
                     const start = item.loc.start;
                     const end = item.loc.end;
 
-                    // Remove the lines
+                    // 移除選定範圍內的行
                     lines.splice(start, end - start + 1);
 
                     const newBlockContent = lines.join('\n');
@@ -1562,5 +1663,86 @@ export class GalleryBlock {
                 break;
             }
         }
+    }
+
+    async renameGalleryItem(galleryId: string, item: GalleryItem, sourcePath?: string, currentPage?: number) {
+        const file = item.file;
+        if (!file) {
+            new Notice(t('error_renaming_file') || 'File not found');
+            return;
+        }
+
+        const currentName = file.basename;
+        const modal = new RenameModal(this.app, currentName, async (newName) => {
+            if (!newName || newName === currentName) return;
+
+            try {
+                const parentPath = file.parent ? file.parent.path : "";
+                const newPath = parentPath === "/" || parentPath === ""
+                    ? `${newName}.${file.extension}`
+                    : `${parentPath}/${newName}.${file.extension}`;
+                await this.app.fileManager.renameFile(file, newPath);
+
+                // 更新 Gallery 區塊中的檔案名稱連結
+                let activeFile: TFile | null = null;
+                if (sourcePath) {
+                    activeFile = this.app.vault.getAbstractFileByPath(sourcePath) as TFile | null;
+                }
+
+                if (!activeFile) {
+                    activeFile = this.app.workspace.getActiveFile();
+                }
+
+                if (activeFile) {
+                    const content = await this.app.vault.read(activeFile);
+                    const galleryBlockRegex = /```gallery\n([\s\S]*?)```/g;
+                    let match;
+
+                    while ((match = galleryBlockRegex.exec(content)) !== null) {
+                        const blockContent = match[1];
+                        const blockId = 'gallery-' + this.hashString(blockContent.trim());
+
+                        if (blockId === galleryId) {
+                            if (item.loc) {
+                                const lines = blockContent.split('\n');
+                                const start = item.loc.start;
+                                const end = item.loc.end;
+
+                                // 將選定範圍內的舊檔名替換為新檔名
+                                for (let i = start; i <= end; i++) {
+                                    lines[i] = lines[i].replace(currentName, newName);
+                                }
+
+                                const newBlockContent = lines.join('\n');
+                                const newId = 'gallery-' + this.hashString(newBlockContent.trim());
+
+                                if (currentPage) {
+                                    GalleryBlock.paginationState.set(newId, currentPage);
+                                }
+
+                                const matchStart = match.index;
+                                const matchEnd = match.index + match[0].length;
+                                const newBlock = '```gallery\n' + newBlockContent + '```';
+
+                                const restoreScroll = captureScrollRestore(this.app, galleryId);
+                                await this.app.vault.process(activeFile, (fileContent) => {
+                                    return fileContent.substring(0, matchStart) +
+                                        newBlock +
+                                        fileContent.substring(matchEnd);
+                                });
+                                restoreScroll(newId);
+                            }
+                            break;
+                        }
+                    }
+                }
+
+                new Notice(t('file_renamed') || 'File renamed');
+            } catch (error) {
+                console.error('Error renaming file:', error);
+                new Notice(t('error_renaming_file') || 'Error renaming file');
+            }
+        });
+        modal.open();
     }
 }

@@ -158,7 +158,7 @@
     text-align: center;
     overflow: hidden;
     text-overflow: ellipsis;
-    backdrop-filter: blur(2px);
+    background: var(--background-primary);
 }
 
 .mv-full-media-view {
