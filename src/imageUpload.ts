@@ -336,19 +336,24 @@ export class ImageUploadModal extends Modal {
 
                 // 找到對應的 gallery 區塊
                 for (const match of galleryBlocks) {
-                    const blockContent = match[1].trim();
+                    const fullMatch = match[0];
+                    const blockContent = match[1];
                     const blockStart = match.index;
-                    const blockEnd = blockStart + match[0].length;
+                    if (fullMatch == null || blockContent == null || blockStart == null) {
+                        continue;
+                    }
+                    const normalizedBlockContent = blockContent.trim();
+                    const blockEnd = blockStart + fullMatch.length;
 
                     // 計算這個區塊的 galleryId
-                    const currentGalleryId = 'gallery-' + this.hashString(blockContent);
+                    const currentGalleryId = 'gallery-' + this.hashString(normalizedBlockContent);
 
                     // 如果這個 gallery 區塊的 ID 與觸發上傳的元素相同
                     if (currentGalleryId === galleryId) {
                         // 在 gallery 區塊內容的最前或最後一行插入新連結 (根據選擇的選項)
                         const newBlockContent = this.insertAtEnd
-                            ? blockContent.trimEnd() + `\n${newLinks.join('\n')}\n`
-                            : `${newLinks.join('\n')}\n` + blockContent + '\n';
+                            ? normalizedBlockContent.trimEnd() + `\n${newLinks.join('\n')}\n`
+                            : `${newLinks.join('\n')}\n` + normalizedBlockContent + '\n';
 
                         // 計算並記錄新的 gallery ID
                         const newGalleryId = 'gallery-' + this.hashString(newBlockContent.trim());
@@ -408,19 +413,24 @@ export class ImageUploadModal extends Modal {
 
                 // 找到對應的 gallery 區塊
                 for (const match of galleryBlocks) {
-                    const blockContent = match[1].trim();
+                    const fullMatch = match[0];
+                    const blockContent = match[1];
                     const blockStart = match.index;
-                    const blockEnd = blockStart + match[0].length;
+                    if (fullMatch == null || blockContent == null || blockStart == null) {
+                        continue;
+                    }
+                    const normalizedBlockContent = blockContent.trim();
+                    const blockEnd = blockStart + fullMatch.length;
 
                     // 計算這個區塊的 galleryId
-                    const currentGalleryId = 'gallery-' + this.hashString(blockContent);
+                    const currentGalleryId = 'gallery-' + this.hashString(normalizedBlockContent);
 
                     // 如果這個 gallery 區塊的 ID 與觸發上傳的元素相同
                     if (currentGalleryId === galleryId) {
                         // 在 gallery 區塊內容的最前或最後一行插入新連結 (根據選擇的選項)
                         const newBlockContent = this.insertAtEnd
-                            ? blockContent.trimEnd() + `\n${links.join('\n')}\n`
-                            : `${links.join('\n')}\n` + blockContent + '\n';
+                            ? normalizedBlockContent.trimEnd() + `\n${links.join('\n')}\n`
+                            : `${links.join('\n')}\n` + normalizedBlockContent + '\n';
 
                         // 計算並記錄新的 gallery ID
                         const newGalleryId = 'gallery-' + this.hashString(newBlockContent.trim());

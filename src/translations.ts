@@ -46,6 +46,8 @@ const TRANSLATIONS: Translations = {
         'move_right': '向右移動',
         'rename': '重新命名',
         'new_filename': '新的檔案名稱',
+        'copy_alt': '複製 alt 內容',
+        'alt_copied': '已複製 alt 內容',
 
         // 設定
         'allow_media_deletion': '允許刪除媒體檔案',
@@ -123,6 +125,8 @@ const TRANSLATIONS: Translations = {
         'move_right': 'Move Right',
         'rename': 'Rename',
         'new_filename': 'New filename',
+        'copy_alt': 'Copy alt text',
+        'alt_copied': 'Alt text copied',
 
         // Settings
         'allow_media_deletion': 'Allow media deletion',
@@ -200,6 +204,8 @@ const TRANSLATIONS: Translations = {
         'move_right': '向右移动',
         'rename': '重命名',
         'new_filename': '新的文件名',
+        'copy_alt': '复制 alt 内容',
+        'alt_copied': '已复制 alt 内容',
 
         // 设置
         'allow_media_deletion': '允许删除媒体文件',
@@ -275,6 +281,8 @@ const TRANSLATIONS: Translations = {
         'move_right': '右に移動',
         'rename': '名前を変更',
         'new_filename': '新しいファイル名',
+        'copy_alt': 'alt テキストをコピー',
+        'alt_copied': 'alt テキストをコピーしました',
 
         // 設定
         'allow_media_deletion': 'メディア削除を許可',

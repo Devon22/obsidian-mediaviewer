@@ -1,4 +1,4 @@
-import { App, TFile, Menu, Notice, Platform, Modal, Setting } from 'obsidian';
+﻿import { App, TFile, Menu, Notice, Platform, Modal, Setting } from 'obsidian';
 import MediaViewPlugin from './main';
 import { FullScreenModal } from './fullscreen';
 import { MediaViewSettings } from './settings';
@@ -59,6 +59,7 @@ interface GalleryItem {
     type: 'image' | 'video' | 'note' | string;
     url?: string;
     path?: string;
+    altText?: string | null;
     title?: {
         type: 'internal' | 'external' | 'text' | string;
         url?: string;
@@ -127,6 +128,7 @@ export class GalleryBlock {
         let pendingItemLines: string[] = [];
 
         let currentTitle = null;
+        let currentAltText: string | null = null;
         let currentLinkUrl = null;
         let currentThumbnail = null;
         let containerTitle = null;
@@ -292,6 +294,7 @@ export class GalleryBlock {
                 if (pendingItemLines.length === 0) tempStartLine = i;
                 pendingItemLines.push(line);
                 const titleText = titleMatch[1];
+                currentAltText = titleText;
 
                 // 檢查是否為內部連結
                 const internalLinkMatch = titleText.match(/\[\[(.*?)(?:\|.*?)?\]\]/);
@@ -361,6 +364,7 @@ export class GalleryBlock {
                                 url: this.app.vault.getResourcePath(file),
                                 path: file.path,
                                 file: file,
+                                altText: currentAltText,
                                 title: currentTitle,
                                 linkUrl: currentLinkUrl,
                                 thumbnail: currentThumbnail,
@@ -379,6 +383,7 @@ export class GalleryBlock {
                                 url: this.app.vault.getResourcePath(file),
                                 path: file.path,
                                 file: file,
+                                altText: currentAltText,
                                 title: currentTitle,
                                 linkUrl: currentLinkUrl,
                                 thumbnail: currentThumbnail,
@@ -400,6 +405,7 @@ export class GalleryBlock {
                     items.push({
                         type: 'note',
                         title: currentTitle || actualLinktext,
+                        altText: currentAltText,
                         path: file ? file.path : actualLinktext,
                         linkUrl: currentLinkUrl,
                         file: file,
@@ -410,6 +416,7 @@ export class GalleryBlock {
                     });
                 }
                 currentTitle = null;
+                currentAltText = null;
                 currentLinkUrl = null;
                 currentThumbnail = null;
                 continue;
@@ -440,6 +447,7 @@ export class GalleryBlock {
                                     url: this.app.vault.getResourcePath(fileByPath),
                                     path: text || fileByPath.path,
                                     file: fileByPath,
+                                    altText: currentAltText,
                                     title: currentTitle,
                                     linkUrl: currentLinkUrl,
                                     thumbnail: currentThumbnail,
@@ -454,6 +462,7 @@ export class GalleryBlock {
                                 url: this.app.vault.getResourcePath(file),
                                 path: text || file.path,
                                 file: file,
+                                altText: currentAltText,
                                 title: currentTitle,
                                 linkUrl: currentLinkUrl,
                                 thumbnail: currentThumbnail,
@@ -468,6 +477,7 @@ export class GalleryBlock {
                             type: isImageFile ? 'video' : 'image',
                             url: url.split(' "')[0],
                             path: text,
+                            altText: currentAltText,
                             title: currentTitle,
                             linkUrl: currentLinkUrl,
                             thumbnail: currentThumbnail,
@@ -489,6 +499,7 @@ export class GalleryBlock {
                                         url: this.app.vault.getResourcePath(fileByPath),
                                         path: text || fileByPath.path,
                                         file: fileByPath,
+                                        altText: currentAltText,
                                         title: currentTitle,
                                         linkUrl: currentLinkUrl,
                                         thumbnail: currentThumbnail,
@@ -505,6 +516,7 @@ export class GalleryBlock {
                                     url: this.app.vault.getResourcePath(file),
                                     path: text || file.path,
                                     file: file,
+                                    altText: currentAltText,
                                     title: currentTitle,
                                     linkUrl: currentLinkUrl,
                                     thumbnail: currentThumbnail,
@@ -521,6 +533,7 @@ export class GalleryBlock {
                                 type: 'video',
                                 url: url.split(' "')[0],
                                 path: text,
+                                altText: currentAltText,
                                 title: currentTitle,
                                 linkUrl: currentLinkUrl,
                                 thumbnail: currentThumbnail,
@@ -534,6 +547,7 @@ export class GalleryBlock {
                     items.push({
                         type: 'note',
                         title: currentTitle || text,
+                        altText: currentAltText,
                         path: url,
                         linkUrl: url,
                         isExternalLink: url.startsWith('http://') || url.startsWith('https://'),
@@ -543,6 +557,7 @@ export class GalleryBlock {
                     });
                 }
                 currentTitle = null;
+                currentAltText = null;
                 currentLinkUrl = null;
                 currentThumbnail = null;
                 continue;
@@ -892,7 +907,8 @@ export class GalleryBlock {
                         }
 
                         // 讀取文件內容
-                        this.app.vault.read(activeFile).then((content) => {
+                        const targetFile = activeFile;
+                        this.app.vault.read(targetFile).then((content) => {
                             // 尋找包含當前 gallery ID 的 gallery 區塊
                             const galleryBlockRegex = /```gallery\n([\s\S]*?)```/g;
                             let match;
@@ -920,7 +936,7 @@ export class GalleryBlock {
 
                             // 設置確認後的回調函數，使用 vault.process 修改文件
                             modal.onConfirm = (newGalleryBlock: string) => {
-                                this.app.vault.process(activeFile, (fileContent) => {
+                                this.app.vault.process(targetFile, (fileContent) => {
                                     return fileContent.substring(0, matchPosition.start) +
                                         newGalleryBlock +
                                         fileContent.substring(matchPosition.end);
@@ -958,7 +974,8 @@ export class GalleryBlock {
                         }
 
                         // 讀取文件內容
-                        this.app.vault.read(activeFile).then((content) => {
+                        const targetFile = activeFile;
+                        this.app.vault.read(targetFile).then((content) => {
                             // 尋找包含當前 gallery ID 的 gallery 區塊
                             const galleryBlockRegex = /```gallery\n([\s\S]*?)```/g;
                             let match;
@@ -983,7 +1000,7 @@ export class GalleryBlock {
                             const newContent = content.substring(matchPosition.start + '```gallery\n'.length, matchPosition.end - '```'.length);
 
                             // 使用 vault.process 修改文件
-                            this.app.vault.process(activeFile, (fileContent) => {
+                            this.app.vault.process(targetFile, (fileContent) => {
                                 return fileContent.substring(0, matchPosition.start) +
                                     newContent +
                                     fileContent.substring(matchPosition.end);
@@ -1118,6 +1135,8 @@ export class GalleryBlock {
                         });
                 });
             }
+
+            this.addCopyAltMenuItem(menu, item);
 
             if (item.file) {
                 menu.addItem((menuItem) => {
@@ -1434,6 +1453,8 @@ export class GalleryBlock {
                 });
             }
 
+            this.addCopyAltMenuItem(menu, media);
+
             if (media.file) {
                 menu.addItem((menuItem) => {
                     menuItem
@@ -1474,6 +1495,27 @@ export class GalleryBlock {
         });
 
         return container;
+    }
+
+    private addCopyAltMenuItem(menu: Menu, item: GalleryItem) {
+        if (!item.altText?.trim()) {
+            return;
+        }
+
+        menu.addItem((menuItem) => {
+            menuItem
+                .setTitle(t('copy_alt') || 'Copy alt')
+                .setIcon('copy')
+                .onClick(async () => {
+                    try {
+                        await navigator.clipboard.writeText(item.altText ?? '');
+                        new Notice(t('alt_copied') || 'Alt copied');
+                    } catch (error) {
+                        console.error('Error copying alt text:', error);
+                        new Notice(t('clipboard_error') || 'Clipboard error');
+                    }
+                });
+        });
     }
 
     createHoverControls(item: GalleryItem, index: number, allItems: GalleryItem[], galleryId: string, sourcePath?: string) {
