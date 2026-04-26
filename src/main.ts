@@ -6,7 +6,7 @@ import { GalleryBlockGenerateModal } from './galleryBlockGenerate';
 import { t } from './translations';
 
 export default class MediaViewPlugin extends Plugin {
-    settings: MediaViewSettings;
+    settings!: MediaViewSettings;
 
     async onload() {
         await this.loadSettings();
@@ -29,7 +29,7 @@ export default class MediaViewPlugin extends Plugin {
             name: t('generate_gallery'),
             checkCallback: (checking) => {
                 // 檢查是否有開啟的筆記
-                const activeView = this.app.workspace.getActiveViewOfType(require('obsidian').MarkdownView);
+                const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
                 if (activeView) {
                     if (!checking) {
                         this.generateGallery();
@@ -114,7 +114,7 @@ export default class MediaViewPlugin extends Plugin {
     }
 
     generateGallery() {
-        const activeView = this.app.workspace.getActiveViewOfType(require('obsidian').MarkdownView) as MarkdownView;
+        const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
         if (activeView) {
             const editor = activeView.editor;
             const selectedText = editor.getSelection();

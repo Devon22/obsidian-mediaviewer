@@ -19,10 +19,10 @@ export class FullScreenModal extends Modal {
     isZoomed: boolean;
     isImage: boolean;
     openType: string;
-    fullMediaView: HTMLDivElement;
-    fullImage: HTMLImageElement;
-    fullVideo: HTMLVideoElement;
-    galleryCloseButton: HTMLButtonElement;
+    fullMediaView!: HTMLDivElement;
+    fullImage!: HTMLImageElement;
+    fullVideo!: HTMLVideoElement;
+    galleryCloseButton!: HTMLButtonElement;
     handleWheel: ((event: WheelEvent) => void) | null;
     autoPlayTimer: number | null;
     isAutoPlaying: boolean;

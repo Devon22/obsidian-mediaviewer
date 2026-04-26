@@ -13,13 +13,13 @@ export class GalleryBlockGenerateModal extends Modal {
 
     constructor(app: App, selectedText: string) {
         super(app);
+        this.title = '';
+        this.size = 'medium';
+        this.addButton = false;
+        this.pagination = 0;
         this.selectedText = this.parseExistingContent(selectedText);
         this.replaceRange = null;
         this.onConfirm = null;
-        if (this.title === undefined) this.title = '';
-        if (this.size === undefined) this.size = 'medium';
-        if (this.addButton === undefined) this.addButton = false;
-        if (this.pagination === undefined) this.pagination = 0;
     }
 
     // 解析現有的 gallery 區塊內容
