@@ -478,6 +478,35 @@
     transform: scale(1.05);
 }
 
+.mvgb-media-gallery-grid .mv-media-thumbnail-container.mvgb-reorder-dragging {
+    opacity: 0.55;
+}
+
+.mvgb-media-gallery-grid .mv-media-thumbnail-container.mvgb-reorder-before,
+.mvgb-media-gallery-grid .mv-media-thumbnail-container.mvgb-reorder-after {
+    transform: scale(1.02);
+}
+
+.mvgb-media-gallery-grid .mv-media-thumbnail-container.mvgb-reorder-before::before,
+.mvgb-media-gallery-grid .mv-media-thumbnail-container.mvgb-reorder-after::before {
+    content: "";
+    position: absolute;
+    top: 8px;
+    bottom: 8px;
+    width: 4px;
+    border-radius: 2px;
+    background: var(--interactive-accent);
+    z-index: 12;
+}
+
+.mvgb-media-gallery-grid .mv-media-thumbnail-container.mvgb-reorder-before::before {
+    left: 4px;
+}
+
+.mvgb-media-gallery-grid .mv-media-thumbnail-container.mvgb-reorder-after::before {
+    right: 4px;
+}
+
 .mvgb-media-gallery-grid .mv-media-thumbnail-container img,
 .mvgb-media-gallery-grid .mv-media-thumbnail-container video {
     width: 100%;
@@ -799,8 +828,29 @@
     /* 右上角與容器一致，左下角為圓角 */
 }
 
+.mvgb-btn-drag {
+    top: 8px;
+    left: 8px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.55);
+    color: white;
+    cursor: grab;
+}
+
+.mvgb-btn-drag:hover {
+    color: white;
+    background: rgba(0, 0, 0, 0.72);
+    border-color: white;
+}
+
+
+.mvgb-btn-drag:active {
+    cursor: grabbing;
+}
+
 .mvgb-hover-btn svg {
     width: 20px;
     height: 20px;
-    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
 }

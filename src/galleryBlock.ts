@@ -94,6 +94,13 @@ interface MediaUrlsData {
     isFiltered?: boolean;
 }
 
+const GALLERY_REORDER_MIME = 'application/x-mediaviewer-gallery-item';
+
+interface GalleryReorderPayload {
+    galleryId: string;
+    index: number;
+}
+
 export class GalleryBlock {
     app: App;
     plugin: MediaViewPlugin;
@@ -602,6 +609,48 @@ export class GalleryBlock {
         return Math.abs(hash).toString(36);
     }
 
+    private isGalleryReorderDrag(e: DragEvent): boolean {
+        return Array.from(e.dataTransfer?.types || []).includes(GALLERY_REORDER_MIME);
+    }
+
+    private getCurrentGalleryPage(galleryDiv: Element | null): number {
+        const paginationDiv = galleryDiv?.parentElement?.querySelector('.mvgb-pagination');
+        if (paginationDiv instanceof HTMLElement && paginationDiv.dataset.currentPage) {
+            return parseInt(paginationDiv.dataset.currentPage);
+        }
+        return 1;
+    }
+
+    private clearReorderClasses(galleryDiv: HTMLElement) {
+        galleryDiv.querySelectorAll('.mvgb-reorder-before, .mvgb-reorder-after, .mvgb-reorder-dragging').forEach((el) => {
+            el.classList.remove('mvgb-reorder-before', 'mvgb-reorder-after', 'mvgb-reorder-dragging');
+        });
+    }
+
+    private getReorderTarget(e: DragEvent, galleryDiv: HTMLElement) {
+        const targetEl = (e.target as HTMLElement | null)?.closest('.mv-media-thumbnail-container') as HTMLElement | null;
+        if (!targetEl || !galleryDiv.contains(targetEl) || targetEl.classList.contains('placeholder') || targetEl.classList.contains('mvgb-add-media-button')) {
+            return null;
+        }
+
+        const indexAttr = targetEl.dataset.galleryIndex;
+        if (!indexAttr) {
+            return null;
+        }
+
+        const targetIndex = parseInt(indexAttr);
+        if (Number.isNaN(targetIndex)) {
+            return null;
+        }
+
+        const rect = targetEl.getBoundingClientRect();
+        return {
+            el: targetEl,
+            index: targetIndex,
+            position: e.clientX < rect.left + rect.width / 2 ? 'before' as const : 'after' as const
+        };
+    }
+
     createGalleryElement(mediaUrlsData: MediaUrlsData) {
         const { items, containerInfo, galleryId, sourcePath } = mediaUrlsData;
         const titleDiv = document.createElement('div');
@@ -795,6 +844,20 @@ export class GalleryBlock {
         galleryDiv.addEventListener('dragover', (e) => {
             e.preventDefault();
             e.stopPropagation();
+
+            if (this.isGalleryReorderDrag(e as DragEvent)) {
+                const dragEvent = e as DragEvent;
+                if (dragEvent.dataTransfer) {
+                    dragEvent.dataTransfer.dropEffect = 'move';
+                }
+                this.clearReorderClasses(galleryDiv);
+                const reorderTarget = this.getReorderTarget(dragEvent, galleryDiv);
+                if (reorderTarget) {
+                    reorderTarget.el.classList.add(reorderTarget.position === 'before' ? 'mvgb-reorder-before' : 'mvgb-reorder-after');
+                }
+                return;
+            }
+
             galleryDiv.addClass('drag-over');
             // 根據滑鼠位置決定左右區域並加上對應樣式
             const rect = galleryDiv.getBoundingClientRect();
@@ -815,6 +878,7 @@ export class GalleryBlock {
             galleryDiv.removeClass('drag-over');
             galleryDiv.removeClass('drag-left');
             galleryDiv.removeClass('drag-right');
+            this.clearReorderClasses(galleryDiv);
         });
 
         galleryDiv.addEventListener('drop', async (e) => {
@@ -823,6 +887,30 @@ export class GalleryBlock {
             galleryDiv.removeClass('drag-over');
             galleryDiv.removeClass('drag-left');
             galleryDiv.removeClass('drag-right');
+
+            const dragEvent = e as DragEvent;
+            if (this.isGalleryReorderDrag(dragEvent)) {
+                try {
+                    const payload = JSON.parse(dragEvent.dataTransfer?.getData(GALLERY_REORDER_MIME) || '') as GalleryReorderPayload;
+                    const reorderTarget = this.getReorderTarget(dragEvent, galleryDiv);
+                    this.clearReorderClasses(galleryDiv);
+
+                    if (!reorderTarget || payload.galleryId !== galleryId || payload.index === reorderTarget.index) {
+                        return;
+                    }
+
+                    const draggedItem = items[payload.index];
+                    const targetItem = items[reorderTarget.index];
+                    if (!draggedItem || !targetItem) {
+                        return;
+                    }
+
+                    await this.moveGalleryItem(galleryId, draggedItem, targetItem, reorderTarget.position, sourcePath, this.getCurrentGalleryPage(galleryDiv));
+                } catch (error) {
+                    console.error('Error reordering gallery item:', error);
+                }
+                return;
+            }
 
             // 計算是否落在右側（右側代表加到最後，左側代表加到最前）
             const rect = galleryDiv.getBoundingClientRect();
@@ -1018,6 +1106,8 @@ export class GalleryBlock {
     createNoteContainer(item: GalleryItem, index: number, allItems: GalleryItem[], galleryId: string, sourcePath?: string, isFiltered?: boolean) {
         const container = document.createElement('div');
         container.className = 'mv-media-thumbnail-container mvgb-note-thumbnail';
+        container.dataset.galleryId = galleryId;
+        container.dataset.galleryIndex = index.toString();
 
         const notePreview = document.createElement('div');
         notePreview.className = 'mvgb-note-preview';
@@ -1232,6 +1322,8 @@ export class GalleryBlock {
     createMediaContainer(media: GalleryItem, index: number, allItems: GalleryItem[], galleryId: string, sourcePath?: string, isFiltered?: boolean) {
         const container = document.createElement('div');
         container.className = 'mv-media-thumbnail-container';
+        container.dataset.galleryId = galleryId;
+        container.dataset.galleryIndex = index.toString();
 
         if (media.type === 'image') {
             const img = document.createElement('img') as HTMLImageElement;
@@ -1522,50 +1614,37 @@ export class GalleryBlock {
         const controls = document.createElement('div');
         controls.className = 'mvgb-hover-controls';
 
-        // 左箭頭
-        if (index > 0) {
-            const leftBtn = document.createElement('button');
-            leftBtn.className = 'mvgb-hover-btn mvgb-btn-left';
-            leftBtn.title = t('move_left') || 'Move Left';
-            leftBtn.innerHTML = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z" /></svg>';
-            leftBtn.onclick = async (e) => {
+        if (item.loc) {
+            const dragHandle = document.createElement('button');
+            dragHandle.className = 'mvgb-hover-btn mvgb-btn-drag';
+            dragHandle.type = 'button';
+            dragHandle.title = t('drag_reorder');
+            dragHandle.draggable = true;
+            dragHandle.innerHTML = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M13,6.83V11H17.17L15.59,9.41L17,8L21,12L17,16L15.59,14.59L17.17,13H13V17.17L14.59,15.59L16,17L12,21L8,17L9.41,15.59L11,17.17V13H6.83L8.41,14.59L7,16L3,12L7,8L8.41,9.41L6.83,11H11V6.83L9.41,8.41L8,7L12,3L16,7L14.59,8.41L13,6.83Z" /></svg>';
+            dragHandle.onclick = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                // 從 DOM 獲取當前頁碼
-                const galleryDiv = controls.closest('.mvgb-media-gallery-grid');
-                let currentPage = 1;
-                if (galleryDiv) {
-                    const paginationDiv = galleryDiv.parentElement?.querySelector('.mvgb-pagination');
-                    if (paginationDiv && paginationDiv instanceof HTMLElement && paginationDiv.dataset.currentPage) {
-                        currentPage = parseInt(paginationDiv.dataset.currentPage);
-                    }
-                }
-                await this.swapGalleryItems(galleryId, item, allItems[index - 1], sourcePath, currentPage);
             };
-            controls.appendChild(leftBtn);
-        }
-
-        // 右箭頭
-        if (index < allItems.length - 1) {
-            const rightBtn = document.createElement('button');
-            rightBtn.className = 'mvgb-hover-btn mvgb-btn-right';
-            rightBtn.title = t('move_right') || 'Move Right';
-            rightBtn.innerHTML = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z" /></svg>';
-            rightBtn.onclick = async (e) => {
+            dragHandle.addEventListener('dragstart', (e: DragEvent) => {
+                if (!e.dataTransfer) return;
+                e.stopPropagation();
+                const payload: GalleryReorderPayload = { galleryId, index };
+                e.dataTransfer.setData(GALLERY_REORDER_MIME, JSON.stringify(payload));
+                e.dataTransfer.effectAllowed = 'move';
+                const itemContainer = dragHandle.closest('.mv-media-thumbnail-container');
+                if (itemContainer) {
+                    itemContainer.classList.add('mvgb-reorder-dragging');
+                }
+            });
+            dragHandle.addEventListener('dragend', (e: DragEvent) => {
                 e.preventDefault();
                 e.stopPropagation();
-                // 從 DOM 獲取當前頁碼
-                const galleryDiv = controls.closest('.mvgb-media-gallery-grid');
-                let currentPage = 1;
+                const galleryDiv = dragHandle.closest('.mvgb-media-gallery-grid') as HTMLElement | null;
                 if (galleryDiv) {
-                    const paginationDiv = galleryDiv.parentElement?.querySelector('.mvgb-pagination');
-                    if (paginationDiv && paginationDiv instanceof HTMLElement && paginationDiv.dataset.currentPage) {
-                        currentPage = parseInt(paginationDiv.dataset.currentPage);
-                    }
+                    this.clearReorderClasses(galleryDiv);
                 }
-                await this.swapGalleryItems(galleryId, item, allItems[index + 1], sourcePath, currentPage);
-            };
-            controls.appendChild(rightBtn);
+            });
+            controls.appendChild(dragHandle);
         }
 
         return controls;
@@ -1647,6 +1726,83 @@ export class GalleryBlock {
                     });
                     restoreScroll(newId);
                 }
+                break;
+            }
+        }
+    }
+
+    async moveGalleryItem(galleryId: string, draggedItem: GalleryItem, targetItem: GalleryItem, position: 'before' | 'after', sourcePath?: string, currentPage?: number) {
+        let activeFile: TFile | null = null;
+        if (sourcePath) {
+            activeFile = this.app.vault.getAbstractFileByPath(sourcePath) as TFile | null;
+        }
+
+        if (!activeFile) {
+            activeFile = this.app.workspace.getActiveFile();
+            if (!activeFile) return;
+        }
+
+        const content = await this.app.vault.read(activeFile);
+        const galleryBlockRegex = /```gallery\n([\s\S]*?)```/g;
+        let match;
+
+        while ((match = galleryBlockRegex.exec(content)) !== null) {
+            const blockContent = match[1];
+            const blockId = 'gallery-' + this.hashString(blockContent.trim());
+
+            if (blockId === galleryId) {
+                if (!draggedItem.loc || !targetItem.loc) {
+                    return;
+                }
+
+                const dragged = draggedItem.loc;
+                const target = targetItem.loc;
+
+                if (dragged.start === target.start && dragged.end === target.end) {
+                    return;
+                }
+
+                if (dragged.start <= target.end && dragged.end >= target.start) {
+                    console.error('Overlapping items, cannot move');
+                    return;
+                }
+
+                const lines = blockContent.split('\n');
+                const movedLines = lines.slice(dragged.start, dragged.end + 1);
+                const remainingLines = [
+                    ...lines.slice(0, dragged.start),
+                    ...lines.slice(dragged.end + 1)
+                ];
+
+                const removedCount = dragged.end - dragged.start + 1;
+                let targetStart = target.start;
+                let targetEnd = target.end;
+                if (target.start > dragged.end) {
+                    targetStart -= removedCount;
+                    targetEnd -= removedCount;
+                }
+
+                const insertIndex = position === 'before' ? targetStart : targetEnd + 1;
+                remainingLines.splice(insertIndex, 0, ...movedLines);
+
+                const newBlockContent = remainingLines.join('\n');
+                const newId = 'gallery-' + this.hashString(newBlockContent.trim());
+
+                if (currentPage) {
+                    GalleryBlock.paginationState.set(newId, currentPage);
+                }
+
+                const matchStart = match.index;
+                const matchEnd = match.index + match[0].length;
+                const newBlock = '```gallery\n' + newBlockContent + '```';
+
+                const restoreScroll = captureScrollRestore(this.app, galleryId);
+                await this.app.vault.process(activeFile, (fileContent) => {
+                    return fileContent.substring(0, matchStart) +
+                        newBlock +
+                        fileContent.substring(matchEnd);
+                });
+                restoreScroll(newId);
                 break;
             }
         }
