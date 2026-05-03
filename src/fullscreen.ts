@@ -32,6 +32,17 @@ export class FullScreenModal extends Modal {
     private touchStartY = 0;
     private touchStartTime = 0;
     private isDragging = false;
+    private isPinching = false;
+    private pinchStartDistance = 0;
+    private pinchStartWidth = 0;
+    private pinchMinWidth = 0;
+    private pinchCurrentWidth = 0;
+    private pinchStartCenterX = 0;
+    private pinchStartCenterY = 0;
+    private pinchStartImageX = 0;
+    private pinchStartImageY = 0;
+    private suppressNextClick = false;
+    private suppressSwipeUntil = 0;
     private minSwipeDistance = 50; // 最小滑動距離
     private maxSwipeTime = 300; // 最大滑動時間（毫秒）
 
@@ -507,6 +518,12 @@ export class FullScreenModal extends Modal {
             this.handleWheel = null;
         }
 
+        this.isPinching = false;
+        this.pinchStartDistance = 0;
+        this.pinchStartWidth = 0;
+        this.pinchMinWidth = 0;
+        this.pinchCurrentWidth = 0;
+
         this.fullImage.style.width = 'auto';
         this.fullImage.style.height = 'auto';
 
@@ -527,6 +544,7 @@ export class FullScreenModal extends Modal {
         this.fullImage.style.position = 'absolute';
         this.fullImage.style.left = '50%';
         this.fullImage.style.top = '50%';
+        this.fullImage.style.margin = '';
         this.fullImage.style.transform = 'translate(-50%, -50%)';
 
         this.fullMediaView.style.overflowX = 'hidden';
@@ -546,6 +564,99 @@ export class FullScreenModal extends Modal {
         }
     }
 
+    private getTouchDistance(touches: TouchList): number {
+        const dx = touches[0].clientX - touches[1].clientX;
+        const dy = touches[0].clientY - touches[1].clientY;
+        return Math.hypot(dx, dy);
+    }
+
+    private getTouchCenter(touches: TouchList): { x: number; y: number } {
+        return {
+            x: (touches[0].clientX + touches[1].clientX) / 2,
+            y: (touches[0].clientY + touches[1].clientY) / 2
+        };
+    }
+
+    private prepareImageForPinchZoom() {
+        if (!this.isImage || !this.fullImage || this.fullImage.style.display === 'none') return;
+
+        if (this.handleWheel) {
+            this.fullMediaView.removeEventListener('wheel', this.handleWheel);
+            this.handleWheel = null;
+        }
+
+        const rect = this.fullImage.getBoundingClientRect();
+        if (this.pinchMinWidth === 0) {
+            this.pinchMinWidth = rect.width;
+        }
+        this.fullImage.style.width = `${rect.width}px`;
+        this.fullImage.style.height = 'auto';
+        this.fullImage.style.maxWidth = 'none';
+        this.fullImage.style.maxHeight = 'none';
+        this.fullImage.style.position = 'relative';
+        this.fullImage.style.left = '0';
+        this.fullImage.style.top = '0';
+        this.fullImage.style.margin = 'auto';
+        this.fullImage.style.transform = 'none';
+        this.fullImage.style.cursor = 'zoom-out';
+        this.fullMediaView.style.overflowX = 'scroll';
+        this.fullMediaView.style.overflowY = 'scroll';
+        this.isZoomed = true;
+        this.updatePinchZoomMargin(rect.width);
+    }
+
+    private updatePinchZoomMargin(width: number) {
+        const naturalWidth = this.fullImage.naturalWidth || width;
+        const naturalHeight = this.fullImage.naturalHeight || this.fullImage.getBoundingClientRect().height;
+        const height = naturalWidth > 0 ? width * naturalHeight / naturalWidth : this.fullImage.getBoundingClientRect().height;
+        const marginTop = Math.max(0, (this.fullMediaView.clientHeight - height) / 2);
+
+        this.fullImage.style.margin = `${marginTop}px auto 0 auto`;
+    }
+
+    private startPinchZoom(e: TouchEvent) {
+        this.prepareImageForPinchZoom();
+
+        const center = this.getTouchCenter(e.touches);
+        const viewRect = this.fullMediaView.getBoundingClientRect();
+        const imageRect = this.fullImage.getBoundingClientRect();
+        this.isPinching = true;
+        this.isDragging = false;
+        this.suppressNextClick = true;
+        this.pinchStartDistance = this.getTouchDistance(e.touches);
+        this.pinchStartWidth = this.fullImage.getBoundingClientRect().width;
+        this.pinchCurrentWidth = this.pinchStartWidth;
+        this.pinchStartCenterX = center.x - viewRect.left;
+        this.pinchStartCenterY = center.y - viewRect.top;
+        this.pinchStartImageX = center.x - imageRect.left;
+        this.pinchStartImageY = center.y - imageRect.top;
+    }
+
+    private updatePinchZoom(e: TouchEvent) {
+        if (!this.isPinching || this.pinchStartDistance === 0) return;
+
+        const distance = this.getTouchDistance(e.touches);
+        const scale = distance / this.pinchStartDistance;
+        const naturalWidth = this.fullImage.naturalWidth || this.pinchStartWidth;
+        const minWidth = Math.min(this.pinchMinWidth || this.pinchStartWidth, naturalWidth);
+        const maxWidth = Math.max(minWidth, naturalWidth * 4);
+        const newWidth = Math.max(minWidth, Math.min(this.pinchStartWidth * scale, maxWidth));
+        const widthRatio = newWidth / this.pinchStartWidth;
+
+        this.pinchCurrentWidth = newWidth;
+        this.fullImage.style.width = `${newWidth}px`;
+        this.updatePinchZoomMargin(newWidth);
+
+        requestAnimationFrame(() => {
+            const maxScrollLeft = this.fullMediaView.scrollWidth - this.fullMediaView.clientWidth;
+            const maxScrollTop = this.fullMediaView.scrollHeight - this.fullMediaView.clientHeight;
+            const nextScrollLeft = this.fullImage.offsetLeft + (this.pinchStartImageX * widthRatio) - this.pinchStartCenterX;
+            const nextScrollTop = this.fullImage.offsetTop + (this.pinchStartImageY * widthRatio) - this.pinchStartCenterY;
+            this.fullMediaView.scrollLeft = Math.max(0, Math.min(nextScrollLeft, maxScrollLeft));
+            this.fullMediaView.scrollTop = Math.max(0, Math.min(nextScrollTop, maxScrollTop));
+        });
+    }
+
     registerMediaEvents() {
         // 點擊預覽區域背景時關閉
         this.fullMediaView.onclick = (event) => {
@@ -562,6 +673,11 @@ export class FullScreenModal extends Modal {
         this.fullImage.onclick = (event) => {
             // 阻止事件冒泡，避免觸發外層的點擊事件
             event.stopPropagation();
+
+            if (this.suppressNextClick) {
+                this.suppressNextClick = false;
+                return;
+            }
 
             if (this.plugin.settings.displayOriginalSize &&
                 this.fullImage.naturalWidth < this.fullMediaView.clientWidth &&
@@ -712,7 +828,17 @@ export class FullScreenModal extends Modal {
     // 註冊觸控事件處理器（行動裝置拖曳翻頁）
     private registerTouchEvents(element: HTMLElement) {
         element.addEventListener('touchstart', (e) => {
+            if (e.touches.length >= 2) {
+                if (!this.isImage) return;
+                e.preventDefault();
+                this.startPinchZoom(e);
+                return;
+            }
             // 只有在非縮放狀態下才處理觸控事件
+            if (Date.now() < this.suppressSwipeUntil) {
+                this.isDragging = false;
+                return;
+            }
             if (this.isZoomed) return;
 
             const touch = e.touches[0];
@@ -720,10 +846,23 @@ export class FullScreenModal extends Modal {
             this.touchStartY = touch.clientY;
             this.touchStartTime = Date.now();
             this.isDragging = false;
-        }, { passive: true });
+        }, { passive: false });
 
         element.addEventListener('touchmove', (e) => {
+            if (e.touches.length >= 2) {
+                if (!this.isImage) return;
+                e.preventDefault();
+                if (!this.isPinching) {
+                    this.startPinchZoom(e);
+                }
+                this.updatePinchZoom(e);
+                return;
+            }
             // 只有在非縮放狀態下才處理觸控事件
+            if (Date.now() < this.suppressSwipeUntil) {
+                this.isDragging = false;
+                return;
+            }
             if (this.isZoomed) return;
 
             const touch = e.touches[0];
@@ -740,7 +879,30 @@ export class FullScreenModal extends Modal {
         }, { passive: false });
 
         element.addEventListener('touchend', (e) => {
+            if (this.isPinching) {
+                if (e.touches.length >= 2) {
+                    return;
+                }
+
+                this.isPinching = false;
+                this.suppressSwipeUntil = Date.now() + 350;
+                if (this.pinchMinWidth > 0 && this.pinchCurrentWidth <= this.pinchMinWidth + 1) {
+                    this.resetImageStyles();
+                }
+                this.touchStartTime = Date.now();
+                this.isDragging = false;
+                window.setTimeout(() => {
+                    this.suppressNextClick = false;
+                }, 350);
+                return;
+            }
+
             // 只有在非縮放狀態下才處理觸控事件
+            if (Date.now() < this.suppressSwipeUntil) {
+                this.isDragging = false;
+                return;
+            }
+
             if (this.isZoomed) return;
 
             if (!this.isDragging) return;
