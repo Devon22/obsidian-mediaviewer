@@ -653,8 +653,8 @@ export class GalleryBlock {
 
     createGalleryElement(mediaUrlsData: MediaUrlsData) {
         const { items, containerInfo, galleryId, sourcePath } = mediaUrlsData;
-        const titleDiv = document.createElement('div');
-        const galleryDiv = document.createElement('div');
+        const titleDiv = activeDocument.createElement('div');
+        const galleryDiv = activeDocument.createElement('div');
         galleryDiv.className = 'mvgb-media-gallery-grid';
 
         // 使用從 mediaUrlsData 中取得的 galleryId
@@ -690,7 +690,7 @@ export class GalleryBlock {
                             link.onclick = (e) => {
                                 e.preventDefault();
                                 const leaf = this.app.workspace.getLeaf('tab');
-                                leaf.openFile(file);
+                                void leaf.openFile(file);
                             };
                         }
                     } else {
@@ -708,7 +708,7 @@ export class GalleryBlock {
             galleryDiv.style.borderRadius = '0 8px 8px 8px';
         }
 
-        const container = document.createElement('div');
+        const container = activeDocument.createElement('div');
         container.className = 'mvgb-media-container';
         container.appendChild(titleDiv);
         container.appendChild(galleryDiv);
@@ -731,21 +731,21 @@ export class GalleryBlock {
 
             // 不使用分頁時，如果允許新增圖片，則顯示傳統的新增按鈕
             if (containerInfo.addButtonEnabled || items.length === 0) {
-                const addContainer = document.createElement('div');
+                const addContainer = activeDocument.createElement('div');
                 addContainer.className = 'mv-media-thumbnail-container mvgb-add-media-button';
 
                 const addIcon = addContainer.createDiv('mvgb-add-media-icon');
-                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                const svg = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'svg');
                 svg.setAttribute('viewBox', '0 0 24 24');
                 svg.setAttribute('width', '24');
                 svg.setAttribute('height', '24');
-                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                const path = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'path');
                 path.setAttribute('fill', 'currentColor');
                 path.setAttribute('d', 'M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z');
                 svg.appendChild(path);
                 addIcon.appendChild(svg);
 
-                const addIconText = document.createElement('div');
+                const addIconText = activeDocument.createElement('div');
                 addIconText.className = 'mvgb-add-media-text';
                 addIconText.textContent = t('add_image');
                 addIcon.appendChild(addIconText);
@@ -771,10 +771,10 @@ export class GalleryBlock {
                 GalleryBlock.paginationState.delete(galleryId);
             }
 
-            const controlsDiv = document.createElement('div');
+            const controlsDiv = activeDocument.createElement('div');
             controlsDiv.className = 'mvgb-gallery-controls';
 
-            const paginationDiv = document.createElement('div');
+            const paginationDiv = activeDocument.createElement('div');
             paginationDiv.className = 'mvgb-pagination';
 
             const prevPageButton = paginationDiv.createEl('button', {
@@ -881,75 +881,77 @@ export class GalleryBlock {
             this.clearReorderClasses(galleryDiv);
         });
 
-        galleryDiv.addEventListener('drop', async (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            galleryDiv.removeClass('drag-over');
-            galleryDiv.removeClass('drag-left');
-            galleryDiv.removeClass('drag-right');
+        galleryDiv.addEventListener('drop', (e) => {
+            void (async () => {
+                e.preventDefault();
+                e.stopPropagation();
+                galleryDiv.removeClass('drag-over');
+                galleryDiv.removeClass('drag-left');
+                galleryDiv.removeClass('drag-right');
 
-            const dragEvent = e as DragEvent;
-            if (this.isGalleryReorderDrag(dragEvent)) {
-                try {
-                    const payload = JSON.parse(dragEvent.dataTransfer?.getData(GALLERY_REORDER_MIME) || '') as GalleryReorderPayload;
-                    const reorderTarget = this.getReorderTarget(dragEvent, galleryDiv);
-                    this.clearReorderClasses(galleryDiv);
+                const dragEvent = e as DragEvent;
+                if (this.isGalleryReorderDrag(dragEvent)) {
+                    try {
+                        const payload = JSON.parse(dragEvent.dataTransfer?.getData(GALLERY_REORDER_MIME) || '') as GalleryReorderPayload;
+                        const reorderTarget = this.getReorderTarget(dragEvent, galleryDiv);
+                        this.clearReorderClasses(galleryDiv);
 
-                    if (!reorderTarget || payload.galleryId !== galleryId || payload.index === reorderTarget.index) {
-                        return;
+                        if (!reorderTarget || payload.galleryId !== galleryId || payload.index === reorderTarget.index) {
+                            return;
+                        }
+
+                        const draggedItem = items[payload.index];
+                        const targetItem = items[reorderTarget.index];
+                        if (!draggedItem || !targetItem) {
+                            return;
+                        }
+
+                        await this.moveGalleryItem(galleryId, draggedItem, targetItem, reorderTarget.position, sourcePath, this.getCurrentGalleryPage(galleryDiv));
+                    } catch (error) {
+                        console.error('Error reordering gallery item:', error);
                     }
-
-                    const draggedItem = items[payload.index];
-                    const targetItem = items[reorderTarget.index];
-                    if (!draggedItem || !targetItem) {
-                        return;
-                    }
-
-                    await this.moveGalleryItem(galleryId, draggedItem, targetItem, reorderTarget.position, sourcePath, this.getCurrentGalleryPage(galleryDiv));
-                } catch (error) {
-                    console.error('Error reordering gallery item:', error);
+                    return;
                 }
-                return;
-            }
 
-            // 計算是否落在右側（右側代表加到最後，左側代表加到最前）
-            const rect = galleryDiv.getBoundingClientRect();
-            const midX = rect.left + rect.width / 2;
-            const clientX = (e as DragEvent).clientX;
-            const insertAtEnd = clientX >= midX;
+                // 計算是否落在右側（右側代表加到最後，左側代表加到最前）
+                const rect = galleryDiv.getBoundingClientRect();
+                const midX = rect.left + rect.width / 2;
+                const clientX = (e as DragEvent).clientX;
+                const insertAtEnd = clientX >= midX;
 
-            const files = [];
+                const files = [];
 
-            // 處理所有拖放的項目
-            for (const item of (e.dataTransfer as any).items) {
-                if (item.kind === 'string') {
-                    if (item.type === 'text/uri-list') {
-                        // 處理 URI 列表
-                        const uriPromise = new Promise(resolve => {
-                            item.getAsString((string: string) => {
-                                resolve({ type: 'uri', getData: () => string });
+                // 處理所有拖放的項目
+                for (const item of (e.dataTransfer as any).items) {
+                    if (item.kind === 'string') {
+                        if (item.type === 'text/uri-list') {
+                            // 處理 URI 列表
+                            const uriPromise = new Promise(resolve => {
+                                item.getAsString((string: string) => {
+                                    resolve({ type: 'uri', getData: () => string });
+                                });
                             });
-                        });
-                        files.push(uriPromise);
-                    } else if (item.type === 'text/plain') {
-                        const textPromise = new Promise(resolve => {
-                            item.getAsString((string: string) => {
-                                resolve({ type: 'text', getData: () => string });
+                            files.push(uriPromise);
+                        } else if (item.type === 'text/plain') {
+                            const textPromise = new Promise(resolve => {
+                                item.getAsString((string: string) => {
+                                    resolve({ type: 'text', getData: () => string });
+                                });
                             });
-                        });
-                        files.push(textPromise);
+                            files.push(textPromise);
+                        }
+                    } else if (item.kind === 'file') {
+                        // 處理一般檔案
+                        files.push(item.getAsFile());
                     }
-                } else if (item.kind === 'file') {
-                    // 處理一般檔案
-                    files.push(item.getAsFile());
                 }
-            }
 
-            const resolvedFiles = await Promise.all(files);
-            const modal = new ImageUploadModal(this.app, this.plugin, galleryDiv, sourcePath);
-            // 依左右區域設定插入位置
-            modal.insertAtEnd = insertAtEnd;
-            await modal.handleFiles(resolvedFiles);
+                const resolvedFiles = await Promise.all(files);
+                const modal = new ImageUploadModal(this.app, this.plugin, galleryDiv, sourcePath);
+                // 依左右區域設定插入位置
+                modal.insertAtEnd = insertAtEnd;
+                await modal.handleFiles(resolvedFiles);
+            })();
         });
 
         // 右鍵選單
@@ -994,9 +996,11 @@ export class GalleryBlock {
                             }
                         }
 
-                        // 讀取文件內容
-                        const targetFile = activeFile;
-                        this.app.vault.read(targetFile).then((content) => {
+                        void (async () => {
+                            // 讀取文件內容
+                            const targetFile = activeFile;
+                            const content = await this.app.vault.read(targetFile);
+
                             // 尋找包含當前 gallery ID 的 gallery 區塊
                             const galleryBlockRegex = /```gallery\n([\s\S]*?)```/g;
                             let match;
@@ -1024,14 +1028,20 @@ export class GalleryBlock {
 
                             // 設置確認後的回調函數，使用 vault.process 修改文件
                             modal.onConfirm = (newGalleryBlock: string) => {
-                                this.app.vault.process(targetFile, (fileContent) => {
+                                void this.app.vault.process(targetFile, (fileContent) => {
                                     return fileContent.substring(0, matchPosition.start) +
                                         newGalleryBlock +
                                         fileContent.substring(matchPosition.end);
+                                }).catch((error) => {
+                                    console.error('Error updating gallery block:', error);
+                                    new Notice(t('gallery_not_found'));
                                 });
                             };
 
                             modal.open();
+                        })().catch((error) => {
+                            console.error('Error opening gallery settings:', error);
+                            new Notice(t('gallery_not_found'));
                         });
                     });
             });
@@ -1061,9 +1071,11 @@ export class GalleryBlock {
                             }
                         }
 
-                        // 讀取文件內容
-                        const targetFile = activeFile;
-                        this.app.vault.read(targetFile).then((content) => {
+                        void (async () => {
+                            // 讀取文件內容
+                            const targetFile = activeFile;
+                            const content = await this.app.vault.read(targetFile);
+
                             // 尋找包含當前 gallery ID 的 gallery 區塊
                             const galleryBlockRegex = /```gallery\n([\s\S]*?)```/g;
                             let match;
@@ -1079,7 +1091,7 @@ export class GalleryBlock {
                                 }
                             }
 
-                            if (!matchPosition.start) {
+                            if (!match || match.length === 0) {
                                 new Notice(t('gallery_not_found'));
                                 return;
                             }
@@ -1088,11 +1100,14 @@ export class GalleryBlock {
                             const newContent = content.substring(matchPosition.start + '```gallery\n'.length, matchPosition.end - '```'.length);
 
                             // 使用 vault.process 修改文件
-                            this.app.vault.process(targetFile, (fileContent) => {
+                            await this.app.vault.process(targetFile, (fileContent) => {
                                 return fileContent.substring(0, matchPosition.start) +
                                     newContent +
                                     fileContent.substring(matchPosition.end);
                             });
+                        })().catch((error) => {
+                            console.error('Error ungenerating gallery block:', error);
+                            new Notice(t('gallery_not_found'));
                         });
                     });
             });
@@ -1104,42 +1119,42 @@ export class GalleryBlock {
     }
 
     createNoteContainer(item: GalleryItem, index: number, allItems: GalleryItem[], galleryId: string, sourcePath?: string, isFiltered?: boolean) {
-        const container = document.createElement('div');
+        const container = activeDocument.createElement('div');
         container.className = 'mv-media-thumbnail-container mvgb-note-thumbnail';
         container.dataset.galleryId = galleryId;
         container.dataset.galleryIndex = index.toString();
 
-        const notePreview = document.createElement('div');
+        const notePreview = activeDocument.createElement('div');
         notePreview.className = 'mvgb-note-preview';
 
         // 如果有縮圖，使用縮圖
         if (item.thumbnail) {
-            const img = document.createElement('img');
+            const img = activeDocument.createElement('img');
             img.src = item.thumbnail;
             img.className = 'mvgb-note-thumbnail-image';
             notePreview.appendChild(img);
         } else {
             // 否則使用預設圖示
-            const noteIcon = document.createElement('div');
+            const noteIcon = activeDocument.createElement('div');
             noteIcon.className = 'mvgb-note-icon';
 
             if (item.isExternalLink) {
-                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                const svg = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'svg');
                 svg.setAttribute('viewBox', '0 0 24 24');
                 svg.setAttribute('width', '24');
                 svg.setAttribute('height', '24');
-                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                const path = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'path');
                 path.setAttribute('fill', 'currentColor');
                 path.setAttribute('d', 'M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z');
                 svg.appendChild(path);
                 noteIcon.appendChild(svg);
                 noteIcon.classList.add('external-link');
             } else {
-                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                const svg = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'svg');
                 svg.setAttribute('viewBox', '0 0 24 24');
                 svg.setAttribute('width', '24');
                 svg.setAttribute('height', '24');
-                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                const path = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'path');
                 path.setAttribute('fill', 'currentColor');
                 path.setAttribute('d', 'M14,17H7V15H14V17M17,13H7V11H17V13M17,9H7V7H17V9M19,3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3Z');
                 svg.appendChild(path);
@@ -1167,7 +1182,7 @@ export class GalleryBlock {
             } else if (item.isInternalLink && item.file) {
                 // 內部連結：在新分頁開啟筆記
                 const leaf = this.app.workspace.getLeaf('tab');
-                leaf.openFile(item.file);
+                void leaf.openFile(item.file);
             } else {
                 // 其他連結：嘗試在新分頁開啟
                 window.open(item.path, '_blank', 'noopener,noreferrer');
@@ -1242,7 +1257,7 @@ export class GalleryBlock {
                                     currentPage = parseInt(paginationDiv.dataset.currentPage);
                                 }
                             }
-                            this.renameGalleryItem(galleryId, item, sourcePath, currentPage);
+                            void this.renameGalleryItem(galleryId, item, sourcePath, currentPage);
                         });
                 });
             }
@@ -1261,7 +1276,7 @@ export class GalleryBlock {
                                 currentPage = parseInt(paginationDiv.dataset.currentPage);
                             }
                         }
-                        this.deleteGalleryItem(galleryId, item, sourcePath, currentPage);
+                        void this.deleteGalleryItem(galleryId, item, sourcePath, currentPage);
                     });
             });
             menu.showAtMouseEvent(e);
@@ -1300,7 +1315,7 @@ export class GalleryBlock {
         if (page === totalPages && currentPageItems.length < itemsPerPage) {
             const placeholdersNeeded = itemsPerPage - currentPageItems.length;
             for (let i = 0; i < placeholdersNeeded; i++) {
-                const placeholder = document.createElement('div');
+                const placeholder = activeDocument.createElement('div');
                 placeholder.className = 'mv-media-thumbnail-container placeholder';
                 placeholder.style.visibility = 'hidden'; // 隱藏但保持佔位
                 galleryDiv.appendChild(placeholder);
@@ -1320,13 +1335,13 @@ export class GalleryBlock {
     }
 
     createMediaContainer(media: GalleryItem, index: number, allItems: GalleryItem[], galleryId: string, sourcePath?: string, isFiltered?: boolean) {
-        const container = document.createElement('div');
+        const container = activeDocument.createElement('div');
         container.className = 'mv-media-thumbnail-container';
         container.dataset.galleryId = galleryId;
         container.dataset.galleryIndex = index.toString();
 
         if (media.type === 'image') {
-            const img = document.createElement('img') as HTMLImageElement;
+            const img = activeDocument.createElement('img') as HTMLImageElement;
             if (media.url) {
                 img.src = media.url;
                 img.alt = media.path || '';
@@ -1339,13 +1354,13 @@ export class GalleryBlock {
                 if (media.path.toLowerCase().match(/\.(mp4|mkv|mov|webm)$/)) {
                     // 如果有自訂縮圖，使用縮圖顯示
                     if (media.thumbnail) {
-                        const img = document.createElement('img') as HTMLImageElement;
+                        const img = activeDocument.createElement('img') as HTMLImageElement;
                         img.src = media.thumbnail;
                         img.alt = media.path || '';
                         img.className = 'mvgb-video-thumbnail';
                         container.appendChild(img);
                     } else {
-                        const video = document.createElement('video') as HTMLVideoElement;
+                        const video = activeDocument.createElement('video') as HTMLVideoElement;
                         if (!Platform.isAndroidApp) {
                             video.src = media.url;
                         }
@@ -1354,13 +1369,13 @@ export class GalleryBlock {
                     }
 
                     if (!Platform.isAndroidApp || media.thumbnail) {
-                        const videoIcon = document.createElement('div');
+                        const videoIcon = activeDocument.createElement('div');
                         videoIcon.className = 'mv-video-indicator';
-                        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                        const svg = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'svg');
                         svg.setAttribute('viewBox', '0 0 24 24');
                         svg.setAttribute('width', '24');
                         svg.setAttribute('height', '24');
-                        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                        const path = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'path');
                         path.setAttribute('d', 'M8 5v14l11-7z');
                         svg.appendChild(path);
                         videoIcon.appendChild(svg);
@@ -1370,26 +1385,26 @@ export class GalleryBlock {
                     // 處理音樂檔案
                     // 如果有自訂縮圖，使用縮圖顯示
                     if (media.thumbnail) {
-                        const img = document.createElement('img') as HTMLImageElement;
+                        const img = activeDocument.createElement('img') as HTMLImageElement;
                         img.src = media.thumbnail;
                         img.alt = media.path || '';
                         img.className = 'mvgb-video-thumbnail';
                         container.appendChild(img);
                     } else {
-                        const audio = document.createElement('audio') as HTMLAudioElement;
+                        const audio = activeDocument.createElement('audio') as HTMLAudioElement;
                         audio.src = media.url;
                         audio.style.pointerEvents = 'none';
                         container.appendChild(audio);
                     }
 
                     if (!Platform.isAndroidApp || media.thumbnail) {
-                        const audioIcon = document.createElement('div');
+                        const audioIcon = activeDocument.createElement('div');
                         audioIcon.className = 'mv-audio-indicator';
-                        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                        const svg = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'svg');
                         svg.setAttribute('viewBox', '0 0 24 24');
                         svg.setAttribute('width', '24');
                         svg.setAttribute('height', '24');
-                        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                        const path = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'path');
                         path.setAttribute('fill', 'currentColor');
                         path.setAttribute('d', 'M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z');
                         svg.appendChild(path);
@@ -1398,7 +1413,7 @@ export class GalleryBlock {
                     }
 
                     // 添加檔案名稱顯示
-                    const filenameDiv = document.createElement('div');
+                    const filenameDiv = activeDocument.createElement('div');
                     filenameDiv.className = 'mv-audio-filename';
                     let filename = '';
                     if (media.path) {
@@ -1413,18 +1428,18 @@ export class GalleryBlock {
         }
 
         if (typeof media.title === 'object' && media.title !== null) {
-            const linkArea = document.createElement('div');
+            const linkArea = activeDocument.createElement('div');
             linkArea.className = 'mvgb-media-link-area';
 
             if (media.title.type === 'text') {
                 // 純文字
-                const textSpan = document.createElement('span');
+                const textSpan = activeDocument.createElement('span');
                 textSpan.textContent = media.title.text;
                 textSpan.style.color = 'white';
                 linkArea.appendChild(textSpan);
             } else {
                 // 內部或外部連結
-                const link = document.createElement('a');
+                const link = activeDocument.createElement('a');
                 link.textContent = media.title.text;
 
                 if (media.title.url) {
@@ -1436,7 +1451,7 @@ export class GalleryBlock {
                                 e.preventDefault();
                                 e.stopPropagation();
                                 const leaf = this.app.workspace.getLeaf('tab');
-                                leaf.openFile(file);
+                                void leaf.openFile(file);
                             };
                         }
                     } else {
@@ -1485,11 +1500,11 @@ export class GalleryBlock {
             container.onclick = () => {
                 const modal = new FullScreenModal(this.app, this.plugin, 'thumbnail', sourcePath);
                 modal.open();
-                setTimeout(() => {
+                window.setTimeout(() => {
                     const allUrls = modal.mediaUrls;
                     const targetIndex = allUrls.findIndex(m => m.url === media.url);
                     if (targetIndex !== -1) {
-                        modal.showMedia(targetIndex);
+                        void modal.showMedia(targetIndex);
                     }
                 }, 100);
             };
@@ -1561,7 +1576,7 @@ export class GalleryBlock {
                                     currentPage = parseInt(paginationDiv.dataset.currentPage);
                                 }
                             }
-                            this.renameGalleryItem(galleryId, media, sourcePath, currentPage);
+                            void this.renameGalleryItem(galleryId, media, sourcePath, currentPage);
                         });
                 });
             }
@@ -1580,7 +1595,7 @@ export class GalleryBlock {
                                 currentPage = parseInt(paginationDiv.dataset.currentPage);
                             }
                         }
-                        this.deleteGalleryItem(galleryId, media, sourcePath, currentPage);
+                        void this.deleteGalleryItem(galleryId, media, sourcePath, currentPage);
                     });
             });
             menu.showAtMouseEvent(e);
@@ -1611,11 +1626,11 @@ export class GalleryBlock {
     }
 
     createHoverControls(item: GalleryItem, index: number, allItems: GalleryItem[], galleryId: string, sourcePath?: string) {
-        const controls = document.createElement('div');
+        const controls = activeDocument.createElement('div');
         controls.className = 'mvgb-hover-controls';
 
         if (item.loc) {
-            const dragHandle = document.createElement('button');
+            const dragHandle = activeDocument.createElement('button');
             dragHandle.className = 'mvgb-hover-btn mvgb-btn-drag';
             dragHandle.type = 'button';
             dragHandle.title = t('drag_reorder');
@@ -1871,75 +1886,77 @@ export class GalleryBlock {
         }
 
         const currentName = file.basename;
-        const modal = new RenameModal(this.app, currentName, async (newName) => {
-            if (!newName || newName === currentName) return;
+        const modal = new RenameModal(this.app, currentName, (newName) => {
+            void (async () => {
+                if (!newName || newName === currentName) return;
 
-            try {
-                const parentPath = file.parent ? file.parent.path : "";
-                const newPath = parentPath === "/" || parentPath === ""
-                    ? `${newName}.${file.extension}`
-                    : `${parentPath}/${newName}.${file.extension}`;
-                await this.app.fileManager.renameFile(file, newPath);
+                try {
+                    const parentPath = file.parent ? file.parent.path : "";
+                    const newPath = parentPath === "/" || parentPath === ""
+                        ? `${newName}.${file.extension}`
+                        : `${parentPath}/${newName}.${file.extension}`;
+                    await this.app.fileManager.renameFile(file, newPath);
 
-                // 更新 Gallery 區塊中的檔案名稱連結
-                let activeFile: TFile | null = null;
-                if (sourcePath) {
-                    activeFile = this.app.vault.getAbstractFileByPath(sourcePath) as TFile | null;
-                }
+                    // 更新 Gallery 區塊中的檔案名稱連結
+                    let activeFile: TFile | null = null;
+                    if (sourcePath) {
+                        activeFile = this.app.vault.getAbstractFileByPath(sourcePath) as TFile | null;
+                    }
 
-                if (!activeFile) {
-                    activeFile = this.app.workspace.getActiveFile();
-                }
+                    if (!activeFile) {
+                        activeFile = this.app.workspace.getActiveFile();
+                    }
 
-                if (activeFile) {
-                    const content = await this.app.vault.read(activeFile);
-                    const galleryBlockRegex = /```gallery\n([\s\S]*?)```/g;
-                    let match;
+                    if (activeFile) {
+                        const content = await this.app.vault.read(activeFile);
+                        const galleryBlockRegex = /```gallery\n([\s\S]*?)```/g;
+                        let match;
 
-                    while ((match = galleryBlockRegex.exec(content)) !== null) {
-                        const blockContent = match[1];
-                        const blockId = 'gallery-' + this.hashString(blockContent.trim());
+                        while ((match = galleryBlockRegex.exec(content)) !== null) {
+                            const blockContent = match[1];
+                            const blockId = 'gallery-' + this.hashString(blockContent.trim());
 
-                        if (blockId === galleryId) {
-                            if (item.loc) {
-                                const lines = blockContent.split('\n');
-                                const start = item.loc.start;
-                                const end = item.loc.end;
+                            if (blockId === galleryId) {
+                                if (item.loc) {
+                                    const lines = blockContent.split('\n');
+                                    const start = item.loc.start;
+                                    const end = item.loc.end;
 
-                                // 將選定範圍內的舊檔名替換為新檔名
-                                for (let i = start; i <= end; i++) {
-                                    lines[i] = lines[i].replace(currentName, newName);
+                                    // 將選定範圍內的舊檔名替換為新檔名
+                                    for (let i = start; i <= end; i++) {
+                                        lines[i] = lines[i].replace(currentName, newName);
+                                    }
+
+                                    const newBlockContent = lines.join('\n');
+                                    const newId = 'gallery-' + this.hashString(newBlockContent.trim());
+
+                                    if (currentPage) {
+                                        GalleryBlock.paginationState.set(newId, currentPage);
+                                    }
+
+                                    const matchStart = match.index;
+                                    const matchEnd = match.index + match[0].length;
+                                    const newBlock = '```gallery\n' + newBlockContent + '```';
+
+                                    const restoreScroll = captureScrollRestore(this.app, galleryId);
+                                    await this.app.vault.process(activeFile, (fileContent) => {
+                                        return fileContent.substring(0, matchStart) +
+                                            newBlock +
+                                            fileContent.substring(matchEnd);
+                                    });
+                                    restoreScroll(newId);
                                 }
-
-                                const newBlockContent = lines.join('\n');
-                                const newId = 'gallery-' + this.hashString(newBlockContent.trim());
-
-                                if (currentPage) {
-                                    GalleryBlock.paginationState.set(newId, currentPage);
-                                }
-
-                                const matchStart = match.index;
-                                const matchEnd = match.index + match[0].length;
-                                const newBlock = '```gallery\n' + newBlockContent + '```';
-
-                                const restoreScroll = captureScrollRestore(this.app, galleryId);
-                                await this.app.vault.process(activeFile, (fileContent) => {
-                                    return fileContent.substring(0, matchStart) +
-                                        newBlock +
-                                        fileContent.substring(matchEnd);
-                                });
-                                restoreScroll(newId);
+                                break;
                             }
-                            break;
                         }
                     }
-                }
 
-                new Notice(t('file_renamed') || 'File renamed');
-            } catch (error) {
-                console.error('Error renaming file:', error);
-                new Notice(t('error_renaming_file') || 'Error renaming file');
-            }
+                    new Notice(t('file_renamed') || 'File renamed');
+                } catch (error) {
+                    console.error('Error renaming file:', error);
+                    new Notice(t('error_renaming_file') || 'Error renaming file');
+                }
+            })();
         });
         modal.open();
     }

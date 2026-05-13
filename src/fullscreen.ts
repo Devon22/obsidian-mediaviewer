@@ -261,11 +261,11 @@ export class FullScreenModal extends Modal {
                     if (!Platform.isAndroidApp) {
                         video.src = media.url;
                         const videoIcon = container.createDiv('mv-video-indicator');
-                        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                        const svg = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'svg');
                         svg.setAttribute('viewBox', '0 0 24 24');
                         svg.setAttribute('width', '24');
                         svg.setAttribute('height', '24');
-                        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                        const path = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'path');
                         path.setAttribute('fill', 'currentColor');
                         path.setAttribute('d', 'M8 5v14l11-7z');
                         svg.appendChild(path);
@@ -276,11 +276,11 @@ export class FullScreenModal extends Modal {
                     audio.src = media.url;
                     container.onclick = () => this.showMedia(index);
                     const audioIcon = container.createDiv('mv-audio-indicator');
-                    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                    const svg = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'svg');
                     svg.setAttribute('viewBox', '0 0 24 24');
                     svg.setAttribute('width', '24');
                     svg.setAttribute('height', '24');
-                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    const path = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'path');
                     path.setAttribute('fill', 'currentColor');
                     path.setAttribute('d', 'M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z');
                     svg.appendChild(path);
@@ -318,13 +318,13 @@ export class FullScreenModal extends Modal {
         prevArea.onclick = (e) => {
             e.stopPropagation();
             const prevIndex = (this.currentIndex - 1 + this.mediaUrls.length) % this.mediaUrls.length;
-            this.showMedia(prevIndex);
+            void this.showMedia(prevIndex);
         };
 
         nextArea.onclick = (e) => {
             e.stopPropagation();
             const nextIndex = (this.currentIndex + 1) % this.mediaUrls.length;
-            this.showMedia(nextIndex);
+            void this.showMedia(nextIndex);
         };
 
         this.fullImage = this.fullMediaView.createEl('img', { cls: 'mv-full-image' });
@@ -349,7 +349,7 @@ export class FullScreenModal extends Modal {
         // 根據類型決定是否自動顯示一張圖片
         if (this.openType === 'command') {
             if (this.plugin.settings.autoOpenFirstImage) {
-                this.showMedia(0);
+                void this.showMedia(0);
             }
         } else if (this.openType === 'thumbnail') {
             // 從縮圖開啟時，不需要做任何特殊處理，
@@ -401,12 +401,12 @@ export class FullScreenModal extends Modal {
             this.fullVideo.style.display = 'block';
             this.fullImage.style.display = 'none';
             this.fullVideo.loop = true;
-            this.fullVideo.play();
+            void this.fullVideo.play();
         }
 
         // 顯示圖片資訊
         if (this.plugin.settings.showImageInfo || this.plugin.settings.allowMediaDeletion || this.plugin.settings.autoPlayInterval > 0) {
-            this.showImageInfo(media);
+            void this.showImageInfo(media);
         }
 
         // 如果之前是自動播放狀態，則繼續自動播放
@@ -490,7 +490,7 @@ export class FullScreenModal extends Modal {
         this.fullMediaView.appendChild(infoPanel);
 
         // 設定三秒後淡出
-        setTimeout(() => {
+        window.setTimeout(() => {
             infoPanel.classList.add('fade');
         }, 3000);
     }
@@ -647,7 +647,7 @@ export class FullScreenModal extends Modal {
         this.fullImage.style.width = `${newWidth}px`;
         this.updatePinchZoomMargin(newWidth);
 
-        requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
             const maxScrollLeft = this.fullMediaView.scrollWidth - this.fullMediaView.clientWidth;
             const maxScrollTop = this.fullMediaView.scrollHeight - this.fullMediaView.clientHeight;
             const nextScrollLeft = this.fullImage.offsetLeft + (this.pinchStartImageX * widthRatio) - this.pinchStartCenterX;
@@ -655,6 +655,81 @@ export class FullScreenModal extends Modal {
             this.fullMediaView.scrollLeft = Math.max(0, Math.min(nextScrollLeft, maxScrollLeft));
             this.fullMediaView.scrollTop = Math.max(0, Math.min(nextScrollTop, maxScrollTop));
         });
+    }
+
+    private toggleImageZoom(event: MouseEvent) {
+        if (this.suppressNextClick) {
+            this.suppressNextClick = false;
+            return;
+        }
+
+        if (this.plugin.settings.displayOriginalSize &&
+            this.fullImage.naturalWidth < this.fullMediaView.clientWidth &&
+            this.fullImage.naturalHeight < this.fullMediaView.clientHeight) {
+            return;
+        }
+
+        if (event.target !== this.fullImage) return;
+
+        if (!this.isZoomed) { // 縮放
+            // 計算點擊位置相對於圖片的百分比
+            const rect = this.fullImage.getBoundingClientRect();
+            const clickX = event.clientX - rect.left;
+            const clickY = event.clientY - rect.top;
+            const clickXPercent = clickX / rect.width;
+            const clickYPercent = clickY / rect.height;
+
+            // 根據圖片與視窗的長寬比來決定放大模式
+            const imageAspect = this.fullImage.naturalWidth / this.fullImage.naturalHeight;
+            const screenAspect = this.fullMediaView.clientWidth / this.fullMediaView.clientHeight;
+
+            // 如果圖片比視窗更"細長" (Aspect Ratio 較小)，則寬度填滿 (Fit Width)，垂直捲動
+            // 如果圖片比視窗更"扁平" (Aspect Ratio 較大)，則高度填滿 (Fit Height)，水平捲動
+            if (imageAspect < screenAspect) {
+                this.fullImage.style.width = '100vw';
+                this.fullImage.style.height = 'auto';
+                this.fullMediaView.style.overflowX = 'hidden';
+                this.fullMediaView.style.overflowY = 'scroll';
+            } else {
+                this.fullImage.style.width = 'auto';
+                this.fullImage.style.height = '100vh';
+                this.fullMediaView.style.overflowX = 'scroll';
+                this.fullMediaView.style.overflowY = 'hidden';
+
+                // 將事件處理程序存儲在類別屬性中
+                this.handleWheel = (e) => {
+                    e.preventDefault();
+                    this.fullMediaView.scrollLeft += e.deltaY;
+                };
+                this.fullMediaView.addEventListener('wheel', this.handleWheel);
+            }
+
+            this.fullImage.style.maxWidth = 'none';
+            this.fullImage.style.maxHeight = 'none';
+            this.fullImage.style.position = 'relative';
+            this.fullImage.style.left = '0';
+            this.fullImage.style.top = '0';
+            this.fullImage.style.margin = 'auto';
+            this.fullImage.style.transform = 'none';
+            this.fullImage.style.cursor = 'zoom-out';
+            this.isZoomed = true;
+
+            // 在下一幀執行滾動，確保圖片已經放大
+            window.requestAnimationFrame(() => {
+                if (this.fullMediaView.scrollWidth > this.fullMediaView.clientWidth) {
+                    // 水平滾動到點擊位置
+                    const scrollX = (this.fullImage.scrollWidth * clickXPercent) - (this.fullMediaView.clientWidth / 2);
+                    this.fullMediaView.scrollLeft = Math.max(0, Math.min(scrollX, this.fullImage.scrollWidth - this.fullMediaView.clientWidth));
+                }
+                if (this.fullMediaView.scrollHeight > this.fullMediaView.clientHeight) {
+                    // 垂直滾動到點擊位置
+                    const scrollY = (this.fullImage.scrollHeight * clickYPercent) - (this.fullMediaView.clientHeight / 2);
+                    this.fullMediaView.scrollTop = Math.max(0, Math.min(scrollY, this.fullImage.scrollHeight - this.fullMediaView.clientHeight));
+                }
+            });
+        } else {
+            this.resetImageStyles();
+        }
     }
 
     registerMediaEvents() {
@@ -669,83 +744,17 @@ export class FullScreenModal extends Modal {
             }
         };
 
-        // 圖片點擊事件（放大）
+        // 圖片點擊事件（桌面點一下縮放，行動裝置雙擊縮放）
         this.fullImage.onclick = (event) => {
             // 阻止事件冒泡，避免觸發外層的點擊事件
             event.stopPropagation();
 
-            if (this.suppressNextClick) {
-                this.suppressNextClick = false;
-                return;
-            }
+            if (!Platform.isMobileApp) this.toggleImageZoom(event);
+        };
 
-            if (this.plugin.settings.displayOriginalSize &&
-                this.fullImage.naturalWidth < this.fullMediaView.clientWidth &&
-                this.fullImage.naturalHeight < this.fullMediaView.clientHeight) {
-                return;
-            }
-
-            if (event.target === this.fullImage) {
-                if (!this.isZoomed) { // 縮放
-                    // 計算點擊位置相對於圖片的百分比
-                    const rect = this.fullImage.getBoundingClientRect();
-                    const clickX = event.clientX - rect.left;
-                    const clickY = event.clientY - rect.top;
-                    const clickXPercent = clickX / rect.width;
-                    const clickYPercent = clickY / rect.height;
-
-                    // 根據圖片與視窗的長寬比來決定放大模式
-                    const imageAspect = this.fullImage.naturalWidth / this.fullImage.naturalHeight;
-                    const screenAspect = this.fullMediaView.clientWidth / this.fullMediaView.clientHeight;
-
-                    // 如果圖片比視窗更"細長" (Aspect Ratio 較小)，則寬度填滿 (Fit Width)，垂直捲動
-                    // 如果圖片比視窗更"扁平" (Aspect Ratio 較大)，則高度填滿 (Fit Height)，水平捲動
-                    if (imageAspect < screenAspect) {
-                        this.fullImage.style.width = '100vw';
-                        this.fullImage.style.height = 'auto';
-                        this.fullMediaView.style.overflowX = 'hidden';
-                        this.fullMediaView.style.overflowY = 'scroll';
-                    } else {
-                        this.fullImage.style.width = 'auto';
-                        this.fullImage.style.height = '100vh';
-                        this.fullMediaView.style.overflowX = 'scroll';
-                        this.fullMediaView.style.overflowY = 'hidden';
-
-                        // 將事件處理程序存儲在類別屬性中
-                        this.handleWheel = (e) => {
-                            e.preventDefault();
-                            this.fullMediaView.scrollLeft += e.deltaY;
-                        };
-                        this.fullMediaView.addEventListener('wheel', this.handleWheel);
-                    }
-
-                    this.fullImage.style.maxWidth = 'none';
-                    this.fullImage.style.maxHeight = 'none';
-                    this.fullImage.style.position = 'relative';
-                    this.fullImage.style.left = '0';
-                    this.fullImage.style.top = '0';
-                    this.fullImage.style.margin = 'auto';
-                    this.fullImage.style.transform = 'none';
-                    this.fullImage.style.cursor = 'zoom-out';
-                    this.isZoomed = true;
-
-                    // 在下一幀執行滾動，確保圖片已經放大
-                    requestAnimationFrame(() => {
-                        if (this.fullMediaView.scrollWidth > this.fullMediaView.clientWidth) {
-                            // 水平滾動到點擊位置
-                            const scrollX = (this.fullImage.scrollWidth * clickXPercent) - (this.fullMediaView.clientWidth / 2);
-                            this.fullMediaView.scrollLeft = Math.max(0, Math.min(scrollX, this.fullImage.scrollWidth - this.fullMediaView.clientWidth));
-                        }
-                        if (this.fullMediaView.scrollHeight > this.fullMediaView.clientHeight) {
-                            // 垂直滾動到點擊位置
-                            const scrollY = (this.fullImage.scrollHeight * clickYPercent) - (this.fullMediaView.clientHeight / 2);
-                            this.fullMediaView.scrollTop = Math.max(0, Math.min(scrollY, this.fullImage.scrollHeight - this.fullMediaView.clientHeight));
-                        }
-                    });
-                } else {
-                    this.resetImageStyles();
-                }
-            }
+        this.fullImage.ondblclick = (event) => {
+            event.stopPropagation();
+            if (Platform.isMobileApp) this.toggleImageZoom(event);
         };
 
         // 滾輪事件
@@ -816,13 +825,13 @@ export class FullScreenModal extends Modal {
     // 顯示上一個媒體
     showPrevMedia() {
         this.currentIndex = (this.currentIndex - 1 + this.mediaUrls.length) % this.mediaUrls.length;
-        this.showMedia(this.currentIndex);
+        void this.showMedia(this.currentIndex);
     }
 
     // 顯示下一個媒體
     showNextMedia() {
         this.currentIndex = (this.currentIndex + 1) % this.mediaUrls.length;
-        this.showMedia(this.currentIndex);
+        void this.showMedia(this.currentIndex);
     }
 
     // 註冊觸控事件處理器（行動裝置拖曳翻頁）
@@ -1041,11 +1050,11 @@ export class FullScreenModal extends Modal {
                         if (!Platform.isAndroidApp) {
                             video.src = media.url;
                             const videoIcon = container.createDiv('mv-video-indicator');
-                            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                            const svg = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'svg');
                             svg.setAttribute('viewBox', '0 0 24 24');
                             svg.setAttribute('width', '24');
                             svg.setAttribute('height', '24');
-                            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                            const path = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'path');
                             path.setAttribute('d', 'M8 5v14l11-7z');
                             svg.appendChild(path);
                             videoIcon.appendChild(svg);
@@ -1055,11 +1064,11 @@ export class FullScreenModal extends Modal {
                         audio.src = media.url;
                         container.onclick = () => this.showMedia(idx);
                         const audioIcon = container.createDiv('mv-audio-indicator');
-                        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                        const svg = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'svg');
                         svg.setAttribute('viewBox', '0 0 24 24');
                         svg.setAttribute('width', '24');
                         svg.setAttribute('height', '24');
-                        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                        const path = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'path');
                         path.setAttribute('fill', 'currentColor');
                         path.setAttribute('d', 'M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z');
                         svg.appendChild(path);
@@ -1096,13 +1105,13 @@ export class FullScreenModal extends Modal {
             prevArea.onclick = (e) => {
                 e.stopPropagation();
                 const prevIndex = (this.currentIndex - 1 + this.mediaUrls.length) % this.mediaUrls.length;
-                this.showMedia(prevIndex);
+                void this.showMedia(prevIndex);
             };
 
             nextArea.onclick = (e) => {
                 e.stopPropagation();
                 const nextIndex = (this.currentIndex + 1) % this.mediaUrls.length;
-                this.showMedia(nextIndex);
+                void this.showMedia(nextIndex);
             };
 
             this.fullImage = this.fullMediaView.createEl('img', { cls: 'mv-full-image' });
@@ -1124,7 +1133,7 @@ export class FullScreenModal extends Modal {
             // 自動顯示下一張圖片（如果還有的話）
             if (this.mediaUrls.length > 0) {
                 const nextIndex = Math.min(index, this.mediaUrls.length - 1);
-                this.showMedia(nextIndex);
+                void this.showMedia(nextIndex);
             }
 
             new Notice(t('media_deleted'));

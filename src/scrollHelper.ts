@@ -46,13 +46,13 @@ export function findScrollableContainer(app: App, startEl: HTMLElement | null): 
  * @returns 還原捲動位置的函數
  */
 export function captureScrollRestore(app: App, galleryId: string): ((newGalleryId?: string) => void) {
-    const galleryEl = document.querySelector(`.mvgb-media-gallery-grid[data-gallery-id="${CSS.escape(galleryId)}"]`) as HTMLElement | null;
+    const galleryEl = activeDocument.querySelector(`.mvgb-media-gallery-grid[data-gallery-id="${CSS.escape(galleryId)}"]`) as HTMLElement | null;
     const container = findScrollableContainer(app, galleryEl);
     const top = container ? container.scrollTop : 0;
 
     return (newGalleryId?: string) => {
         const targetId = newGalleryId || galleryId;
-        const galleryElAfter = document.querySelector(
+        const galleryElAfter = activeDocument.querySelector(
             `.mvgb-media-gallery-grid[data-gallery-id="${CSS.escape(targetId)}"]`
         ) as HTMLElement | null;
         const containerAfter = findScrollableContainer(app, galleryElAfter);
@@ -65,8 +65,8 @@ export function captureScrollRestore(app: App, galleryId: string): ((newGalleryI
             }
         };
 
-        requestAnimationFrame(doRestore);
-        setTimeout(doRestore, 50);
-        setTimeout(doRestore, 250);
+        window.requestAnimationFrame(doRestore);
+        window.setTimeout(doRestore, 50);
+        window.setTimeout(doRestore, 250);
     };
 }

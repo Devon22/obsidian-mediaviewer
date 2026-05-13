@@ -44,71 +44,73 @@ export class ImageUploadModal extends Modal {
             cls: 'mvgb-paste-button',
         });
 
-        pasteButton.addEventListener('click', async () => {
-            try {
-                // 先嘗試讀取剪貼簿中的文字內容
-                const text = await navigator.clipboard.readText();
-                if (text) {
-                    // 使用正則表達式找出所有網址
-                    const urlRegex = /(https?:\/\/[^\s]+)/gi;
-                    const urls = text.match(urlRegex);
+        pasteButton.addEventListener('click', () => {
+            void (async () => { 
+                try {
+                    // 先嘗試讀取剪貼簿中的文字內容
+                    const text = await navigator.clipboard.readText();
+                    if (text) {
+                        // 使用正則表達式找出所有網址
+                        const urlRegex = /(https?:\/\/[^\s]+)/gi;
+                        const urls = text.match(urlRegex);
 
-                    if (urls && urls.length > 0) {
-                        // 將每個網址轉換成 Markdown 圖片格式
-                        const markdownLinks = urls.map(url => `![](${url})`);
-                        await this.handleLinks(markdownLinks);
-                        return;
-                    }
-                }
-
-                // 如果不是網址或檔案路徑，或是讀取失敗，則嘗試讀取剪貼簿中的圖片
-                const items = await navigator.clipboard.read();
-                for (const item of items) {
-                    const imageTypes = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
-                    const imageType = item.types.find(type => imageTypes.includes(type));
-
-                    if (imageType) {
-                        const blob = await item.getType(imageType);
-                        // 嘗試取得目前的 Markdown 檔案
-                        // 優先使用來源路徑，若無效則使用當前開啟的檔案
-                        let activeFile: TFile | null = null;
-                        if (this.sourcePath) {
-                            activeFile = this.app.vault.getAbstractFileByPath(this.sourcePath) as TFile | null;
+                        if (urls && urls.length > 0) {
+                            // 將每個網址轉換成 Markdown 圖片格式
+                            const markdownLinks = urls.map(url => `![](${url})`);
+                            await this.handleLinks(markdownLinks);
+                            return;
                         }
+                    }
 
-                        if (!activeFile) {
-                            activeFile = this.app.workspace.getActiveFile();
+                    // 如果不是網址或檔案路徑，或是讀取失敗，則嘗試讀取剪貼簿中的圖片
+                    const items = await navigator.clipboard.read();
+                    for (const item of items) {
+                        const imageTypes = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
+                        const imageType = item.types.find(type => imageTypes.includes(type));
+
+                        if (imageType) {
+                            const blob = await item.getType(imageType);
+                            // 嘗試取得目前的 Markdown 檔案
+                            // 優先使用來源路徑，若無效則使用當前開啟的檔案
+                            let activeFile: TFile | null = null;
+                            if (this.sourcePath) {
+                                activeFile = this.app.vault.getAbstractFileByPath(this.sourcePath) as TFile | null;
+                            }
+
                             if (!activeFile) {
-                                new Notice(t('please_open_note'));
-                                return;
+                                activeFile = this.app.workspace.getActiveFile();
+                                if (!activeFile) {
+                                    new Notice(t('please_open_note'));
+                                    return;
+                                }
                             }
-                        }
-                        // 取得附件資料夾路徑
-                        const attachmentFolderPath = this.getAttachmentFolderPath(activeFile);
-                        // 確保附件資料夾存在
-                        await this.ensureFolderExists(attachmentFolderPath);
-                        let safeName = this.getSafeFileName(`pasted_image.${imageType.split('/')[1]}`);
-                        let timestamp = new Date().toISOString().replace(/[-:.TZ]/g, "");
-                        let fileNameWithoutExt = safeName.substring(0, safeName.lastIndexOf('.'));
-                        let extension = safeName.substring(safeName.lastIndexOf('.'));
-                        safeName = `${fileNameWithoutExt}_${timestamp}${extension}`;
-                        let newFilePath = `${attachmentFolderPath}/${safeName}`;
-                        if (await this.app.vault.adapter.exists(newFilePath)) {
-                            let counter = 1;
-                            while (await this.app.vault.adapter.exists(newFilePath)) {
-                                safeName = `${fileNameWithoutExt}_${timestamp}_${counter}${extension}`;
-                                newFilePath = `${attachmentFolderPath}/${safeName}`;
-                                counter++;
+                            // 取得附件資料夾路徑
+                            const attachmentFolderPath = this.getAttachmentFolderPath(activeFile);
+                            // 確保附件資料夾存在
+                            await this.ensureFolderExists(attachmentFolderPath);
+                            let safeName = this.getSafeFileName(`pasted_image.${imageType.split('/')[1]}`);
+                            let timestamp = new Date().toISOString().replace(/[-:.TZ]/g, "");
+                            let fileNameWithoutExt = safeName.substring(0, safeName.lastIndexOf('.'));
+                            let extension = safeName.substring(safeName.lastIndexOf('.'));
+                            safeName = `${fileNameWithoutExt}_${timestamp}${extension}`;
+                            let newFilePath = `${attachmentFolderPath}/${safeName}`;
+                            if (await this.app.vault.adapter.exists(newFilePath)) {
+                                let counter = 1;
+                                while (await this.app.vault.adapter.exists(newFilePath)) {
+                                    safeName = `${fileNameWithoutExt}_${timestamp}_${counter}${extension}`;
+                                    newFilePath = `${attachmentFolderPath}/${safeName}`;
+                                    counter++;
+                                }
                             }
+                            const newFile = new File([blob], safeName, { type: imageType });
+                            await this.handleFiles([newFile]);
                         }
-                        const newFile = new File([blob], safeName, { type: imageType });
-                        await this.handleFiles([newFile]);
                     }
+                } catch (err) {
+                    new Notice(`${t('clipboard_error')}: ${err instanceof Error ? err.message : String(err)}`);
+                    console.error('剪貼簿讀取錯誤:', err);
                 }
-            } catch (err) {
-                new Notice(t('clipboard_error' + err));
-                console.error('剪貼簿讀取錯誤:', err);
-            }
+            });
         });
 
         // 新增插入位置選項
@@ -172,21 +174,23 @@ export class ImageUploadModal extends Modal {
             dropZone.removeClass('drag-right');
         });
 
-        dropZone.addEventListener('drop', async (e) => {
-            e.preventDefault();
-            dropZone.removeClass('drag-over');
-            dropZone.removeClass('drag-left');
-            dropZone.removeClass('drag-right');
+        dropZone.addEventListener('drop', (e) => {
+            void (async () => {
+                e.preventDefault();
+                dropZone.removeClass('drag-over');
+                dropZone.removeClass('drag-left');
+                dropZone.removeClass('drag-right');
 
-            if (e.dataTransfer === null) return;
-            // 依左右區域設定插入位置
-            const rect = dropZone.getBoundingClientRect();
-            const midX = rect.left + rect.width / 2;
-            const clientX = (e as DragEvent).clientX;
-            this.insertAtEnd = clientX >= midX;
+                if (e.dataTransfer === null) return;
+                // 依左右區域設定插入位置
+                const rect = dropZone.getBoundingClientRect();
+                const midX = rect.left + rect.width / 2;
+                const clientX = (e as DragEvent).clientX;
+                this.insertAtEnd = clientX >= midX;
 
-            const files = (e.dataTransfer.files as any);
-            await this.handleFiles(files);
+                const files = (e.dataTransfer.files as any);
+                await this.handleFiles(files);
+            })();
         });
 
         const fileInput = contentEl.createEl('input', {
@@ -198,10 +202,12 @@ export class ImageUploadModal extends Modal {
             }
         });
 
-        fileInput.addEventListener('change', async () => {
-            if (fileInput.files && fileInput.files.length > 0) {
-                await this.handleFiles(Array.from(fileInput.files));
-            }
+        fileInput.addEventListener('change', () => {
+            void (async () => {
+                if (fileInput.files && fileInput.files.length > 0) {
+                    await this.handleFiles(Array.from(fileInput.files));
+                }
+            })();
         });
 
         dropZone.addEventListener('click', () => {
@@ -359,7 +365,7 @@ export class ImageUploadModal extends Modal {
                         const newGalleryId = 'gallery-' + this.hashString(newBlockContent.trim());
 
                         // 使用 setTimeout 確保在 DOM 更新後執行
-                        if (restoreScroll) setTimeout(() => restoreScroll(newGalleryId), 0);
+                        if (restoreScroll) window.setTimeout(() => restoreScroll(newGalleryId), 0);
 
                         // 更新整個文件內容
                         return (
@@ -436,7 +442,7 @@ export class ImageUploadModal extends Modal {
                         const newGalleryId = 'gallery-' + this.hashString(newBlockContent.trim());
 
                         // 使用 setTimeout 確保在 DOM 更新後執行
-                        if (restoreScroll) setTimeout(() => restoreScroll(newGalleryId), 0);
+                        if (restoreScroll) window.setTimeout(() => restoreScroll(newGalleryId), 0);
 
                         // 更新整個文件內容
                         return (
@@ -482,7 +488,6 @@ export class ImageUploadModal extends Modal {
     getAttachmentFolderPath(activeFile: TFile) {
         // 取得 vault 的附件設定
         const basePath = (this.app.vault as any).config.attachmentFolderPath
-
 
         if (basePath.startsWith('./')) {
             // 如果是相對路徑，則使用筆記所在資料夾

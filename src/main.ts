@@ -58,7 +58,7 @@ export default class MediaViewPlugin extends Plugin {
 
             if (this.settings.openMediaBrowserOnClick) {
                 // 添加點擊圖片的事件監聽
-                this.registerDomEvent(document, 'click', (evt) => {
+                this.registerDomEvent(activeDocument, 'click', (evt) => {
                     const target = (evt.target) as HTMLImageElement;
                     if (!target) return;
 
@@ -91,12 +91,12 @@ export default class MediaViewPlugin extends Plugin {
                         modal.open();
                         
                         // 等待 modal 載入完成後顯示對應圖片
-                        setTimeout(() => {
+                        window.setTimeout(() => {
                             const allUrls = modal.mediaUrls;
                             const targetUrl = target.src;
                             const targetIndex = allUrls.findIndex(m => m.url === targetUrl);
                             if (targetIndex !== -1) {
-                                modal.showMedia(targetIndex);
+                                void modal.showMedia(targetIndex);
                             }
                         }, 100);
                     }

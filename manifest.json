@@ -1,8 +1,8 @@
 {
 	"id": "mediaviewer",
 	"name": "Media Viewer",
-	"version": "2.1.0",
-	"minAppVersion": "1.1.0",
+	"version": "2.1.1",
+	"minAppVersion": "1.8.7",
 	"description": "View and manage media files within your notes.",
 	"author": "Devon22",
 	"authorUrl": "https://github.com/Devon22",
