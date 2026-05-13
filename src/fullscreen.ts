@@ -88,7 +88,7 @@ export class FullScreenModal extends Modal {
             // 1. ![[image.jpg]] - Obsidian 內部連結
             // 2. ![alt](path) - 標準 Markdown
             const mediaUrls: Media[] = [];
-            const mediaLinks = new Map(); // 用於儲存媒體連結的原始文字
+            const mediaLinks = new Map<string, string[]>(); // 用於儲存媒體連結的原始文字
 
             // 使用單一正則表達式匹配所有媒體連結
             // Because the links in the Gallery Block need to be parsed, Metadatacache cannot be used
@@ -167,15 +167,16 @@ export class FullScreenModal extends Modal {
                     }
 
                     // 如果這個 URL 已經存在，將新的連結文字加入到現有的列表中
-                    if (mediaLinks.has(url)) {
-                        mediaLinks.get(url).push(fullMatch);
+                    const links = mediaLinks.get(url);
+                    if (links) {
+                        links.push(fullMatch);
                     } else {
                         mediaLinks.set(url, [fullMatch]);
                         mediaUrls.push({
                             type: type,
                             url: url,
                             path: file ? file.path : undefined,
-                            file: file || undefined
+                            file: file ?? undefined
                         });
                     }
                 }
@@ -207,8 +208,7 @@ export class FullScreenModal extends Modal {
         const { contentEl } = this;
 
         contentEl.empty();
-        contentEl.style.width = '100%'; // 設定寬度佈滿整個空間
-        contentEl.style.height = '100%'; // 設定高度佈滿整個空間
+        contentEl.addClass('mv-media-viewer-content');
 
         contentEl.addEventListener('click', (e) => {
             if (e.target === contentEl) {
@@ -221,9 +221,11 @@ export class FullScreenModal extends Modal {
         const gridSize = this.plugin.settings.galleryGridSize;
         const propertyName = `galleryGridSize${gridSize.charAt(0).toUpperCase() + gridSize.slice(1)}` as keyof MediaViewSettings;
         const width = this.plugin.settings[propertyName];
-        galleryContent.style.gridTemplateColumns = `repeat(auto-fill, minmax(${width}px, 1fr))`;
+        galleryContent.setCssProps({
+            '--mv-gallery-thumbnail-width': `${width}px`
+        });
 
-        if (this.openType !== 'command') galleryContent.style.display = 'none';
+        galleryContent.toggleClass('is-hidden', this.openType !== 'command');
 
         galleryContent.addEventListener('click', (e) => {
             const isMediaThumbnail = (e.target as Element).closest('.mv-media-thumbnail');
@@ -307,9 +309,9 @@ export class FullScreenModal extends Modal {
         this.galleryCloseButton = closeButton;
 
         // 建立全屏預覽區域
-        this.fullMediaView = contentEl.createDiv('mv-full-media-view') as HTMLDivElement;
-        this.fullMediaView.style.display = 'none';
-        this.fullMediaView.style.background = this.openType === 'command' ? 'rgba(0, 0, 0, 0.5)' : 'rgba(0, 0, 0, 0.7)';
+        this.fullMediaView = contentEl.createDiv('mv-full-media-view');
+        this.fullMediaView.addClass('is-hidden');
+        this.fullMediaView.toggleClass('is-thumbnail-open', this.openType !== 'command');
 
         // 添加左右切換區域
         const prevArea = this.fullMediaView.createDiv('mv-media-nav-area mv-prev-area');
@@ -377,20 +379,21 @@ export class FullScreenModal extends Modal {
         if (oldInfo) oldInfo.remove();
 
         this.currentIndex = index;
-        this.galleryCloseButton.style.display = 'none';
-        this.fullMediaView.style.display = 'block';
+        this.galleryCloseButton.addClass('is-hidden');
+        this.fullMediaView.removeClass('is-hidden');
 
         const media = mediaItems[index];
         this.isImage = media.type === 'image';
         this.fullMediaView.classList.toggle('is-video', !this.isImage);
+        this.fullMediaView.classList.toggle('is-image', this.isImage);
 
         this.fullVideo.pause();
 
         if (this.isImage) {
             this.fullImage.src = media.url;
             this.fullImage.onload = () => {
-                this.fullImage.style.display = 'block';
-                this.fullVideo.style.display = 'none';
+                this.fullImage.removeClass('is-hidden');
+                this.fullVideo.addClass('is-hidden');
                 this.resetImageStyles();
             };
         } else {
@@ -398,8 +401,8 @@ export class FullScreenModal extends Modal {
             if (media.url.match(/\.(mp4|mkv|mov|webm)/i)) {
                 this.fullVideo.muted = this.plugin.settings.muteVideoOnOpen;
             }
-            this.fullVideo.style.display = 'block';
-            this.fullImage.style.display = 'none';
+            this.fullVideo.removeClass('is-hidden');
+            this.fullImage.addClass('is-hidden');
             this.fullVideo.loop = true;
             void this.fullVideo.play();
         }
@@ -417,7 +420,7 @@ export class FullScreenModal extends Modal {
 
     async showImageInfo(media: Media) {
         // 創建資訊面板
-        const infoPanel = document.createElement('div');
+        const infoPanel = activeDocument.createElement('div');
         infoPanel.className = 'mv-image-info-panel';
 
         // 添加刪除按鈕（只在啟用刪除功能時顯示）
@@ -504,9 +507,10 @@ export class FullScreenModal extends Modal {
         // 清除自動播放計時器
         this.stopAutoPlay();
 
-        this.fullMediaView.style.display = 'none';
+        this.fullMediaView.addClass('is-hidden');
         this.fullMediaView.classList.remove('is-video');
-        this.galleryCloseButton.style.display = 'flex';
+        this.fullMediaView.classList.remove('is-image');
+        this.galleryCloseButton.removeClass('is-hidden');
         this.isZoomed = false;
         this.fullVideo.pause();
     }
@@ -524,41 +528,34 @@ export class FullScreenModal extends Modal {
         this.pinchMinWidth = 0;
         this.pinchCurrentWidth = 0;
 
-        this.fullImage.style.width = 'auto';
-        this.fullImage.style.height = 'auto';
+        this.setImageMode('is-fit');
 
         if (this.plugin.settings.displayOriginalSize &&
             this.fullImage.naturalWidth < this.fullMediaView.clientWidth &&
             this.fullImage.naturalHeight < this.fullMediaView.clientHeight) {
             // 以原始尺寸顯示
-            this.fullImage.style.maxWidth = `${this.fullImage.naturalWidth}px`;
-            this.fullImage.style.maxHeight = `${this.fullImage.naturalHeight}px`;
-            this.fullImage.style.cursor = 'default';
+            this.fullImage.setCssProps({
+                '--mv-full-image-max-width': `${this.fullImage.naturalWidth}px`,
+                '--mv-full-image-max-height': `${this.fullImage.naturalHeight}px`
+            });
+            this.fullImage.addClass('is-original-size');
         } else {
             // 全螢幕顯示
-            this.fullImage.style.maxWidth = '100vw';
-            this.fullImage.style.maxHeight = '100vh';
-            this.fullImage.style.cursor = 'zoom-in';
+            this.fullImage.setCssProps({
+                '--mv-full-image-max-width': '100vw',
+                '--mv-full-image-max-height': '100vh'
+            });
         }
-
-        this.fullImage.style.position = 'absolute';
-        this.fullImage.style.left = '50%';
-        this.fullImage.style.top = '50%';
-        this.fullImage.style.margin = '';
-        this.fullImage.style.transform = 'translate(-50%, -50%)';
-
-        this.fullMediaView.style.overflowX = 'hidden';
-        this.fullMediaView.style.overflowY = 'hidden';
         this.isZoomed = false;
 
         if (!this.plugin.settings.displayOriginalSize) {
             if (this.fullMediaView.clientWidth > this.fullMediaView.clientHeight) {
                 if (this.fullImage.naturalHeight < this.fullMediaView.clientHeight) {
-                    this.fullImage.style.height = '100%';
+                    this.fullImage.addClass('is-fill-height');
                 }
             } else {
                 if (this.fullImage.naturalWidth < this.fullMediaView.clientWidth) {
-                    this.fullImage.style.width = '100%';
+                    this.fullImage.addClass('is-fill-width');
                 }
             }
         }
@@ -577,8 +574,26 @@ export class FullScreenModal extends Modal {
         };
     }
 
+    private setImageMode(mode: 'is-fit' | 'is-zoom-width' | 'is-zoom-height' | 'is-pinch-zoomed') {
+        this.fullImage.removeClasses([
+            'is-fit',
+            'is-zoom-width',
+            'is-zoom-height',
+            'is-pinch-zoomed',
+            'is-fill-width',
+            'is-fill-height',
+            'is-original-size'
+        ]);
+        this.fullMediaView.removeClasses([
+            'is-scroll-x',
+            'is-scroll-y',
+            'is-scroll-both'
+        ]);
+        this.fullImage.addClass(mode);
+    }
+
     private prepareImageForPinchZoom() {
-        if (!this.isImage || !this.fullImage || this.fullImage.style.display === 'none') return;
+        if (!this.isImage || !this.fullImage || this.fullImage.hasClass('is-hidden')) return;
 
         if (this.handleWheel) {
             this.fullMediaView.removeEventListener('wheel', this.handleWheel);
@@ -589,18 +604,11 @@ export class FullScreenModal extends Modal {
         if (this.pinchMinWidth === 0) {
             this.pinchMinWidth = rect.width;
         }
-        this.fullImage.style.width = `${rect.width}px`;
-        this.fullImage.style.height = 'auto';
-        this.fullImage.style.maxWidth = 'none';
-        this.fullImage.style.maxHeight = 'none';
-        this.fullImage.style.position = 'relative';
-        this.fullImage.style.left = '0';
-        this.fullImage.style.top = '0';
-        this.fullImage.style.margin = 'auto';
-        this.fullImage.style.transform = 'none';
-        this.fullImage.style.cursor = 'zoom-out';
-        this.fullMediaView.style.overflowX = 'scroll';
-        this.fullMediaView.style.overflowY = 'scroll';
+        this.fullImage.setCssProps({
+            '--mv-full-image-width': `${rect.width}px`
+        });
+        this.setImageMode('is-pinch-zoomed');
+        this.fullMediaView.addClass('is-scroll-both');
         this.isZoomed = true;
         this.updatePinchZoomMargin(rect.width);
     }
@@ -611,7 +619,9 @@ export class FullScreenModal extends Modal {
         const height = naturalWidth > 0 ? width * naturalHeight / naturalWidth : this.fullImage.getBoundingClientRect().height;
         const marginTop = Math.max(0, (this.fullMediaView.clientHeight - height) / 2);
 
-        this.fullImage.style.margin = `${marginTop}px auto 0 auto`;
+        this.fullImage.setCssProps({
+            '--mv-full-image-margin-top': `${marginTop}px`
+        });
     }
 
     private startPinchZoom(e: TouchEvent) {
@@ -644,7 +654,9 @@ export class FullScreenModal extends Modal {
         const widthRatio = newWidth / this.pinchStartWidth;
 
         this.pinchCurrentWidth = newWidth;
-        this.fullImage.style.width = `${newWidth}px`;
+        this.fullImage.setCssProps({
+            '--mv-full-image-width': `${newWidth}px`
+        });
         this.updatePinchZoomMargin(newWidth);
 
         window.requestAnimationFrame(() => {
@@ -686,15 +698,11 @@ export class FullScreenModal extends Modal {
             // 如果圖片比視窗更"細長" (Aspect Ratio 較小)，則寬度填滿 (Fit Width)，垂直捲動
             // 如果圖片比視窗更"扁平" (Aspect Ratio 較大)，則高度填滿 (Fit Height)，水平捲動
             if (imageAspect < screenAspect) {
-                this.fullImage.style.width = '100vw';
-                this.fullImage.style.height = 'auto';
-                this.fullMediaView.style.overflowX = 'hidden';
-                this.fullMediaView.style.overflowY = 'scroll';
+                this.setImageMode('is-zoom-width');
+                this.fullMediaView.addClass('is-scroll-y');
             } else {
-                this.fullImage.style.width = 'auto';
-                this.fullImage.style.height = '100vh';
-                this.fullMediaView.style.overflowX = 'scroll';
-                this.fullMediaView.style.overflowY = 'hidden';
+                this.setImageMode('is-zoom-height');
+                this.fullMediaView.addClass('is-scroll-x');
 
                 // 將事件處理程序存儲在類別屬性中
                 this.handleWheel = (e) => {
@@ -704,14 +712,6 @@ export class FullScreenModal extends Modal {
                 this.fullMediaView.addEventListener('wheel', this.handleWheel);
             }
 
-            this.fullImage.style.maxWidth = 'none';
-            this.fullImage.style.maxHeight = 'none';
-            this.fullImage.style.position = 'relative';
-            this.fullImage.style.left = '0';
-            this.fullImage.style.top = '0';
-            this.fullImage.style.margin = 'auto';
-            this.fullImage.style.transform = 'none';
-            this.fullImage.style.cursor = 'zoom-out';
             this.isZoomed = true;
 
             // 在下一幀執行滾動，確保圖片已經放大
@@ -1096,7 +1096,7 @@ export class FullScreenModal extends Modal {
 
             // 建立全屏預覽區域
             this.fullMediaView = contentEl.createDiv('mv-full-media-view');
-            this.fullMediaView.style.display = 'none';
+            this.fullMediaView.addClass('is-hidden');
 
             // 添加左右切換區域
             const prevArea = this.fullMediaView.createDiv('mv-media-nav-area mv-prev-area');
@@ -1155,8 +1155,8 @@ export class FullScreenModal extends Modal {
             this.autoPlayTimer = window.setTimeout(() => {
                 // 播放下一張圖片
                 const nextIndex = (this.currentIndex + 1) % this.mediaUrls.length;
-                this.showMedia(nextIndex);
-            }, interval * 1000) as number; // 轉換為毫秒，並確保類型為 number
+                void this.showMedia(nextIndex);
+            }, interval * 1000); // 轉換為毫秒
 
             // 設定自動播放狀態為開啟
             this.isAutoPlaying = true;

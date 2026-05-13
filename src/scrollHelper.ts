@@ -1,10 +1,23 @@
 import { App } from 'obsidian';
 
+type ViewWithContentEl = {
+    contentEl?: HTMLElement;
+};
+
+function getViewContentEl(view: unknown): HTMLElement | undefined {
+    if (typeof view !== 'object' || view === null || !('contentEl' in view)) {
+        return undefined;
+    }
+
+    const { contentEl } = view as ViewWithContentEl;
+    return contentEl instanceof HTMLElement ? contentEl : undefined;
+}
+
 /**
- * 尋找可捲動的容器元素
- * @param app Obsidian App 實例
- * @param startEl 起始元素（通常是 gallery 元素）
- * @returns 可捲動的容器元素，找不到則回傳 null
+ * 從指定元素往上尋找可捲動的容器。
+ * @param app Obsidian App 物件
+ * @param startEl 起始元素，通常是 gallery 元素
+ * @returns 可捲動的容器，找不到時回傳 null
  */
 export function findScrollableContainer(app: App, startEl: HTMLElement | null): HTMLElement | null {
     const isScrollable = (el: HTMLElement) => {
@@ -25,12 +38,12 @@ export function findScrollableContainer(app: App, startEl: HTMLElement | null): 
     }
 
     const activeLeaf = app.workspace.getMostRecentLeaf();
-    const contentEl = (activeLeaf?.view as any)?.contentEl as HTMLElement | undefined;
+    const contentEl = getViewContentEl(activeLeaf?.view);
     if (contentEl) {
-        const cmScroller = contentEl.querySelector('.cm-scroller') as HTMLElement | null;
+        const cmScroller = contentEl.querySelector<HTMLElement>('.cm-scroller');
         if (cmScroller && cmScroller.scrollHeight > cmScroller.clientHeight) return cmScroller;
 
-        const previewView = contentEl.querySelector('.markdown-preview-view') as HTMLElement | null;
+        const previewView = contentEl.querySelector<HTMLElement>('.markdown-preview-view');
         if (previewView && previewView.scrollHeight > previewView.clientHeight) return previewView;
 
         if (contentEl.scrollHeight > contentEl.clientHeight) return contentEl;
@@ -40,21 +53,21 @@ export function findScrollableContainer(app: App, startEl: HTMLElement | null): 
 }
 
 /**
- * 捕獲當前捲動位置並回傳還原函數
- * @param app Obsidian App 實例
+ * 記錄目前捲動位置，並回傳可在重新渲染後還原位置的函式。
+ * @param app Obsidian App 物件
  * @param galleryId Gallery 的唯一識別碼
- * @returns 還原捲動位置的函數
+ * @returns 還原捲動位置的函式
  */
 export function captureScrollRestore(app: App, galleryId: string): ((newGalleryId?: string) => void) {
-    const galleryEl = activeDocument.querySelector(`.mvgb-media-gallery-grid[data-gallery-id="${CSS.escape(galleryId)}"]`) as HTMLElement | null;
+    const galleryEl = activeDocument.querySelector<HTMLElement>(`.mvgb-media-gallery-grid[data-gallery-id="${CSS.escape(galleryId)}"]`);
     const container = findScrollableContainer(app, galleryEl);
     const top = container ? container.scrollTop : 0;
 
     return (newGalleryId?: string) => {
         const targetId = newGalleryId || galleryId;
-        const galleryElAfter = activeDocument.querySelector(
+        const galleryElAfter = activeDocument.querySelector<HTMLElement>(
             `.mvgb-media-gallery-grid[data-gallery-id="${CSS.escape(targetId)}"]`
-        ) as HTMLElement | null;
+        );
         const containerAfter = findScrollableContainer(app, galleryElAfter);
 
         const doRestore = () => {

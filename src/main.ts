@@ -134,7 +134,11 @@ export default class MediaViewPlugin extends Plugin {
     }
 
     async loadSettings() {
-        this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+        const loadedData: unknown = await this.loadData();
+        const loadedSettings = loadedData && typeof loadedData === 'object'
+            ? loadedData as Partial<MediaViewSettings>
+            : {};
+        this.settings = Object.assign({}, DEFAULT_SETTINGS, loadedSettings);
     }
 
     async saveSettings() {

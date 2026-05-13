@@ -56,12 +56,12 @@ class RenameModal extends Modal {
 }
 
 interface GalleryItem {
-    type: 'image' | 'video' | 'note' | string;
+    type: string;
     url?: string;
     path?: string;
     altText?: string | null;
     title?: {
-        type: 'internal' | 'external' | 'text' | string;
+        type: string;
         url?: string;
         text: string;
     } | string | null;
@@ -76,7 +76,7 @@ interface GalleryItem {
 
 interface ContainerInfo {
     title: {
-        type: 'internal' | 'external' | 'text' | string;
+        type: string;
         url?: string;
         text: string;
     } | string | null;
@@ -100,6 +100,15 @@ interface GalleryReorderPayload {
     galleryId: string;
     index: number;
 }
+
+type DroppedTextItem = {
+    type: 'uri' | 'text';
+    getData: () => string;
+};
+
+type DroppedFileItem = File;
+
+type DroppedItem = DroppedTextItem | DroppedFileItem;
 
 export class GalleryBlock {
     app: App;
@@ -357,7 +366,7 @@ export class GalleryBlock {
                 const originalBlock = pendingItemLines.join('\n');
                 pendingItemLines = [];
 
-                const [_, isImage, linktext] = internalMatch;
+                const [, isImage, linktext] = internalMatch;
                 const actualLinktext = linktext.split('|')[0].split('#')[0];
                 const file = this.app.metadataCache.getFirstLinkpathDest(actualLinktext, '');
 
@@ -437,7 +446,7 @@ export class GalleryBlock {
                 const originalBlock = pendingItemLines.join('\n');
                 pendingItemLines = [];
 
-                const [_, isImage, text, url] = markdownMatch;
+                const [, isImage, text, url] = markdownMatch;
 
                 if (isImage && !currentThumbnail) {
                     // 處理一般的圖片連結
@@ -579,7 +588,7 @@ export class GalleryBlock {
 
         const shouldFilter = !!filterKeyword && filterKeyword.trim() !== '' && !skipFilter;
         const finalItems = shouldFilter ? items.filter(item => {
-            const titleText = typeof item.title === 'string' ? item.title : (item.title ? (item.title as any).text : '');
+            const titleText = this.getGalleryTitleText(item);
             const textToFilter = (titleText || '') + (item.path || '') + (item.url || '');
             return textToFilter.toLowerCase().includes(filterKeyword!);
         }) : items;
@@ -615,10 +624,27 @@ export class GalleryBlock {
 
     private getCurrentGalleryPage(galleryDiv: Element | null): number {
         const paginationDiv = galleryDiv?.parentElement?.querySelector('.mvgb-pagination');
-        if (paginationDiv instanceof HTMLElement && paginationDiv.dataset.currentPage) {
+        if (paginationDiv?.instanceOf(HTMLElement) && paginationDiv.dataset.currentPage) {
             return parseInt(paginationDiv.dataset.currentPage);
         }
         return 1;
+    }
+
+    private getGalleryTitleText(item: GalleryItem): string {
+        if (typeof item.title === 'string') {
+            return item.title;
+        }
+        return item.title?.text ?? '';
+    }
+
+    private createDragHandleIcon(): SVGSVGElement {
+        const svg = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        const path = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('fill', 'currentColor');
+        path.setAttribute('d', 'M13,6.83V11H17.17L15.59,9.41L17,8L21,12L17,16L15.59,14.59L17.17,13H13V17.17L14.59,15.59L16,17L12,21L8,17L9.41,15.59L11,17.17V13H6.83L8.41,14.59L7,16L3,12L7,8L8.41,9.41L6.83,11H11V6.83L9.41,8.41L8,7L12,3L16,7L14.59,8.41L13,6.83Z');
+        svg.appendChild(path);
+        return svg;
     }
 
     private clearReorderClasses(galleryDiv: HTMLElement) {
@@ -664,7 +690,9 @@ export class GalleryBlock {
         galleryDiv.addClass(`size-${containerInfo.gridSize}`);
         const propertyName = `galleryGridSize${containerInfo.gridSize.charAt(0).toUpperCase() + containerInfo.gridSize.slice(1)}` as keyof MediaViewSettings;
         const width = this.plugin.settings[propertyName];
-        galleryDiv.style.gridTemplateColumns = `repeat(auto-fill, minmax(${width}px, 1fr))`;
+        galleryDiv.setCssProps({
+            '--mv-gallery-thumbnail-width': `${width}px`
+        });
 
         // 處理容器標題
         if (typeof containerInfo.title === 'object' && containerInfo.title !== null) {
@@ -705,7 +733,7 @@ export class GalleryBlock {
                 }
             }
 
-            galleryDiv.style.borderRadius = '0 8px 8px 8px';
+            galleryDiv.addClass('has-container-title');
         }
 
         const container = activeDocument.createElement('div');
@@ -833,9 +861,6 @@ export class GalleryBlock {
             controlsDiv.appendChild(paginationDiv);
             container.appendChild(controlsDiv);
 
-            controlsDiv.appendChild(paginationDiv);
-            container.appendChild(controlsDiv);
-
             // 初始化第一頁
             this.updateGalleryPage(galleryDiv, items, currentPage, itemsPerPage, sourcePath, mediaUrlsData.isFiltered);
         }
@@ -845,8 +870,8 @@ export class GalleryBlock {
             e.preventDefault();
             e.stopPropagation();
 
-            if (this.isGalleryReorderDrag(e as DragEvent)) {
-                const dragEvent = e as DragEvent;
+            if (this.isGalleryReorderDrag(e)) {
+                const dragEvent = e;
                 if (dragEvent.dataTransfer) {
                     dragEvent.dataTransfer.dropEffect = 'move';
                 }
@@ -862,7 +887,7 @@ export class GalleryBlock {
             // 根據滑鼠位置決定左右區域並加上對應樣式
             const rect = galleryDiv.getBoundingClientRect();
             const midX = rect.left + rect.width / 2;
-            const clientX = (e as DragEvent).clientX;
+            const clientX = e.clientX;
             if (clientX < midX) {
                 galleryDiv.addClass('drag-left');
                 galleryDiv.removeClass('drag-right');
@@ -889,7 +914,7 @@ export class GalleryBlock {
                 galleryDiv.removeClass('drag-left');
                 galleryDiv.removeClass('drag-right');
 
-                const dragEvent = e as DragEvent;
+                const dragEvent = e;
                 if (this.isGalleryReorderDrag(dragEvent)) {
                     try {
                         const payload = JSON.parse(dragEvent.dataTransfer?.getData(GALLERY_REORDER_MIME) || '') as GalleryReorderPayload;
@@ -916,24 +941,24 @@ export class GalleryBlock {
                 // 計算是否落在右側（右側代表加到最後，左側代表加到最前）
                 const rect = galleryDiv.getBoundingClientRect();
                 const midX = rect.left + rect.width / 2;
-                const clientX = (e as DragEvent).clientX;
+                const clientX = e.clientX;
                 const insertAtEnd = clientX >= midX;
 
-                const files = [];
+                const files: Array<Promise<DroppedItem>> = [];
 
                 // 處理所有拖放的項目
-                for (const item of (e.dataTransfer as any).items) {
+                for (const item of Array.from(e.dataTransfer?.items ?? [])) {
                     if (item.kind === 'string') {
                         if (item.type === 'text/uri-list') {
                             // 處理 URI 列表
-                            const uriPromise = new Promise(resolve => {
+                            const uriPromise = new Promise<DroppedTextItem>(resolve => {
                                 item.getAsString((string: string) => {
                                     resolve({ type: 'uri', getData: () => string });
                                 });
                             });
                             files.push(uriPromise);
                         } else if (item.type === 'text/plain') {
-                            const textPromise = new Promise(resolve => {
+                            const textPromise = new Promise<DroppedTextItem>(resolve => {
                                 item.getAsString((string: string) => {
                                     resolve({ type: 'text', getData: () => string });
                                 });
@@ -942,7 +967,10 @@ export class GalleryBlock {
                         }
                     } else if (item.kind === 'file') {
                         // 處理一般檔案
-                        files.push(item.getAsFile());
+                        const file = item.getAsFile();
+                        if (file) {
+                            files.push(Promise.resolve(file));
+                        }
                     }
                 }
 
@@ -1212,7 +1240,7 @@ export class GalleryBlock {
                             let currentPage = 1;
                             if (galleryDiv) {
                                 const paginationDiv = galleryDiv.parentElement?.querySelector('.mvgb-pagination');
-                                if (paginationDiv && paginationDiv instanceof HTMLElement && paginationDiv.dataset.currentPage) {
+                                if (paginationDiv?.instanceOf(HTMLElement) && paginationDiv.dataset.currentPage) {
                                     currentPage = parseInt(paginationDiv.dataset.currentPage);
                                 }
                             }
@@ -1232,7 +1260,7 @@ export class GalleryBlock {
                             let currentPage = 1;
                             if (galleryDiv) {
                                 const paginationDiv = galleryDiv.parentElement?.querySelector('.mvgb-pagination');
-                                if (paginationDiv && paginationDiv instanceof HTMLElement && paginationDiv.dataset.currentPage) {
+                                if (paginationDiv?.instanceOf(HTMLElement) && paginationDiv.dataset.currentPage) {
                                     currentPage = parseInt(paginationDiv.dataset.currentPage);
                                 }
                             }
@@ -1253,7 +1281,7 @@ export class GalleryBlock {
                             let currentPage = 1;
                             if (galleryDiv) {
                                 const paginationDiv = galleryDiv.parentElement?.querySelector('.mvgb-pagination');
-                                if (paginationDiv && paginationDiv instanceof HTMLElement && paginationDiv.dataset.currentPage) {
+                                if (paginationDiv?.instanceOf(HTMLElement) && paginationDiv.dataset.currentPage) {
                                     currentPage = parseInt(paginationDiv.dataset.currentPage);
                                 }
                             }
@@ -1272,7 +1300,7 @@ export class GalleryBlock {
                         let currentPage = 1;
                         if (galleryDiv) {
                             const paginationDiv = galleryDiv.parentElement?.querySelector('.mvgb-pagination');
-                            if (paginationDiv && paginationDiv instanceof HTMLElement && paginationDiv.dataset.currentPage) {
+                            if (paginationDiv?.instanceOf(HTMLElement) && paginationDiv.dataset.currentPage) {
                                 currentPage = parseInt(paginationDiv.dataset.currentPage);
                             }
                         }
@@ -1317,7 +1345,7 @@ export class GalleryBlock {
             for (let i = 0; i < placeholdersNeeded; i++) {
                 const placeholder = activeDocument.createElement('div');
                 placeholder.className = 'mv-media-thumbnail-container placeholder';
-                placeholder.style.visibility = 'hidden'; // 隱藏但保持佔位
+                placeholder.addClass('is-placeholder-hidden'); // 隱藏但保持佔位
                 galleryDiv.appendChild(placeholder);
             }
         }
@@ -1341,11 +1369,11 @@ export class GalleryBlock {
         container.dataset.galleryIndex = index.toString();
 
         if (media.type === 'image') {
-            const img = activeDocument.createElement('img') as HTMLImageElement;
+            const img = activeDocument.createElement('img');
             if (media.url) {
                 img.src = media.url;
                 img.alt = media.path || '';
-                if (Platform.isMobile) img.style.pointerEvents = 'none';
+                img.toggleClass('is-pointer-disabled', Platform.isMobile);
                 container.appendChild(img);
             }
         } else {
@@ -1354,17 +1382,17 @@ export class GalleryBlock {
                 if (media.path.toLowerCase().match(/\.(mp4|mkv|mov|webm)$/)) {
                     // 如果有自訂縮圖，使用縮圖顯示
                     if (media.thumbnail) {
-                        const img = activeDocument.createElement('img') as HTMLImageElement;
+                        const img = activeDocument.createElement('img');
                         img.src = media.thumbnail;
                         img.alt = media.path || '';
                         img.className = 'mvgb-video-thumbnail';
                         container.appendChild(img);
                     } else {
-                        const video = activeDocument.createElement('video') as HTMLVideoElement;
+                        const video = activeDocument.createElement('video');
                         if (!Platform.isAndroidApp) {
                             video.src = media.url;
                         }
-                        video.style.pointerEvents = 'none';
+                        video.addClass('is-pointer-disabled');
                         container.appendChild(video);
                     }
 
@@ -1385,15 +1413,15 @@ export class GalleryBlock {
                     // 處理音樂檔案
                     // 如果有自訂縮圖，使用縮圖顯示
                     if (media.thumbnail) {
-                        const img = activeDocument.createElement('img') as HTMLImageElement;
+                        const img = activeDocument.createElement('img');
                         img.src = media.thumbnail;
                         img.alt = media.path || '';
                         img.className = 'mvgb-video-thumbnail';
                         container.appendChild(img);
                     } else {
-                        const audio = activeDocument.createElement('audio') as HTMLAudioElement;
+                        const audio = activeDocument.createElement('audio');
                         audio.src = media.url;
-                        audio.style.pointerEvents = 'none';
+                        audio.addClass('is-pointer-disabled');
                         container.appendChild(audio);
                     }
 
@@ -1435,7 +1463,7 @@ export class GalleryBlock {
                 // 純文字
                 const textSpan = activeDocument.createElement('span');
                 textSpan.textContent = media.title.text;
-                textSpan.style.color = 'white';
+                textSpan.addClass('mvgb-media-link-text');
                 linkArea.appendChild(textSpan);
             } else {
                 // 內部或外部連結
@@ -1472,7 +1500,8 @@ export class GalleryBlock {
         }
 
         // 使媒體縮圖可拖曳為 URI（包含影片/圖片/音訊）。在行動裝置上略過。
-        if (!Platform.isMobile && media.url && media.type === 'video') {
+        const mediaUrl = media.url;
+        if (!Platform.isMobile && mediaUrl && media.type === 'video') {
             container.draggable = true;
             container.addEventListener('dragstart', (e: DragEvent) => {
                 if (!e.dataTransfer) return;
@@ -1480,8 +1509,8 @@ export class GalleryBlock {
                 e.stopPropagation();
                 try {
                     // 針對內部檔案輸出 Obsidian URI；外部連結則維持原本 URL
-                    const isHttp = /^https?:\/\//i.test(media.url as string);
-                    let outUri = media.url as string;
+                    const isHttp = /^https?:\/\//i.test(mediaUrl);
+                    let outUri = mediaUrl;
                     if (!isHttp && media.path) {
                         const vaultName = this.app.vault.getName();
                         outUri = `obsidian://open?vault=${encodeURIComponent(vaultName)}&file=${encodeURIComponent(media.path)}`;
@@ -1490,7 +1519,7 @@ export class GalleryBlock {
                     e.dataTransfer.setData('text/uri-list', outUri);
                     e.dataTransfer.setData('text/plain', outUri);
                     e.dataTransfer.effectAllowed = 'copy';
-                } catch (err) {
+                } catch {
                     // 忽略 setData 可能的例外
                 }
             });
@@ -1532,7 +1561,7 @@ export class GalleryBlock {
                             let currentPage = 1;
                             if (galleryDiv) {
                                 const paginationDiv = galleryDiv.parentElement?.querySelector('.mvgb-pagination');
-                                if (paginationDiv && paginationDiv instanceof HTMLElement && paginationDiv.dataset.currentPage) {
+                                if (paginationDiv?.instanceOf(HTMLElement) && paginationDiv.dataset.currentPage) {
                                     currentPage = parseInt(paginationDiv.dataset.currentPage);
                                 }
                             }
@@ -1551,7 +1580,7 @@ export class GalleryBlock {
                             let currentPage = 1;
                             if (galleryDiv) {
                                 const paginationDiv = galleryDiv.parentElement?.querySelector('.mvgb-pagination');
-                                if (paginationDiv && paginationDiv instanceof HTMLElement && paginationDiv.dataset.currentPage) {
+                                if (paginationDiv?.instanceOf(HTMLElement) && paginationDiv.dataset.currentPage) {
                                     currentPage = parseInt(paginationDiv.dataset.currentPage);
                                 }
                             }
@@ -1572,7 +1601,7 @@ export class GalleryBlock {
                             let currentPage = 1;
                             if (galleryDiv) {
                                 const paginationDiv = galleryDiv.parentElement?.querySelector('.mvgb-pagination');
-                                if (paginationDiv && paginationDiv instanceof HTMLElement && paginationDiv.dataset.currentPage) {
+                                if (paginationDiv?.instanceOf(HTMLElement) && paginationDiv.dataset.currentPage) {
                                     currentPage = parseInt(paginationDiv.dataset.currentPage);
                                 }
                             }
@@ -1591,7 +1620,7 @@ export class GalleryBlock {
                         let currentPage = 1;
                         if (galleryDiv) {
                             const paginationDiv = galleryDiv.parentElement?.querySelector('.mvgb-pagination');
-                            if (paginationDiv && paginationDiv instanceof HTMLElement && paginationDiv.dataset.currentPage) {
+                            if (paginationDiv?.instanceOf(HTMLElement) && paginationDiv.dataset.currentPage) {
                                 currentPage = parseInt(paginationDiv.dataset.currentPage);
                             }
                         }
@@ -1635,7 +1664,7 @@ export class GalleryBlock {
             dragHandle.type = 'button';
             dragHandle.title = t('drag_reorder');
             dragHandle.draggable = true;
-            dragHandle.innerHTML = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M13,6.83V11H17.17L15.59,9.41L17,8L21,12L17,16L15.59,14.59L17.17,13H13V17.17L14.59,15.59L16,17L12,21L8,17L9.41,15.59L11,17.17V13H6.83L8.41,14.59L7,16L3,12L7,8L8.41,9.41L6.83,11H11V6.83L9.41,8.41L8,7L12,3L16,7L14.59,8.41L13,6.83Z" /></svg>';
+            dragHandle.appendChild(this.createDragHandleIcon());
             dragHandle.onclick = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -1654,8 +1683,8 @@ export class GalleryBlock {
             dragHandle.addEventListener('dragend', (e: DragEvent) => {
                 e.preventDefault();
                 e.stopPropagation();
-                const galleryDiv = dragHandle.closest('.mvgb-media-gallery-grid') as HTMLElement | null;
-                if (galleryDiv) {
+                const galleryDiv = dragHandle.closest('.mvgb-media-gallery-grid');
+                if (galleryDiv?.instanceOf(HTMLElement)) {
                     this.clearReorderClasses(galleryDiv);
                 }
             });
