@@ -74,6 +74,14 @@
     transition: background-color 0.3s;
 }
 
+.mv-media-viewer-modal button.mv-gallery-close-button.is-hidden {
+    display: none;
+}
+
+.modal.mv-media-viewer-modal .modal-close-button {
+    display: none;
+}
+
 .mv-media-viewer-modal button.mv-gallery-close-button:hover {
     background: rgba(255, 0, 0, 0.7);
 }
