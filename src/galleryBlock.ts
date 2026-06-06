@@ -1,4 +1,4 @@
-﻿import { App, TFile, Menu, Notice, Platform, Modal, Setting } from 'obsidian';
+import { App, TFile, Menu, Notice, Platform, Modal, Setting } from 'obsidian';
 import MediaViewPlugin from './main';
 import { FullScreenModal } from './fullscreen';
 import { MediaViewSettings } from './settings';
@@ -1160,6 +1160,7 @@ export class GalleryBlock {
             const img = activeDocument.createElement('img');
             img.src = item.thumbnail;
             img.className = 'mvgb-note-thumbnail-image';
+            img.toggleClass('is-pointer-disabled', Platform.isMobile);
             notePreview.appendChild(img);
         } else {
             // 否則使用預設圖示
@@ -1386,6 +1387,7 @@ export class GalleryBlock {
                         img.src = media.thumbnail;
                         img.alt = media.path || '';
                         img.className = 'mvgb-video-thumbnail';
+                        img.toggleClass('is-pointer-disabled', Platform.isMobile);
                         container.appendChild(img);
                     } else {
                         const video = activeDocument.createElement('video');
@@ -1417,6 +1419,7 @@ export class GalleryBlock {
                         img.src = media.thumbnail;
                         img.alt = media.path || '';
                         img.className = 'mvgb-video-thumbnail';
+                        img.toggleClass('is-pointer-disabled', Platform.isMobile);
                         container.appendChild(img);
                     } else {
                         const audio = activeDocument.createElement('audio');
@@ -1531,7 +1534,7 @@ export class GalleryBlock {
                 modal.open();
                 window.setTimeout(() => {
                     const allUrls = modal.mediaUrls;
-                    const targetIndex = allUrls.findIndex(m => m.url === media.url);
+                    const targetIndex = allUrls.findIndex(m => (media.path && m.path === media.path) || m.url === media.url);
                     if (targetIndex !== -1) {
                         void modal.showMedia(targetIndex);
                     }
