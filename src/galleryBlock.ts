@@ -370,6 +370,29 @@ export class GalleryBlock {
                 const actualLinktext = linktext.split('|')[0].split('#')[0];
                 const file = this.app.metadataCache.getFirstLinkpathDest(actualLinktext, '');
 
+                if (file && file.extension.toLowerCase() === 'zip') {
+                    if (!currentThumbnail) {
+                        currentThumbnail = await this.getZipThumbnail(file.path);
+                    }
+                    items.push({
+                        type: 'note',
+                        title: currentTitle || actualLinktext,
+                        altText: currentAltText,
+                        path: file.path,
+                        linkUrl: currentLinkUrl,
+                        file: file,
+                        isInternalLink: true,
+                        thumbnail: currentThumbnail,
+                        originalBlock: originalBlock,
+                        loc: { start: tempStartLine, end: i }
+                    });
+                    currentTitle = null;
+                    currentAltText = null;
+                    currentLinkUrl = null;
+                    currentThumbnail = null;
+                    continue;
+                }
+
                 if (isImage && !currentThumbnail) {
                     // 處理一般的圖片/媒體連結
                     if (file) {
@@ -447,6 +470,34 @@ export class GalleryBlock {
                 pendingItemLines = [];
 
                 const [, isImage, text, url] = markdownMatch;
+
+                if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                    const file = this.app.metadataCache.getFirstLinkpathDest(url, '');
+                    const abstractFile = this.app.vault.getAbstractFileByPath(url);
+                    const targetFile = file || (abstractFile instanceof TFile ? abstractFile : null);
+                    if (targetFile && targetFile.extension.toLowerCase() === 'zip') {
+                        if (!currentThumbnail) {
+                            currentThumbnail = await this.getZipThumbnail(targetFile.path);
+                        }
+                        items.push({
+                            type: 'note',
+                            title: currentTitle || text || targetFile.basename,
+                            altText: currentAltText,
+                            path: targetFile.path,
+                            linkUrl: currentLinkUrl,
+                            file: targetFile,
+                            isInternalLink: true,
+                            thumbnail: currentThumbnail,
+                            originalBlock: originalBlock,
+                            loc: { start: tempStartLine, end: i }
+                        });
+                        currentTitle = null;
+                        currentAltText = null;
+                        currentLinkUrl = null;
+                        currentThumbnail = null;
+                        continue;
+                    }
+                }
 
                 if (isImage && !currentThumbnail) {
                     // 處理一般的圖片連結
@@ -616,6 +667,24 @@ export class GalleryBlock {
             hash = hash & hash; // Convert to 32bit integer
         }
         return Math.abs(hash).toString(36);
+    }
+
+    async getZipThumbnail(zipPath: string): Promise<string | null> {
+        interface ObsidianAppWithPlugins {
+            plugins?: {
+                plugins?: Record<string, {
+                    getThumbnail?: (path: string) => Promise<string | null>;
+                }>;
+            };
+        }
+        const appWithPlugins = this.app as ObsidianAppWithPlugins;
+        const zipPlugin = appWithPlugins.plugins?.plugins?.['obsidian-gridexplorer'];
+        
+        if (!zipPlugin || typeof zipPlugin.getThumbnail !== 'function') {
+            return null;
+        }
+        
+        return await zipPlugin.getThumbnail(zipPath);
     }
 
     private isGalleryReorderDrag(e: DragEvent): boolean {
@@ -989,157 +1058,7 @@ export class GalleryBlock {
             }
             event.preventDefault();
             const menu = new Menu();
-            menu.addItem((item) => {
-                item
-                    .setTitle(t('add_image'))
-                    .setIcon("image")
-                    .onClick(() => {
-                        const modal = new ImageUploadModal(this.app, this.plugin, galleryDiv, sourcePath);
-                        modal.open();
-                    });
-            });
-            menu.addItem((item) => {
-                item
-                    .setTitle(t('setting_gallery'))
-                    .setIcon("settings")
-                    .onClick(() => {
-                        // 獲取 gallery 區塊的 ID
-                        const galleryId = galleryDiv.getAttribute('data-gallery-id');
-                        if (!galleryId) {
-                            return;
-                        }
-
-                        // 獲取當前筆記的文件
-                        // 優先使用來源路徑，若無效則使用當前開啟的檔案
-                        let activeFile: TFile | null = null;
-                        if (sourcePath) {
-                            activeFile = this.app.vault.getAbstractFileByPath(sourcePath) as TFile | null;
-                        }
-
-                        if (!activeFile) {
-                            activeFile = this.app.workspace.getActiveFile();
-                            if (!activeFile) {
-                                new Notice(t('please_open_note'));
-                                return;
-                            }
-                        }
-
-                        void (async () => {
-                            // 讀取文件內容
-                            const targetFile = activeFile;
-                            const content = await this.app.vault.read(targetFile);
-
-                            // 尋找包含當前 gallery ID 的 gallery 區塊
-                            const galleryBlockRegex = /```gallery\n([\s\S]*?)```/g;
-                            let match;
-                            let galleryContent = '';
-                            let matchPosition = { start: 0, end: 0 };
-
-                            while ((match = galleryBlockRegex.exec(content)) !== null) {
-                                const blockContent = match[1];
-                                const blockId = 'gallery-' + this.hashString(blockContent.trim());
-                                if (blockId === galleryId) {
-                                    galleryContent = blockContent;
-                                    matchPosition.start = match.index;
-                                    matchPosition.end = match.index + match[0].length;
-                                    break;
-                                }
-                            }
-
-                            if (!match || match.length === 0) {
-                                new Notice(t('gallery_not_found'));
-                                return;
-                            }
-
-                            // 創建並打開設定對話框
-                            const modal = new GalleryBlockGenerateModal(this.app, galleryContent);
-
-                            // 設置確認後的回調函數，使用 vault.process 修改文件
-                            modal.onConfirm = (newGalleryBlock: string) => {
-                                void this.app.vault.process(targetFile, (fileContent) => {
-                                    return fileContent.substring(0, matchPosition.start) +
-                                        newGalleryBlock +
-                                        fileContent.substring(matchPosition.end);
-                                }).catch((error) => {
-                                    console.error('Error updating gallery block:', error);
-                                    new Notice(t('gallery_not_found'));
-                                });
-                            };
-
-                            modal.open();
-                        })().catch((error) => {
-                            console.error('Error opening gallery settings:', error);
-                            new Notice(t('gallery_not_found'));
-                        });
-                    });
-            });
-            menu.addItem((item) => {
-                item
-                    .setTitle(t('ungenerate_gallery'))
-                    .setIcon("eraser")
-                    .onClick(() => {
-                        // 獲取 gallery 區塊的 ID
-                        const galleryId = galleryDiv.getAttribute('data-gallery-id');
-                        if (!galleryId) {
-                            return;
-                        }
-
-                        // 獲取當前筆記的文件
-                        // 優先使用來源路徑，若無效則使用當前開啟的檔案
-                        let activeFile: TFile | null = null;
-                        if (sourcePath) {
-                            activeFile = this.app.vault.getAbstractFileByPath(sourcePath) as TFile | null;
-                        }
-
-                        if (!activeFile) {
-                            activeFile = this.app.workspace.getActiveFile();
-                            if (!activeFile) {
-                                new Notice(t('please_open_note'));
-                                return;
-                            }
-                        }
-
-                        void (async () => {
-                            // 讀取文件內容
-                            const targetFile = activeFile;
-                            const content = await this.app.vault.read(targetFile);
-
-                            // 尋找包含當前 gallery ID 的 gallery 區塊
-                            const galleryBlockRegex = /```gallery\n([\s\S]*?)```/g;
-                            let match;
-                            let matchPosition = { start: 0, end: 0 };
-
-                            while ((match = galleryBlockRegex.exec(content)) !== null) {
-                                const blockContent = match[1];
-                                const blockId = 'gallery-' + this.hashString(blockContent.trim());
-                                if (blockId === galleryId) {
-                                    matchPosition.start = match.index;
-                                    matchPosition.end = match.index + match[0].length;
-                                    break;
-                                }
-                            }
-
-                            if (!match || match.length === 0) {
-                                new Notice(t('gallery_not_found'));
-                                return;
-                            }
-
-                            // 移除 gallery 標記，保留內容
-                            const newContent = content.substring(matchPosition.start + '```gallery\n'.length, matchPosition.end - '```'.length);
-
-                            // 使用 vault.process 修改文件
-                            await this.app.vault.process(targetFile, (fileContent) => {
-                                return fileContent.substring(0, matchPosition.start) +
-                                    newContent +
-                                    fileContent.substring(matchPosition.end);
-                            });
-                        })().catch((error) => {
-                            console.error('Error ungenerating gallery block:', error);
-                            new Notice(t('gallery_not_found'));
-                        });
-                    });
-            });
-
+            this.addGalleryBlockMenuItems(menu, galleryDiv, galleryId, sourcePath);
             menu.showAtMouseEvent(event);
         });
 
@@ -1308,6 +1227,13 @@ export class GalleryBlock {
                         void this.deleteGalleryItem(galleryId, item, sourcePath, currentPage);
                     });
             });
+
+            const galleryDiv = container.closest('.mvgb-media-gallery-grid');
+            if (galleryDiv instanceof HTMLElement) {
+                menu.addSeparator();
+                this.addGalleryBlockMenuItems(menu, galleryDiv, galleryId, sourcePath);
+            }
+
             menu.showAtMouseEvent(e);
         });
 
@@ -1630,6 +1556,13 @@ export class GalleryBlock {
                         void this.deleteGalleryItem(galleryId, media, sourcePath, currentPage);
                     });
             });
+
+            const galleryDiv = container.closest('.mvgb-media-gallery-grid');
+            if (galleryDiv instanceof HTMLElement) {
+                menu.addSeparator();
+                this.addGalleryBlockMenuItems(menu, galleryDiv, galleryId, sourcePath);
+            }
+
             menu.showAtMouseEvent(e);
         });
 
@@ -1653,6 +1586,147 @@ export class GalleryBlock {
                         console.error('Error copying alt text:', error);
                         new Notice(t('clipboard_error') || 'Clipboard error');
                     }
+                });
+        });
+    }
+
+    private addGalleryBlockMenuItems(menu: Menu, galleryDiv: HTMLElement, galleryId: string, sourcePath?: string) {
+        menu.addItem((item) => {
+            item
+                .setTitle(t('add_image'))
+                .setIcon("image")
+                .onClick(() => {
+                    const modal = new ImageUploadModal(this.app, this.plugin, galleryDiv, sourcePath);
+                    modal.open();
+                });
+        });
+        menu.addItem((item) => {
+            item
+                .setTitle(t('setting_gallery'))
+                .setIcon("settings")
+                .onClick(() => {
+                    // 獲取當前筆記的文件
+                    // 優先使用來源路徑，若無效則使用當前開啟的檔案
+                    let activeFile: TFile | null = null;
+                    if (sourcePath) {
+                        activeFile = this.app.vault.getAbstractFileByPath(sourcePath) as TFile | null;
+                    }
+
+                    if (!activeFile) {
+                        activeFile = this.app.workspace.getActiveFile();
+                        if (!activeFile) {
+                            new Notice(t('please_open_note'));
+                            return;
+                        }
+                    }
+
+                    void (async () => {
+                        // 讀取文件內容
+                        const targetFile = activeFile;
+                        const content = await this.app.vault.read(targetFile);
+
+                        // 尋找包含當前 gallery ID 的 gallery 區塊
+                        const galleryBlockRegex = /```gallery\n([\s\S]*?)```/g;
+                        let match;
+                        let galleryContent = '';
+                        let matchPosition = { start: 0, end: 0 };
+
+                        while ((match = galleryBlockRegex.exec(content)) !== null) {
+                            const blockContent = match[1];
+                            const blockId = 'gallery-' + this.hashString(blockContent.trim());
+                            if (blockId === galleryId) {
+                                galleryContent = blockContent;
+                                matchPosition.start = match.index;
+                                matchPosition.end = match.index + match[0].length;
+                                break;
+                            }
+                        }
+
+                        if (!match || match.length === 0) {
+                            new Notice(t('gallery_not_found'));
+                            return;
+                        }
+
+                        // 創建並打開設定對話框
+                        const modal = new GalleryBlockGenerateModal(this.app, galleryContent);
+
+                        // 設置確認後的回調函數，使用 vault.process 修改文件
+                        modal.onConfirm = (newGalleryBlock: string) => {
+                            void this.app.vault.process(targetFile, (fileContent) => {
+                                return fileContent.substring(0, matchPosition.start) +
+                                    newGalleryBlock +
+                                    fileContent.substring(matchPosition.end);
+                            }).catch((error) => {
+                                console.error('Error updating gallery block:', error);
+                                new Notice(t('gallery_not_found'));
+                            });
+                        };
+
+                        modal.open();
+                    })().catch((error) => {
+                        console.error('Error opening gallery settings:', error);
+                        new Notice(t('gallery_not_found'));
+                    });
+                });
+        });
+        menu.addItem((item) => {
+            item
+                .setTitle(t('ungenerate_gallery'))
+                .setIcon("eraser")
+                .onClick(() => {
+                    // 獲取當前筆記的文件
+                    // 優先使用來源路徑，若無效則使用當前開啟的檔案
+                    let activeFile: TFile | null = null;
+                    if (sourcePath) {
+                        activeFile = this.app.vault.getAbstractFileByPath(sourcePath) as TFile | null;
+                    }
+
+                    if (!activeFile) {
+                        activeFile = this.app.workspace.getActiveFile();
+                        if (!activeFile) {
+                            new Notice(t('please_open_note'));
+                            return;
+                        }
+                    }
+
+                    void (async () => {
+                        // 讀取文件內容
+                        const targetFile = activeFile;
+                        const content = await this.app.vault.read(targetFile);
+
+                        // 尋找包含當前 gallery ID 的 gallery 區塊
+                        const galleryBlockRegex = /```gallery\n([\s\S]*?)```/g;
+                        let match;
+                        let matchPosition = { start: 0, end: 0 };
+
+                        while ((match = galleryBlockRegex.exec(content)) !== null) {
+                            const blockContent = match[1];
+                            const blockId = 'gallery-' + this.hashString(blockContent.trim());
+                            if (blockId === galleryId) {
+                                matchPosition.start = match.index;
+                                matchPosition.end = match.index + match[0].length;
+                                break;
+                            }
+                        }
+
+                        if (!match || match.length === 0) {
+                            new Notice(t('gallery_not_found'));
+                            return;
+                        }
+
+                        // 移除 gallery 標記，保留內容
+                        const newContent = content.substring(matchPosition.start + '```gallery\n'.length, matchPosition.end - '```'.length);
+
+                        // 使用 vault.process 修改文件
+                        await this.app.vault.process(targetFile, (fileContent) => {
+                            return fileContent.substring(0, matchPosition.start) +
+                                newContent +
+                                fileContent.substring(matchPosition.end);
+                        });
+                    })().catch((error) => {
+                        console.error('Error ungenerating gallery block:', error);
+                        new Notice(t('gallery_not_found'));
+                    });
                 });
         });
     }

@@ -16,7 +16,7 @@ type VaultWithAttachmentConfig = {
     };
 };
 
-const supportedMediaExtRegex = /\.(jpg|jpeg|png|gif|webp|mp4|mov|webm|mp3|m4a|flac|ogg|wav|3gp)$/i;
+const supportedMediaExtRegex = /\.(jpg|jpeg|png|gif|webp|mp4|mov|webm|mp3|m4a|flac|ogg|wav|3gp|zip)$/i;
 
 /**
  * 判斷拖放項目是否為 Obsidian 內部提供的 uri/text 資料。
@@ -147,7 +147,7 @@ export class ImageUploadModal extends Modal {
         const fileInput = contentEl.createEl('input', {
             type: 'file',
             attr: {
-                accept: 'image/*,video/*,audio/*',
+                accept: 'image/*,video/*,audio/*,.zip,application/zip',
                 multiple: true,
                 style: 'display: none;',
             },
