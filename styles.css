@@ -189,6 +189,9 @@
     overflow-x: hidden;
     overflow-y: hidden;
     display: block;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 .mv-full-media-view.is-thumbnail-open {
@@ -257,6 +260,9 @@
     margin: 0;
     transform: translate(-50%, -50%);
     cursor: zoom-in;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 .mv-full-image.is-original-size {
@@ -274,6 +280,7 @@
 .mv-full-image.is-zoom-width,
 .mv-full-image.is-zoom-height,
 .mv-full-image.is-pinch-zoomed {
+    display: block;
     max-width: none;
     max-height: none;
     position: relative;

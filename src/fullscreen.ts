@@ -45,6 +45,8 @@ export class FullScreenModal extends Modal {
     private suppressSwipeUntil = 0;
     private minSwipeDistance = 50; // 最小滑動距離
     private maxSwipeTime = 300; // 最大滑動時間（毫秒）
+    private longPressTimeout: number | null = null;
+    private isLongPress = false;
 
     constructor(app: App, plugin: MediaViewPlugin, openType: string = 'command', sourcePath?: string) {
         super(app);
@@ -330,10 +332,14 @@ export class FullScreenModal extends Modal {
         };
 
         this.fullImage = this.fullMediaView.createEl('img', { cls: 'mv-full-image' });
+        this.fullImage.draggable = false;
+        this.fullImage.addEventListener('dragstart', (e) => e.preventDefault());
         this.fullVideo = this.fullMediaView.createEl('video', {
             cls: 'mv-full-video',
             attr: { controls: true }
         });
+        this.fullVideo.draggable = false;
+        this.fullVideo.addEventListener('dragstart', (e) => e.preventDefault());
 
         // 建立媒體關閉按鈕
         const fullCloseButton = this.fullMediaView.createEl('button', {
@@ -506,6 +512,10 @@ export class FullScreenModal extends Modal {
 
         // 清除自動播放計時器
         this.stopAutoPlay();
+        if (this.longPressTimeout) {
+            window.clearTimeout(this.longPressTimeout);
+            this.longPressTimeout = null;
+        }
 
         this.fullMediaView.addClass('is-hidden');
         this.fullMediaView.classList.remove('is-video');
@@ -805,21 +815,35 @@ export class FullScreenModal extends Modal {
         // 右鍵選單
         this.fullImage.oncontextmenu = (e) => {
             const media = this.mediaUrls[this.currentIndex];
-            if (media.file) {
-                const menu = new Menu();
-                this.app.workspace.trigger('file-menu', menu, media.file, 'media-viewer');
-                menu.showAtMouseEvent(e);
-            }
+            this.onMediaContextMenu(e, media);
         };
 
         this.fullVideo.oncontextmenu = (e) => {
             const media = this.mediaUrls[this.currentIndex];
-            if (media.file) {
-                const menu = new Menu();
-                this.app.workspace.trigger('file-menu', menu, media.file, 'media-viewer');
-                menu.showAtMouseEvent(e);
-            }
+            this.onMediaContextMenu(e, media);
         };
+    }
+
+    private onMediaContextMenu(event: MouseEvent | { clientX: number, clientY: number }, media: Media) {
+        if (event instanceof MouseEvent) {
+            event.preventDefault();
+        }
+        if (media && media.file) {
+            const menu = new Menu();
+            try {
+                this.app.workspace.trigger('file-menu', menu, media.file, 'media-viewer');
+            } catch (err) {
+                console.error('Error triggering file-menu event:', err);
+            }
+            if (event instanceof MouseEvent) {
+                menu.showAtMouseEvent(event);
+            } else {
+                menu.showAtPosition({
+                    x: event.clientX,
+                    y: event.clientY
+                });
+            }
+        }
     }
 
     // 顯示上一個媒體
@@ -837,12 +861,29 @@ export class FullScreenModal extends Modal {
     // 註冊觸控事件處理器（行動裝置拖曳翻頁）
     private registerTouchEvents(element: HTMLElement) {
         element.addEventListener('touchstart', (e) => {
-            if (e.touches.length >= 2) {
-                if (!this.isImage) return;
-                e.preventDefault();
-                this.startPinchZoom(e);
-                return;
+            if (Platform.isMobile) {
+                if (this.longPressTimeout) {
+                    window.clearTimeout(this.longPressTimeout);
+                    this.longPressTimeout = null;
+                }
+                // 【防誤觸關鍵 1】：如果是多指觸碰（例如準備雙指縮放），絕對不觸發長按右鍵選單
+                if (e.touches.length > 1) {
+                    this.isLongPress = false;
+                    if (this.isImage) {
+                        e.preventDefault();
+                        this.startPinchZoom(e);
+                    }
+                    return;
+                }
+            } else {
+                if (e.touches.length >= 2) {
+                    if (!this.isImage) return;
+                    e.preventDefault();
+                    this.startPinchZoom(e);
+                    return;
+                }
             }
+
             // 只有在非縮放狀態下才處理觸控事件
             if (Date.now() < this.suppressSwipeUntil) {
                 this.isDragging = false;
@@ -855,9 +896,31 @@ export class FullScreenModal extends Modal {
             this.touchStartY = touch.clientY;
             this.touchStartTime = Date.now();
             this.isDragging = false;
+            this.isLongPress = false;
+
+            // 【防誤觸關鍵 2】：行動裝置手動偵測長按（嚴格限制僅在單指觸控時啟動）
+            if (Platform.isMobile && e.touches.length === 1) {
+                this.longPressTimeout = window.setTimeout(() => {
+                    this.isLongPress = true;
+                    this.isDragging = false;
+                    const media = this.mediaUrls[this.currentIndex];
+                    if (media) {
+                        this.onMediaContextMenu({ clientX: touch.clientX, clientY: touch.clientY }, media);
+                    }
+                    this.longPressTimeout = null;
+                }, 600); // 600 毫秒判定為長按
+            }
         }, { passive: false });
 
         element.addEventListener('touchmove', (e) => {
+            // 【防誤觸關鍵 3】：雙指以上滑動（正在縮放中）時，立即取消長按計時器
+            if (e.touches.length > 1) {
+                if (this.longPressTimeout) {
+                    window.clearTimeout(this.longPressTimeout);
+                    this.longPressTimeout = null;
+                }
+            }
+
             if (e.touches.length >= 2) {
                 if (!this.isImage) return;
                 e.preventDefault();
@@ -878,6 +941,20 @@ export class FullScreenModal extends Modal {
             const deltaX = Math.abs(touch.clientX - this.touchStartX);
             const deltaY = Math.abs(touch.clientY - this.touchStartY);
 
+            // 有明顯移動時也取消長按計時器
+            if (deltaX > 10 || deltaY > 10) {
+                if (this.longPressTimeout) {
+                    window.clearTimeout(this.longPressTimeout);
+                    this.longPressTimeout = null;
+                }
+            }
+
+            // 如果已經觸發長按選單，阻止滑動與拖曳翻頁
+            if (this.isLongPress) {
+                e.preventDefault();
+                return;
+            }
+
             // 如果水平移動距離大於垂直移動距離，則認為是水平拖曳
             // 如果垂直移動距離大於水平移動距離，則認為是垂直拖曳
             if ((deltaX > deltaY && deltaX > 10) || (deltaY > deltaX && deltaY > 10)) {
@@ -888,6 +965,19 @@ export class FullScreenModal extends Modal {
         }, { passive: false });
 
         element.addEventListener('touchend', (e) => {
+            if (this.longPressTimeout) {
+                window.clearTimeout(this.longPressTimeout);
+                this.longPressTimeout = null;
+            }
+
+            // 如果已經觸發長按選單，則在此時攔截，防止後續觸發 click/tap 事件
+            if (this.isLongPress) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.isLongPress = false;
+                return;
+            }
+
             if (this.isPinching) {
                 if (e.touches.length >= 2) {
                     return;
@@ -943,6 +1033,15 @@ export class FullScreenModal extends Modal {
             }
 
             // 重置拖曳狀態
+            this.isDragging = false;
+        }, { passive: false });
+
+        element.addEventListener('touchcancel', () => {
+            if (this.longPressTimeout) {
+                window.clearTimeout(this.longPressTimeout);
+                this.longPressTimeout = null;
+            }
+            this.isLongPress = false;
             this.isDragging = false;
         }, { passive: true });
     }
@@ -1194,6 +1293,10 @@ export class FullScreenModal extends Modal {
     onClose() {
         // 確保關閉時清除計時器
         this.stopAutoPlay();
+        if (this.longPressTimeout) {
+            window.clearTimeout(this.longPressTimeout);
+            this.longPressTimeout = null;
+        }
 
         const { contentEl } = this;
         contentEl.empty();
