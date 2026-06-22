@@ -822,6 +822,10 @@ export class FullScreenModal extends Modal {
             const media = this.mediaUrls[this.currentIndex];
             this.onMediaContextMenu(e, media);
         };
+
+        this.fullVideo.addEventListener('focus', () => {
+            this.fullVideo.blur();
+        });
     }
 
     private onMediaContextMenu(event: MouseEvent | { clientX: number, clientY: number }, media: Media) {

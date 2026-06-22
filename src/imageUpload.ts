@@ -1,4 +1,4 @@
-import { App, Modal, Notice, TFile } from 'obsidian';
+import { App, Modal, Notice, TFile, FuzzySuggestModal, Setting } from 'obsidian';
 import MediaViewPlugin from './main';
 import { t } from './translations';
 import { captureScrollRestore } from './scrollHelper';
@@ -73,36 +73,28 @@ export class ImageUploadModal extends Modal {
             void this.handleClipboardPaste();
         });
 
-        const insertPositionContainer = contentEl.createDiv('mvgb-insert-position-container');
-        insertPositionContainer.addClass('mvgb-setting-item');
-
-        const insertPositionLabel = insertPositionContainer.createDiv('mvgb-setting-label');
-        insertPositionLabel.setText(t('insert_position'));
-
-        const insertPositionControl = insertPositionContainer.createDiv('mvgb-setting-control');
-        const insertPositionDropdown = insertPositionControl.createEl('select', {
-            cls: 'mvgb-insert-position-dropdown',
+        const chooseNoteButton = contentEl.createEl('button', {
+            text: t('choose_note'),
+            cls: 'mvgb-paste-button mvgb-choose-note-button',
         });
 
-        const endOption = insertPositionDropdown.createEl('option', {
-            text: t('insert_at_end'),
-            value: 'true',
+        chooseNoteButton.addEventListener('click', () => {
+            const noteSuggest = new NoteSuggestModal(this.app, (file) => {
+                const linkText = this.app.metadataCache.fileToLinktext(file, this.sourcePath ?? '', true);
+                void this.handleLinks([`[[${linkText}]]`]);
+            });
+            noteSuggest.open();
         });
 
-        const startOption = insertPositionDropdown.createEl('option', {
-            text: t('insert_at_start'),
-            value: 'false',
-        });
-
-        if (this.insertAtEnd) {
-            endOption.selected = true;
-        } else {
-            startOption.selected = true;
-        }
-
-        insertPositionDropdown.addEventListener('change', () => {
-            this.insertAtEnd = insertPositionDropdown.value === 'true';
-        });
+        new Setting(contentEl)
+            .setName(t('insert_position'))
+            .addDropdown(dropdown => dropdown
+                .addOption('true', t('insert_at_end'))
+                .addOption('false', t('insert_at_start'))
+                .setValue(this.insertAtEnd ? 'true' : 'false')
+                .onChange(value => {
+                    this.insertAtEnd = value === 'true';
+                }));
 
         // 拖曳時用左右半區快速決定插入到 gallery 開頭或結尾。
         dropZone.addEventListener('dragover', (e: DragEvent) => {
@@ -464,5 +456,27 @@ export class ImageUploadModal extends Modal {
             new Notice(t('gallery_not_found'));
             return content;
         });
+    }
+}
+
+export class NoteSuggestModal extends FuzzySuggestModal<TFile> {
+    onChoose: (file: TFile) => void;
+
+    constructor(app: App, onChoose: (file: TFile) => void) {
+        super(app);
+        this.onChoose = onChoose;
+        this.setPlaceholder(t('choose_note_placeholder'));
+    }
+
+    getItems(): TFile[] {
+        return this.app.vault.getMarkdownFiles();
+    }
+
+    getItemText(file: TFile): string {
+        return file.path;
+    }
+
+    onChooseItem(file: TFile, evt: MouseEvent | KeyboardEvent): void {
+        this.onChoose(file);
     }
 }

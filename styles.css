@@ -809,6 +809,10 @@
     transition: background-color 0.2s ease;
 }
 
+.mvgb-paste-button.mvgb-choose-note-button {
+    margin-top: 10px;
+}
+
 .mvgb-paste-button:hover {
     background-color: var(--interactive-accent-hover);
 }

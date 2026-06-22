@@ -33,13 +33,13 @@ const TRANSLATIONS: Translations = {
         'file_renamed': '檔案已重新命名',
 
         // 按鈕和標籤
-        'delete': '刪除',
+        'delete': '移除',
         'confirm': '確認',
         'cancel': '取消',
         'drag_and_drop': '拖曳圖片到這裡或點擊選擇檔案',
         'drag_reorder': '拖曳以重新排序',
         'paste_from_clipboard': '從剪貼簿貼上圖片',
-        'add_image': '新增圖片',
+        'add_item': '新增項目',
         'auto_play': '自動播放',
         'stop_auto_play': '停止播放',
         'move_left': '向左移動',
@@ -48,6 +48,8 @@ const TRANSLATIONS: Translations = {
         'new_filename': '新的檔案名稱',
         'copy_alt': '複製 alt 內容',
         'alt_copied': '已複製 alt 內容',
+        'choose_note': '選擇筆記',
+        'choose_note_placeholder': '搜尋筆記名稱...',
 
         // 設定
         'allow_media_deletion': '允許刪除媒體檔案',
@@ -113,13 +115,13 @@ const TRANSLATIONS: Translations = {
         'file_renamed': 'File renamed',
 
         // Buttons and Labels
-        'delete': 'Delete',
+        'delete': 'Remove',
         'confirm': 'Confirm',
         'cancel': 'Cancel',
         'drag_and_drop': 'Drag and drop images here or click to select files',
         'drag_reorder': 'Drag to reorder',
         'paste_from_clipboard': 'Paste image from clipboard',
-        'add_image': 'Add image',
+        'add_item': 'Add item',
         'auto_play': 'Auto Play',
         'stop_auto_play': 'Stop Auto Play',
         'move_left': 'Move Left',
@@ -128,6 +130,8 @@ const TRANSLATIONS: Translations = {
         'new_filename': 'New filename',
         'copy_alt': 'Copy alt text',
         'alt_copied': 'Alt text copied',
+        'choose_note': 'Choose Note',
+        'choose_note_placeholder': 'Search note name...',
 
         // Settings
         'allow_media_deletion': 'Allow media deletion',
@@ -193,13 +197,13 @@ const TRANSLATIONS: Translations = {
         'file_renamed': '文件已重命名',
 
         // 按钮和标签
-        'delete': '删除',
+        'delete': '移除',
         'confirm': '确认',
         'cancel': '取消',
         'drag_and_drop': '拖曳图片到这裡或点击选择图片',
         'drag_reorder': '拖拽以重新排序',
         'paste_from_clipboard': '从剪贴板粘贴图片',
-        'add_image': '新增图片',
+        'add_item': '新增项目',
         'auto_play': '自动播放',
         'stop_auto_play': '停止播放',
         'move_left': '向左移动',
@@ -208,6 +212,8 @@ const TRANSLATIONS: Translations = {
         'new_filename': '新的文件名',
         'copy_alt': '复制 alt 内容',
         'alt_copied': '已复制 alt 内容',
+        'choose_note': '选择笔记',
+        'choose_note_placeholder': '搜索笔记名称...',
 
         // 设置
         'allow_media_deletion': '允许删除媒体文件',
@@ -273,19 +279,21 @@ const TRANSLATIONS: Translations = {
         'file_renamed': 'ファイル名を変更しました',
 
         // ボタンとラベル
-        'delete': '削除',
+        'delete': '取り除く',
         'confirm': '確認',
         'cancel': 'キャンセル',
         'drag_and_drop': '画像をドラッグ＆ドロップするか、クリックしてファイルを選択',
         'drag_reorder': 'ドラッグして並べ替え',
         'paste_from_clipboard': 'クリップボードから画像を貼り付け',
-        'add_image': '画像を追加',
+        'add_item': '項目を追加',
         'move_left': '左に移動',
         'move_right': '右に移動',
         'rename': '名前を変更',
         'new_filename': '新しいファイル名',
         'copy_alt': 'alt テキストをコピー',
         'alt_copied': 'alt テキストをコピーしました',
+        'choose_note': 'ノートを選択',
+        'choose_note_placeholder': 'ノートの名前を検索...',
 
         // 設定
         'allow_media_deletion': 'メディア削除を許可',

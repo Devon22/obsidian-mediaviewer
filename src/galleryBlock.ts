@@ -844,7 +844,7 @@ export class GalleryBlock {
 
                 const addIconText = activeDocument.createElement('div');
                 addIconText.className = 'mvgb-add-media-text';
-                addIconText.textContent = t('add_image');
+                addIconText.textContent = t('add_item');
                 addIcon.appendChild(addIconText);
 
                 addContainer.onclick = () => {
@@ -916,7 +916,7 @@ export class GalleryBlock {
             if (containerInfo.addButtonEnabled || items.length === 0) {
                 const addButton = paginationDiv.createEl('button', {
                     cls: 'mvgb-gallery-control-button mvgb-add-image-button',
-                    text: t('add_image')
+                    text: t('add_item')
                 });
                 addButton.onclick = () => {
                     const modal = new ImageUploadModal(this.app, this.plugin, galleryDiv, sourcePath);
@@ -1593,7 +1593,7 @@ export class GalleryBlock {
     private addGalleryBlockMenuItems(menu: Menu, galleryDiv: HTMLElement, galleryId: string, sourcePath?: string) {
         menu.addItem((item) => {
             item
-                .setTitle(t('add_image'))
+                .setTitle(t('add_item'))
                 .setIcon("image")
                 .onClick(() => {
                     const modal = new ImageUploadModal(this.app, this.plugin, galleryDiv, sourcePath);
