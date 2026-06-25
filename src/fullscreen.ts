@@ -3,6 +3,12 @@ import MediaViewPlugin from './main';
 import { MediaViewSettings } from './settings';
 import { t } from './translations';
 
+const getYoutubeId = (url: string): string | null => {
+    const regExp = /(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/ ]{11})/;
+    const match = url.match(regExp);
+    return (match && match[1]) ? match[1] : null;
+};
+
 interface Media {
     type: string;
     url: string;
@@ -22,6 +28,7 @@ export class FullScreenModal extends Modal {
     fullMediaView!: HTMLDivElement;
     fullImage!: HTMLImageElement;
     fullVideo!: HTMLVideoElement;
+    fullIframe!: HTMLIFrameElement;
     galleryCloseButton!: HTMLButtonElement;
     handleWheel: ((event: WheelEvent) => void) | null;
     autoPlayTimer: number | null;
@@ -94,10 +101,11 @@ export class FullScreenModal extends Modal {
 
             // 使用單一正則表達式匹配所有媒體連結
             // Because the links in the Gallery Block need to be parsed, Metadatacache cannot be used
-            const mediaMatches = Array.from(contentWithoutFrontmatter.matchAll(/(?:!\[\[(.*?)(?:\|.*?)?\]\]|!\[(.*?)\]\((.*?)\))/g));
+            const mediaMatches = Array.from(contentWithoutFrontmatter.matchAll(/(?:!\[\[(.*?)(?:\|.*?)?\]\]|(!?)\[(.*?)\]\((.*?)\))/g));
 
             for (const match of mediaMatches) {
-                const [fullMatch, internalLink, , markdownLink] = match;
+                const [fullMatch, internalLink] = match;
+                const markdownLink = match[4];
                 let url = null;
                 let file = null;
 
@@ -140,30 +148,35 @@ export class FullScreenModal extends Modal {
 
                 if (url) {
                     let type = 'image';
-                    const urlExtension = url.split('.').pop()?.toLowerCase();
+                    const isYoutubeUrl = getYoutubeId(url) !== null;
+                    if (isYoutubeUrl) {
+                        type = 'youtube';
+                    } else {
+                        const urlExtension = url.split('.').pop()?.toLowerCase();
 
-                    if (file) {
-                        const extension = file.extension.toLowerCase();
-                        if (!extension.match(/^(jpg|jpeg|png|gif|webp|mp4|mkv|mov|webm|flac|m4a|mp3|ogg|wav|3gp)$/)) {
-                            continue;
-                        }
-                        type = extension.match(/^(jpg|jpeg|png|gif|webp)$/) ? 'image' : 'video';
-                    } else if (urlExtension) {
-                        if (urlExtension.match(/^(mp4|mkv|mov|webm|flac|m4a|mp3|ogg|wav|3gp)$/)) {
-                            type = 'video';
-                        } else if (!urlExtension.match(/^(jpg|jpeg|png|gif|webp)$/)) {
-                            // 檢查 URL 是否包含圖片格式的查詢參數
-                            const urlLower = url.toLowerCase();
-                            if (urlLower.includes('format=jpg') ||
-                                urlLower.includes('format=jpeg') ||
-                                urlLower.includes('format=png') ||
-                                urlLower.includes('format=gif') ||
-                                urlLower.includes('format=webp') ||
-                                // 檢查 URL 路徑中是否包含圖片擴展名
-                                urlLower.match(/\.(jpg|jpeg|png|gif|webp)(\?|&|#|!|$)/)) {
-                                type = 'image';
-                            } else {
+                        if (file) {
+                            const extension = file.extension.toLowerCase();
+                            if (!extension.match(/^(jpg|jpeg|png|gif|webp|mp4|mkv|mov|webm|flac|m4a|mp3|ogg|wav|3gp)$/)) {
                                 continue;
+                            }
+                            type = extension.match(/^(jpg|jpeg|png|gif|webp)$/) ? 'image' : 'video';
+                        } else if (urlExtension) {
+                            if (urlExtension.match(/^(mp4|mkv|mov|webm|flac|m4a|mp3|ogg|wav|3gp)$/)) {
+                                type = 'video';
+                            } else if (!urlExtension.match(/^(jpg|jpeg|png|gif|webp)$/)) {
+                                // 檢查 URL 是否包含圖片格式的查詢參數
+                                const urlLower = url.toLowerCase();
+                                if (urlLower.includes('format=jpg') ||
+                                    urlLower.includes('format=jpeg') ||
+                                    urlLower.includes('format=png') ||
+                                    urlLower.includes('format=gif') ||
+                                    urlLower.includes('format=webp') ||
+                                    // 檢查 URL 路徑中是否包含圖片擴展名
+                                    urlLower.match(/\.(jpg|jpeg|png|gif|webp)(\?|&|#|!|$)/)) {
+                                    type = 'image';
+                                } else {
+                                    continue;
+                                }
                             }
                         }
                     }
@@ -251,6 +264,22 @@ export class FullScreenModal extends Modal {
                         menu.showAtMouseEvent(e);
                     }
                 };
+            } else if (media.type === 'youtube') {
+                const ytId = getYoutubeId(media.url);
+                const ytThumbnail = ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : '';
+                const img = container.createEl('img');
+                img.src = ytThumbnail;
+                img.onclick = () => this.showMedia(index);
+                const videoIcon = container.createDiv('mv-video-indicator');
+                const svg = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                svg.setAttribute('viewBox', '0 0 24 24');
+                svg.setAttribute('width', '24');
+                svg.setAttribute('height', '24');
+                const path = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('fill', 'currentColor');
+                path.setAttribute('d', 'M8 5v14l11-7z');
+                svg.appendChild(path);
+                videoIcon.appendChild(svg);
             } else {
                 if (media.url.match(/\.(mp4|mkv|mov|webm)/i)) {
                     const video = container.createEl('video');
@@ -340,6 +369,15 @@ export class FullScreenModal extends Modal {
         });
         this.fullVideo.draggable = false;
         this.fullVideo.addEventListener('dragstart', (e) => e.preventDefault());
+        this.fullIframe = this.fullMediaView.createEl('iframe', {
+            cls: 'mv-full-iframe',
+            attr: {
+                frameborder: '0',
+                allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share',
+                allowfullscreen: 'true'
+            }
+        });
+        this.fullIframe.addClass('is-hidden');
 
         // 建立媒體關閉按鈕
         const fullCloseButton = this.fullMediaView.createEl('button', {
@@ -367,7 +405,7 @@ export class FullScreenModal extends Modal {
 
     async showMedia(index: number): Promise<void> {
         // 過濾出所有媒體項目
-        const mediaItems = this.mediaUrls.filter(item => item.type === 'image' || item.type === 'video');
+        const mediaItems = this.mediaUrls.filter(item => item.type === 'image' || item.type === 'video' || item.type === 'youtube');
         if (mediaItems.length === 0) {
             new Notice(t('no_media_found'));
             this.close();
@@ -390,27 +428,39 @@ export class FullScreenModal extends Modal {
 
         const media = mediaItems[index];
         this.isImage = media.type === 'image';
-        this.fullMediaView.classList.toggle('is-video', !this.isImage);
-        this.fullMediaView.classList.toggle('is-image', this.isImage);
+        this.fullMediaView.classList.toggle('is-video', media.type === 'video');
+        this.fullMediaView.classList.toggle('is-image', media.type === 'image');
+        this.fullMediaView.classList.toggle('is-youtube', media.type === 'youtube');
 
         this.fullVideo.pause();
+        this.fullIframe.src = '';
 
-        if (this.isImage) {
+        if (media.type === 'image') {
             this.fullImage.src = media.url;
             this.fullImage.onload = () => {
                 this.fullImage.removeClass('is-hidden');
                 this.fullVideo.addClass('is-hidden');
+                this.fullIframe.addClass('is-hidden');
                 this.resetImageStyles();
             };
-        } else {
+        } else if (media.type === 'video') {
             this.fullVideo.src = media.url;
             if (media.url.match(/\.(mp4|mkv|mov|webm)/i)) {
                 this.fullVideo.muted = this.plugin.settings.muteVideoOnOpen;
             }
             this.fullVideo.removeClass('is-hidden');
             this.fullImage.addClass('is-hidden');
+            this.fullIframe.addClass('is-hidden');
             this.fullVideo.loop = true;
             void this.fullVideo.play();
+        } else if (media.type === 'youtube') {
+            const ytId = getYoutubeId(media.url);
+            if (ytId) {
+                this.fullIframe.src = `https://www.youtube.com/embed/${ytId}?autoplay=1`;
+                this.fullIframe.removeClass('is-hidden');
+                this.fullImage.addClass('is-hidden');
+                this.fullVideo.addClass('is-hidden');
+            }
         }
 
         // 顯示圖片資訊
@@ -520,9 +570,11 @@ export class FullScreenModal extends Modal {
         this.fullMediaView.addClass('is-hidden');
         this.fullMediaView.classList.remove('is-video');
         this.fullMediaView.classList.remove('is-image');
+        this.fullMediaView.classList.remove('is-youtube');
         this.galleryCloseButton.removeClass('is-hidden');
         this.isZoomed = false;
         this.fullVideo.pause();
+        this.fullIframe.src = '';
     }
 
     resetImageStyles() {
@@ -1139,6 +1191,22 @@ export class FullScreenModal extends Modal {
                             menu.showAtMouseEvent(e);
                         }
                     };
+                } else if (media.type === 'youtube') {
+                    const ytId = getYoutubeId(media.url);
+                    const ytThumbnail = ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : '';
+                    const img = container.createEl('img');
+                    img.src = ytThumbnail;
+                    img.onclick = () => this.showMedia(idx);
+                    const videoIcon = container.createDiv('mv-video-indicator');
+                    const svg = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                    svg.setAttribute('viewBox', '0 0 24 24');
+                    svg.setAttribute('width', '24');
+                    svg.setAttribute('height', '24');
+                    const path = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    path.setAttribute('fill', 'currentColor');
+                    path.setAttribute('d', 'M8 5v14l11-7z');
+                    svg.appendChild(path);
+                    videoIcon.appendChild(svg);
                 } else {
                     if (media.url.match(/\.(mp4|mkv|mov|webm)/i)) {
                         const video = container.createEl('video');
@@ -1222,6 +1290,15 @@ export class FullScreenModal extends Modal {
                 cls: 'mv-full-video',
                 attr: { controls: true }
             });
+            this.fullIframe = this.fullMediaView.createEl('iframe', {
+                cls: 'mv-full-iframe',
+                attr: {
+                    frameborder: '0',
+                    allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share',
+                    allowfullscreen: 'true'
+                }
+            });
+            this.fullIframe.addClass('is-hidden');
 
             // 建立媒體關閉按鈕
             const fullCloseButton = this.fullMediaView.createEl('button', {
@@ -1300,6 +1377,9 @@ export class FullScreenModal extends Modal {
         if (this.longPressTimeout) {
             window.clearTimeout(this.longPressTimeout);
             this.longPressTimeout = null;
+        }
+        if (this.fullIframe) {
+            this.fullIframe.src = '';
         }
 
         const { contentEl } = this;

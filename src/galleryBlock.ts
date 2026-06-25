@@ -470,6 +470,33 @@ export class GalleryBlock {
                 pendingItemLines = [];
 
                 const [, isImage, text, url] = markdownMatch;
+                const cleanUrl = url.split(' "')[0];
+
+                const youtubeRegex = /(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/ ]{11})/;
+                const ytMatch = cleanUrl.match(youtubeRegex);
+                const ytId = ytMatch ? ytMatch[1] : null;
+
+                if (ytId) {
+                    if (!currentThumbnail) {
+                        currentThumbnail = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
+                    }
+                    items.push({
+                        type: 'youtube',
+                        url: cleanUrl,
+                        path: text || ytId,
+                        altText: currentAltText,
+                        title: currentTitle,
+                        linkUrl: cleanUrl,
+                        thumbnail: currentThumbnail,
+                        originalBlock: originalBlock,
+                        loc: { start: tempStartLine, end: i }
+                    });
+                    currentTitle = null;
+                    currentAltText = null;
+                    currentLinkUrl = null;
+                    currentThumbnail = null;
+                    continue;
+                }
 
                 if (!url.startsWith('http://') && !url.startsWith('https://')) {
                     const file = this.app.metadataCache.getFirstLinkpathDest(url, '');
@@ -786,8 +813,14 @@ export class GalleryBlock {
                         if (file instanceof TFile) {
                             link.onclick = (e) => {
                                 e.preventDefault();
-                                const leaf = this.app.workspace.getLeaf('tab');
-                                void leaf.openFile(file);
+                                const isInPreview = link.closest('.ge-note-view-container') !== null;
+                                const isModKey = e.ctrlKey || e.metaKey;
+                                if (isInPreview && !isModKey) {
+                                    this.app.workspace.trigger('grid-explorer:preview-file', file.path);
+                                } else {
+                                    const leaf = this.app.workspace.getLeaf('tab');
+                                    void leaf.openFile(file);
+                                }
                             };
                         }
                     } else {
@@ -1129,8 +1162,14 @@ export class GalleryBlock {
                 }
             } else if (item.isInternalLink && item.file) {
                 // 內部連結：在新分頁開啟筆記
-                const leaf = this.app.workspace.getLeaf('tab');
-                void leaf.openFile(item.file);
+                const isInPreview = container.closest('.ge-note-view-container') !== null;
+                const isModKey = event.ctrlKey || event.metaKey;
+                if (isInPreview && !isModKey) {
+                    this.app.workspace.trigger('grid-explorer:preview-file', item.file.path);
+                } else {
+                    const leaf = this.app.workspace.getLeaf('tab');
+                    void leaf.openFile(item.file);
+                }
             } else {
                 // 其他連結：嘗試在新分頁開啟
                 window.open(item.path, '_blank', 'noopener,noreferrer');
@@ -1303,6 +1342,26 @@ export class GalleryBlock {
                 img.toggleClass('is-pointer-disabled', Platform.isMobile);
                 container.appendChild(img);
             }
+        } else if (media.type === 'youtube') {
+            if (media.thumbnail) {
+                const img = activeDocument.createElement('img');
+                img.src = media.thumbnail;
+                img.alt = media.path || '';
+                img.className = 'mvgb-video-thumbnail';
+                img.toggleClass('is-pointer-disabled', Platform.isMobile);
+                container.appendChild(img);
+            }
+            const videoIcon = activeDocument.createElement('div');
+            videoIcon.className = 'mv-video-indicator';
+            const svg = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('viewBox', '0 0 24 24');
+            svg.setAttribute('width', '24');
+            svg.setAttribute('height', '24');
+            const path = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', 'M8 5v14l11-7z');
+            svg.appendChild(path);
+            videoIcon.appendChild(svg);
+            container.appendChild(videoIcon);
         } else {
             if (media.path && media.url) {
                 // 處理影片檔案
@@ -1407,8 +1466,14 @@ export class GalleryBlock {
                             link.onclick = (e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                const leaf = this.app.workspace.getLeaf('tab');
-                                void leaf.openFile(file);
+                                const isInPreview = link.closest('.ge-note-view-container') !== null;
+                                const isModKey = e.ctrlKey || e.metaKey;
+                                if (isInPreview && !isModKey) {
+                                    this.app.workspace.trigger('grid-explorer:preview-file', file.path);
+                                } else {
+                                    const leaf = this.app.workspace.getLeaf('tab');
+                                    void leaf.openFile(file);
+                                }
                             };
                         }
                     } else {
@@ -1454,7 +1519,7 @@ export class GalleryBlock {
             });
         }
 
-        if ((!this.plugin.settings.disableClickToOpenMediaOnGallery && media.type === 'image') || media.type === 'video') {
+        if ((!this.plugin.settings.disableClickToOpenMediaOnGallery && media.type === 'image') || media.type === 'video' || media.type === 'youtube') {
             container.onclick = () => {
                 const modal = new FullScreenModal(this.app, this.plugin, 'thumbnail', sourcePath);
                 modal.open();
