@@ -1299,21 +1299,15 @@ export class GalleryBlock {
             }
 
             const styleVal = galleryDiv.style.getPropertyValue('--mv-gallery-thumbnail-width');
-            let colWidth = parseInt(styleVal) || 150;
-            if (!colWidth) {
-                let size = 'medium';
-                if (galleryDiv.classList.contains('size-small')) size = 'small';
-                else if (galleryDiv.classList.contains('size-large')) size = 'large';
-                const propertyName = `galleryGridSize${size.charAt(0).toUpperCase() + size.slice(1)}` as keyof MediaViewSettings;
-                colWidth = (this.plugin.settings[propertyName] as number) || 150;
-            }
+            const colWidth = parseInt(styleVal) || 150;
+            const gap = parseFloat(getComputedStyle(galleryDiv).columnGap) || 15;
 
             let currentCols = 0;
             const resizeObserver = new ResizeObserver((entries) => {
                 for (const entry of entries) {
                     const width = entry.contentRect.width;
                     if (width <= 0) continue;
-                    const cols = Math.max(1, Math.floor(width / (colWidth + 2))); // 2px gap
+                    const cols = Math.max(1, Math.floor(width / (colWidth + gap)));
                     if (cols !== currentCols) {
                         currentCols = cols;
                         galleryDiv.replaceChildren();
