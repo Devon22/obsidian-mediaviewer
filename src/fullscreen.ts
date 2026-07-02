@@ -148,7 +148,7 @@ export class FullScreenModal extends Modal {
 
                 if (url) {
                     let type = 'image';
-                    const isYoutubeUrl = getYoutubeId(url) !== null;
+                    const isYoutubeUrl = getYoutubeId(url) !== null && !Platform.isIosApp;
                     if (isYoutubeUrl) {
                         type = 'youtube';
                     } else {
@@ -239,6 +239,10 @@ export class FullScreenModal extends Modal {
         galleryContent.setCssProps({
             '--mv-gallery-thumbnail-width': `${width}px`
         });
+
+        if (this.plugin.settings.galleryWaterfall) {
+            galleryContent.addClass('waterfall');
+        }
 
         galleryContent.toggleClass('is-hidden', this.openType !== 'command');
 
@@ -373,7 +377,7 @@ export class FullScreenModal extends Modal {
             cls: 'mv-full-iframe',
             attr: {
                 frameborder: '0',
-                allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share',
+                allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture',
                 allowfullscreen: 'true'
             }
         });
@@ -1294,7 +1298,7 @@ export class FullScreenModal extends Modal {
                 cls: 'mv-full-iframe',
                 attr: {
                     frameborder: '0',
-                    allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share',
+                    allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture',
                     allowfullscreen: 'true'
                 }
             });

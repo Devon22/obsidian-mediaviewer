@@ -83,6 +83,7 @@ interface ContainerInfo {
     addButtonEnabled: boolean;
     gridSize: string;
     paginationEnabled: number;
+    waterfall?: boolean;
 }
 
 interface MediaUrlsData {
@@ -152,6 +153,7 @@ export class GalleryBlock {
         let gridSize = this.plugin.settings.galleryGridSize || 'medium';
         let paginationEnabled = this.plugin.settings.itemsPerPage || 0; // 設定變數以決定是否開啟分頁功能
         let filterKeyword: string | null = null; // 新增搜尋關鍵字
+        let waterfall = this.plugin.settings.galleryWaterfall || false;
 
         // 產生基於內容的唯一識別碼
         const galleryId = 'gallery-' + this.hashString(content.trim());
@@ -266,6 +268,8 @@ export class GalleryBlock {
                 addButtonEnabled = addButtonMatch[1].toLowerCase() === 'true';
                 continue;
             }
+
+
 
             // 檢查是否為容器標題設定
             const containerTitleMatch = trimmedLine.match(/^title:\s*(.+)$/);
@@ -476,7 +480,7 @@ export class GalleryBlock {
                 const ytMatch = cleanUrl.match(youtubeRegex);
                 const ytId = ytMatch ? ytMatch[1] : null;
 
-                if (ytId) {
+                if (ytId && !Platform.isIosApp) {
                     if (!currentThumbnail) {
                         currentThumbnail = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
                     }
@@ -678,7 +682,8 @@ export class GalleryBlock {
                 title: containerTitle,
                 addButtonEnabled: addButtonEnabled,
                 gridSize: gridSize,
-                paginationEnabled: paginationEnabled
+                paginationEnabled: paginationEnabled,
+                waterfall: waterfall
             },
             galleryId: galleryId,
             sourcePath: sourcePath,
@@ -687,9 +692,10 @@ export class GalleryBlock {
     }
 
     hashString(str: string) {
+        const normalized = str.replace(/\r\n/g, '\n');
         let hash = 0;
-        for (let i = 0; i < str.length; i++) {
-            const char = str.charCodeAt(i);
+        for (let i = 0; i < normalized.length; i++) {
+            const char = normalized.charCodeAt(i);
             hash = ((hash << 5) - hash) + char;
             hash = hash & hash; // Convert to 32bit integer
         }
@@ -784,6 +790,9 @@ export class GalleryBlock {
 
         // 根據 size 參數添加對應的 class 並設定寬度
         galleryDiv.addClass(`size-${containerInfo.gridSize}`);
+        if (containerInfo.waterfall) {
+            galleryDiv.addClass('waterfall');
+        }
         const propertyName = `galleryGridSize${containerInfo.gridSize.charAt(0).toUpperCase() + containerInfo.gridSize.slice(1)}` as keyof MediaViewSettings;
         const width = this.plugin.settings[propertyName];
         galleryDiv.setCssProps({
@@ -849,13 +858,14 @@ export class GalleryBlock {
         // 當 itemsPerPage 為 0 或項目數量不足時，顯示所有項目
         if (itemsPerPage <= 0 || items.length <= itemsPerPage) {
             // 顯示所有項目
+            const itemElements: HTMLElement[] = [];
             items.forEach((item: GalleryItem, index: number) => {
                 if (item.type === 'note') {
                     const noteContainer = this.createNoteContainer(item, index, items, galleryId, sourcePath, mediaUrlsData.isFiltered);
-                    galleryDiv.appendChild(noteContainer);
+                    itemElements.push(noteContainer);
                 } else {
                     const mediaContainer = this.createMediaContainer(item, index, items, galleryId, sourcePath, mediaUrlsData.isFiltered);
-                    galleryDiv.appendChild(mediaContainer);
+                    itemElements.push(mediaContainer);
                 }
             });
 
@@ -885,8 +895,9 @@ export class GalleryBlock {
                     modal.open();
                 };
 
-                galleryDiv.appendChild(addContainer);
+                itemElements.push(addContainer);
             }
+            this.renderGalleryItems(galleryDiv, itemElements);
         } else {
             // 使用分頁顯示
             const totalPages = Math.ceil(items.length / itemsPerPage);
@@ -1279,6 +1290,54 @@ export class GalleryBlock {
         return container;
     }
 
+    renderGalleryItems(galleryDiv: HTMLElement, itemElements: HTMLElement[]) {
+        if (galleryDiv.classList.contains('waterfall')) {
+            // 清理舊的 observer
+            const observedDiv = galleryDiv as HTMLElement & { _resizeObserver?: ResizeObserver };
+            if (observedDiv._resizeObserver) {
+                observedDiv._resizeObserver.disconnect();
+            }
+
+            const styleVal = galleryDiv.style.getPropertyValue('--mv-gallery-thumbnail-width');
+            let colWidth = parseInt(styleVal) || 150;
+            if (!colWidth) {
+                let size = 'medium';
+                if (galleryDiv.classList.contains('size-small')) size = 'small';
+                else if (galleryDiv.classList.contains('size-large')) size = 'large';
+                const propertyName = `galleryGridSize${size.charAt(0).toUpperCase() + size.slice(1)}` as keyof MediaViewSettings;
+                colWidth = (this.plugin.settings[propertyName] as number) || 150;
+            }
+
+            let currentCols = 0;
+            const resizeObserver = new ResizeObserver((entries) => {
+                for (const entry of entries) {
+                    const width = entry.contentRect.width;
+                    if (width <= 0) continue;
+                    const cols = Math.max(1, Math.floor(width / (colWidth + 2))); // 2px gap
+                    if (cols !== currentCols) {
+                        currentCols = cols;
+                        galleryDiv.replaceChildren();
+                        const colDivs: HTMLDivElement[] = [];
+                        for (let c = 0; c < cols; c++) {
+                            const colDiv = activeDocument.createElement('div');
+                            colDiv.className = 'mvgb-waterfall-column';
+                            galleryDiv.appendChild(colDiv);
+                            colDivs.push(colDiv);
+                        }
+                        itemElements.forEach((el, idx) => {
+                            colDivs[idx % cols].appendChild(el);
+                        });
+                    }
+                }
+            });
+            resizeObserver.observe(galleryDiv);
+            observedDiv._resizeObserver = resizeObserver;
+        } else {
+            galleryDiv.replaceChildren();
+            itemElements.forEach(el => galleryDiv.appendChild(el));
+        }
+    }
+
     updateGalleryPage(galleryDiv: HTMLElement, items: GalleryItem[], page: number, itemsPerPage: number, sourcePath?: string, isFiltered?: boolean) {
         const start = (page - 1) * itemsPerPage;
         const end = start + itemsPerPage;
@@ -1294,14 +1353,15 @@ export class GalleryBlock {
         const galleryId = galleryDiv.getAttribute('data-gallery-id') || '';
 
         // 新增新的項目
+        const itemElements: HTMLElement[] = [];
         currentPageItems.forEach((item: GalleryItem, index: number) => {
             const absoluteIndex = start + index;
             if (item.type === 'note') {
                 const noteContainer = this.createNoteContainer(item, absoluteIndex, items, galleryId, sourcePath, isFiltered);
-                galleryDiv.appendChild(noteContainer);
+                itemElements.push(noteContainer);
             } else {
                 const mediaContainer = this.createMediaContainer(item, absoluteIndex, items, galleryId, sourcePath, isFiltered);
-                galleryDiv.appendChild(mediaContainer);
+                itemElements.push(mediaContainer);
             }
         });
 
@@ -1312,9 +1372,11 @@ export class GalleryBlock {
                 const placeholder = activeDocument.createElement('div');
                 placeholder.className = 'mv-media-thumbnail-container placeholder';
                 placeholder.addClass('is-placeholder-hidden'); // 隱藏但保持佔位
-                galleryDiv.appendChild(placeholder);
+                itemElements.push(placeholder);
             }
         }
+
+        this.renderGalleryItems(galleryDiv, itemElements);
 
         // 更新分頁控制項
         if (galleryDiv.parentElement) {
@@ -1398,6 +1460,7 @@ export class GalleryBlock {
                     }
                 } else {
                     // 處理音樂檔案
+                    container.addClass('mvgb-audio-thumbnail');
                     // 如果有自訂縮圖，使用縮圖顯示
                     if (media.thumbnail) {
                         const img = activeDocument.createElement('img');
@@ -1691,7 +1754,7 @@ export class GalleryBlock {
                         const content = await this.app.vault.read(targetFile);
 
                         // 尋找包含當前 gallery ID 的 gallery 區塊
-                        const galleryBlockRegex = /```gallery\n([\s\S]*?)```/g;
+                        const galleryBlockRegex = /```gallery\r?\n([\s\S]*?)```/g;
                         let match;
                         let galleryContent = '';
                         let matchPosition = { start: 0, end: 0 };
@@ -1760,7 +1823,7 @@ export class GalleryBlock {
                         const content = await this.app.vault.read(targetFile);
 
                         // 尋找包含當前 gallery ID 的 gallery 區塊
-                        const galleryBlockRegex = /```gallery\n([\s\S]*?)```/g;
+                        const galleryBlockRegex = /```gallery\r?\n([\s\S]*?)```/g;
                         let match;
                         let matchPosition = { start: 0, end: 0 };
 
@@ -1849,7 +1912,7 @@ export class GalleryBlock {
         }
 
         const content = await this.app.vault.read(activeFile);
-        const galleryBlockRegex = /```gallery\n([\s\S]*?)```/g;
+        const galleryBlockRegex = /```gallery\r?\n([\s\S]*?)```/g;
         let match;
 
         while ((match = galleryBlockRegex.exec(content)) !== null) {
@@ -1929,7 +1992,7 @@ export class GalleryBlock {
         }
 
         const content = await this.app.vault.read(activeFile);
-        const galleryBlockRegex = /```gallery\n([\s\S]*?)```/g;
+        const galleryBlockRegex = /```gallery\r?\n([\s\S]*?)```/g;
         let match;
 
         while ((match = galleryBlockRegex.exec(content)) !== null) {
@@ -2007,7 +2070,7 @@ export class GalleryBlock {
         }
 
         const content = await this.app.vault.read(activeFile);
-        const galleryBlockRegex = /```gallery\n([\s\S]*?)```/g;
+        const galleryBlockRegex = /```gallery\r?\n([\s\S]*?)```/g;
         let match;
 
         while ((match = galleryBlockRegex.exec(content)) !== null) {
@@ -2080,7 +2143,7 @@ export class GalleryBlock {
 
                     if (activeFile) {
                         const content = await this.app.vault.read(activeFile);
-                        const galleryBlockRegex = /```gallery\n([\s\S]*?)```/g;
+                        const galleryBlockRegex = /```gallery\r?\n([\s\S]*?)```/g;
                         let match;
 
                         while ((match = galleryBlockRegex.exec(content)) !== null) {

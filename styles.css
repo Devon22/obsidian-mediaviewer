@@ -122,8 +122,9 @@
 
 .mv-video-indicator {
     position: absolute;
-    top: 8px;
-    left: 8px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     width: 32px;
     height: 32px;
     background: rgba(0, 0, 0, 0.6);
@@ -184,7 +185,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.75);
     z-index: 1000;
     overflow-x: hidden;
     overflow-y: hidden;
@@ -195,7 +196,7 @@
 }
 
 .mv-full-media-view.is-thumbnail-open {
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.75);
 }
 
 .mv-full-media-view.is-scroll-x {
@@ -437,6 +438,45 @@
     border-radius: 8px;
 }
 
+.mvgb-media-gallery-grid.waterfall,
+.mvgb-media-gallery-grid.waterfall.size-small,
+.mvgb-media-gallery-grid.waterfall.size-medium,
+.mvgb-media-gallery-grid.waterfall.size-large {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 15px;
+    padding: 15px;
+}
+
+.mvgb-waterfall-column {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: 15px;
+    min-width: 0;
+}
+
+.mvgb-media-gallery-grid.waterfall .mv-media-thumbnail-container {
+    aspect-ratio: auto;
+    width: 100%;
+}
+
+.mvgb-media-gallery-grid.waterfall .mv-media-thumbnail-container.mvgb-note-thumbnail,
+.mvgb-media-gallery-grid.waterfall .mv-media-thumbnail-container.mvgb-audio-thumbnail,
+.mvgb-media-gallery-grid.waterfall .mv-media-thumbnail-container.mvgb-add-media-button,
+.mvgb-media-gallery-grid.waterfall .mv-media-thumbnail-container.placeholder {
+    aspect-ratio: 1;
+}
+
+.mvgb-media-gallery-grid.waterfall .mv-media-thumbnail-container > img,
+.mvgb-media-gallery-grid.waterfall .mv-media-thumbnail-container > video {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    display: block;
+}
+
 .mvgb-gallery-controls {
     display: flex;
     justify-content: center;
@@ -615,6 +655,15 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+}
+
+.mv-gallery-content.waterfall .mv-media-thumbnail-container img,
+.mv-gallery-content.waterfall .mv-media-thumbnail-container video {
+    object-fit: contain;
+}
+
+.mv-gallery-content.waterfall .mv-media-thumbnail-container {
+    background: transparent;
 }
 
 .mv-media-thumbnail-container.is-placeholder-hidden {

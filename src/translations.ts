@@ -99,7 +99,11 @@ const TRANSLATIONS: Translations = {
         'gallery_size': 'Gallery 尺寸',
         'gallery_size_desc': '選擇 Gallery 中圖片的顯示大小',
         'gallery_add_button': '顯示上傳按鈕',
-        'gallery_add_button_desc': '是否在 Gallery 中顯示上傳圖片的按鈕'
+        'gallery_add_button_desc': '是否在 Gallery 中顯示上傳圖片的按鈕',
+        'gallery_original_ratio': '原始比例顯示',
+        'gallery_original_ratio_desc': '開啟後圖片將以原始比例顯示，不限制為正方形',
+        'gallery_waterfall': '瀑布流顯示',
+        'gallery_waterfall_desc': '開啟後圖片將以瀑布流格式顯示'
     },
     'en': {
         // Notifications
@@ -181,7 +185,11 @@ const TRANSLATIONS: Translations = {
         'gallery_size': 'Gallery size',
         'gallery_size_desc': 'Choose the display size of images in the gallery',
         'gallery_add_button': 'Show upload button',
-        'gallery_add_button_desc': 'Whether to show the upload button in the gallery'
+        'gallery_add_button_desc': 'Whether to show the upload button in the gallery',
+        'gallery_original_ratio': 'Display original ratio',
+        'gallery_original_ratio_desc': 'When enabled, images will be displayed in their original ratio instead of square',
+        'gallery_waterfall': 'Waterfall Layout',
+        'gallery_waterfall_desc': 'When enabled, images will be displayed in a waterfall (masonry) layout'
     },
     'zh': {
         // 通知信息
@@ -263,7 +271,11 @@ const TRANSLATIONS: Translations = {
         'gallery_size': '相册尺寸',
         'gallery_size_desc': '选择相册中图片的显示大小',
         'gallery_add_button': '显示上传按钮',
-        'gallery_add_button_desc': '是否在相册中显示上传图片的按钮'
+        'gallery_add_button_desc': '是否在相册中显示上传图片的按钮',
+        'gallery_original_ratio': '原始比例顯示',
+        'gallery_original_ratio_desc': '開啟後圖片將以原始比例顯示，不限制為正方形',
+        'gallery_waterfall': '瀑布流顯示',
+        'gallery_waterfall_desc': '開啟後圖片將以瀑布流格式顯示'
     },
     'ja': {
         // 通知メッジ
@@ -341,6 +353,10 @@ const TRANSLATIONS: Translations = {
         'gallery_size': 'ギャラリーサイズ',
         'gallery_size_desc': 'ギャラリー内の画像表示サイズを選択',
         'gallery_add_button': 'アップロードボタンを表示',
-        'gallery_add_button_desc': 'ギャラリーにアップロードボタンを表示するかどうか'
+        'gallery_add_button_desc': 'ギャラリーにアップロードボタンを表示するかどうか',
+        'gallery_original_ratio': '元の比率で表示',
+        'gallery_original_ratio_desc': '有効にすると、画像は正方形ではなく元の比率で表示されます',
+        'gallery_waterfall': 'ウォーターフォール表示',
+        'gallery_waterfall_desc': '有効にすると、画像はウォーターフォール（メーソンリー）レイアウトで表示されます'
     },
 };
