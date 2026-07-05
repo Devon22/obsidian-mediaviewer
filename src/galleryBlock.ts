@@ -711,7 +711,7 @@ export class GalleryBlock {
             };
         }
         const appWithPlugins = this.app as ObsidianAppWithPlugins;
-        const zipPlugin = appWithPlugins.plugins?.plugins?.['obsidian-gridexplorer'];
+        const zipPlugin = appWithPlugins.plugins?.plugins?.['gridexplorer'];
         
         if (!zipPlugin || typeof zipPlugin.getThumbnail !== 'function') {
             return null;

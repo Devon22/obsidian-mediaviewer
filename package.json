@@ -1,7 +1,7 @@
 {
 	"name": "mediaviewer",
-	"version": "2.1.11",
-	"description": "View and manage media files within your notes.",
+	"version": "2.1.12",
+	"description": "Transform your notes with beautiful interactive media galleries. Seamlessly view, zoom, and manage images, videos, and audio files.",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
