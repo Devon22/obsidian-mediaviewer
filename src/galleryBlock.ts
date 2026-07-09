@@ -1156,7 +1156,7 @@ export class GalleryBlock {
             notePreview.appendChild(noteIcon);
         }
 
-        const noteTitle = createEl('div', { cls: 'mvgb-note-title', text: item.title as string });
+        const noteTitle = createEl('div', { cls: 'mvgb-note-title', text: this.getGalleryTitleText(item) });
         if (item.isInternalLink && !item.file) {
             noteTitle.addClass('mvgb-invalid-link');
         }
