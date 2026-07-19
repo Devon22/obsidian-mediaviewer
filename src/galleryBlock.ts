@@ -24,17 +24,19 @@ class RenameModal extends Modal {
         const { contentEl } = this;
         contentEl.createEl('h2', { text: t('rename') });
 
-        new Setting(contentEl)
+        const inputSetting = new Setting(contentEl)
             .setName(t('new_filename'))
-            .addText(text => text
-                .setValue(this.currentName)
-                .onChange(value => this.newName = value)
-                .inputEl.addEventListener('keydown', (e) => {
+            .addText(text => {
+                text.setValue(this.currentName)
+                    .onChange(value => this.newName = value);
+                text.inputEl.addEventListener('keydown', (e) => {
                     if (e.key === 'Enter') {
                         this.onConfirm(this.newName);
                         this.close();
                     }
-                }));
+                });
+            });
+        inputSetting.settingEl.addClass('mv-settings-input-flex');
 
         new Setting(contentEl)
             .addButton(button => button
@@ -54,6 +56,75 @@ class RenameModal extends Modal {
         contentEl.empty();
     }
 }
+
+// 編輯 Alt 對話框
+class AltModal extends Modal {
+    altText: string;
+    onConfirm: (altText: string) => void;
+    onDelete?: () => void;
+    currentAlt: string;
+    isEdit: boolean;
+
+    constructor(app: App, currentAlt: string, isEdit: boolean, onConfirm: (altText: string) => void, onDelete?: () => void) {
+        super(app);
+        this.currentAlt = currentAlt;
+        this.altText = currentAlt;
+        this.isEdit = isEdit;
+        this.onConfirm = onConfirm;
+        this.onDelete = onDelete;
+    }
+
+    onOpen() {
+        const { contentEl } = this;
+        contentEl.createEl('h2', { text: this.isEdit ? t('edit_alt') || 'Edit alt' : t('add_alt') || 'Add alt' });
+
+        const inputSetting = new Setting(contentEl)
+            .setName('Alt')
+            .addText(text => {
+                text.setValue(this.currentAlt)
+                    .onChange(value => this.altText = value);
+                text.inputEl.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        this.onConfirm(this.altText);
+                        this.close();
+                    }
+                });
+            });
+        inputSetting.settingEl.addClass('mv-settings-input-flex');
+
+        const buttonsSetting = new Setting(contentEl);
+
+        if (this.isEdit && this.onDelete) {
+            buttonsSetting.addButton(button => button
+                .setButtonText(t('delete') || 'Delete')
+                .setWarning()
+                .onClick(() => {
+                    if (this.onDelete) {
+                        this.onDelete();
+                    }
+                    this.close();
+                }));
+        }
+
+        buttonsSetting.addButton(button => button
+            .setButtonText(t('confirm'))
+            .setCta()
+            .onClick(() => {
+                this.onConfirm(this.altText);
+                this.close();
+            }));
+
+        buttonsSetting.addButton(button => button
+            .setButtonText(t('cancel') || 'Cancel')
+            .onClick(() => this.close()));
+    }
+
+    onClose() {
+        const { contentEl } = this;
+        contentEl.empty();
+    }
+}
+
 
 interface GalleryItem {
     type: string;
@@ -712,11 +783,11 @@ export class GalleryBlock {
         }
         const appWithPlugins = this.app as ObsidianAppWithPlugins;
         const zipPlugin = appWithPlugins.plugins?.plugins?.['gridexplorer'];
-        
+
         if (!zipPlugin || typeof zipPlugin.getThumbnail !== 'function') {
             return null;
         }
-        
+
         return await zipPlugin.getThumbnail(zipPath);
     }
 
@@ -1240,6 +1311,7 @@ export class GalleryBlock {
             }
 
             this.addCopyAltMenuItem(menu, item);
+            this.addEditAltMenuItem(menu, item, galleryId, sourcePath, container);
 
             if (item.file) {
                 menu.addItem((menuItem) => {
@@ -1641,6 +1713,7 @@ export class GalleryBlock {
             }
 
             this.addCopyAltMenuItem(menu, media);
+            this.addEditAltMenuItem(menu, media, galleryId, sourcePath, container);
 
             if (media.file) {
                 menu.addItem((menuItem) => {
@@ -1708,6 +1781,43 @@ export class GalleryBlock {
                         console.error('Error copying alt text:', error);
                         new Notice(t('clipboard_error') || 'Clipboard error');
                     }
+                });
+        });
+    }
+
+    private addEditAltMenuItem(menu: Menu, item: GalleryItem, galleryId: string, sourcePath?: string, container?: HTMLElement) {
+        if (!item.loc) {
+            return;
+        }
+
+        const hasAlt = !!(item.altText && item.altText.trim() !== '');
+        menu.addItem((menuItem) => {
+            menuItem
+                .setTitle(hasAlt ? (t('edit_alt') || 'Edit alt') : (t('add_alt') || 'Add alt'))
+                .setIcon("pencil")
+                .onClick(() => {
+                    let currentPage = 1;
+                    if (container) {
+                        const galleryDiv = container.closest('.mvgb-media-gallery-grid');
+                        if (galleryDiv) {
+                            const paginationDiv = galleryDiv.parentElement?.querySelector('.mvgb-pagination');
+                            if (paginationDiv?.instanceOf(HTMLElement) && paginationDiv.dataset.currentPage) {
+                                currentPage = parseInt(paginationDiv.dataset.currentPage);
+                            }
+                        }
+                    }
+                    const modal = new AltModal(
+                        this.app,
+                        item.altText || '',
+                        hasAlt,
+                        (newAlt) => {
+                            void this.editGalleryItemAlt(galleryId, item, false, newAlt, sourcePath, currentPage);
+                        },
+                        () => {
+                            void this.editGalleryItemAlt(galleryId, item, true, '', sourcePath, currentPage);
+                        }
+                    );
+                    modal.open();
                 });
         });
     }
@@ -2187,5 +2297,88 @@ export class GalleryBlock {
             })();
         });
         modal.open();
+    }
+
+    async editGalleryItemAlt(galleryId: string, item: GalleryItem, isDelete: boolean, newAlt: string, sourcePath?: string, currentPage?: number) {
+        let activeFile: TFile | null = null;
+        if (sourcePath) {
+            activeFile = this.app.vault.getAbstractFileByPath(sourcePath) as TFile | null;
+        }
+
+        if (!activeFile) {
+            activeFile = this.app.workspace.getActiveFile();
+        }
+
+        if (!activeFile) {
+            new Notice(t('please_open_note') || 'Please open a note first');
+            return;
+        }
+
+        try {
+            const content = await this.app.vault.read(activeFile);
+            const galleryBlockRegex = /```gallery\r?\n([\s\S]*?)```/g;
+            let match;
+
+            while ((match = galleryBlockRegex.exec(content)) !== null) {
+                const blockContent = match[1];
+                const blockId = 'gallery-' + this.hashString(blockContent.trim());
+
+                if (blockId === galleryId) {
+                    if (item.loc) {
+                        const lines = blockContent.split('\n');
+                        const start = item.loc.start;
+                        const end = item.loc.end;
+
+                        let hasAltLine = false;
+                        let altIndex = -1;
+
+                        for (let i = start; i <= end; i++) {
+                            if (/^\s*alt:\s*(.*)$/i.test(lines[i])) {
+                                hasAltLine = true;
+                                altIndex = i;
+                                break;
+                            }
+                        }
+
+                        if (isDelete) {
+                            if (hasAltLine && altIndex !== -1) {
+                                lines.splice(altIndex, 1);
+                            }
+                        } else {
+                            if (hasAltLine && altIndex !== -1) {
+                                lines[altIndex] = `alt: ${newAlt}`;
+                            } else {
+                                // 原本沒有 alt，在項目的最前面插入一行 alt:
+                                lines.splice(start, 0, `alt: ${newAlt}`);
+                            }
+                        }
+
+                        const newBlockContent = lines.join('\n');
+                        const newId = 'gallery-' + this.hashString(newBlockContent.trim());
+
+                        if (currentPage) {
+                            GalleryBlock.paginationState.set(newId, currentPage);
+                        }
+
+                        const matchStart = match.index;
+                        const matchEnd = match.index + match[0].length;
+                        const newBlock = '```gallery\n' + newBlockContent + '```';
+
+                        const restoreScroll = captureScrollRestore(this.app, galleryId);
+                        await this.app.vault.process(activeFile, (fileContent) => {
+                            return fileContent.substring(0, matchStart) +
+                                newBlock +
+                                fileContent.substring(matchEnd);
+                        });
+                        restoreScroll(newId);
+                        new Notice(isDelete ? (t('alt_removed') || 'Alt text removed') : (t('alt_updated') || 'Alt text updated'));
+                    }
+                    break;
+                }
+            }
+        } catch (error) {
+            console.error('Error editing alt:', error);
+            new Notice(t('error_updating_alt') || 'Error updating alt text');
+        }
     }
 }

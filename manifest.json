@@ -1,7 +1,7 @@
 {
 	"id": "mediaviewer",
 	"name": "Media Viewer",
-	"version": "2.1.13",
+	"version": "2.2.0",
 	"minAppVersion": "1.8.7",
 	"description": "Transform your notes with beautiful interactive media galleries. Seamlessly view, zoom, and manage images, videos, and audio files.",
 	"author": "Devon22",

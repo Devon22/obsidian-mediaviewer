@@ -1016,3 +1016,15 @@
     width: 20px;
     height: 20px;
 }
+
+/* Alt & Rename Modals */
+.mv-settings-input-flex .setting-item-control {
+    flex-grow: 1;
+}
+
+.mv-settings-input-flex .setting-item-control input[type="text"] {
+    width: 100% !important;
+    min-width: 180px;
+    max-width: 350px;
+}
+

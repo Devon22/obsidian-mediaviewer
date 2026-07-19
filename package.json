@@ -1,6 +1,6 @@
 {
 	"name": "mediaviewer",
-	"version": "2.1.13",
+	"version": "2.2.0",
 	"description": "Transform your notes with beautiful interactive media galleries. Seamlessly view, zoom, and manage images, videos, and audio files.",
 	"main": "main.js",
 	"scripts": {
