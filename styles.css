@@ -365,6 +365,7 @@
     position: fixed;
     top: 15px;
     left: 15px;
+    max-width: calc(100vw - 80px);
     background: rgba(0, 0, 0, 0.7);
     padding: 7px 14px;
     border-radius: 5px;
@@ -373,10 +374,15 @@
     z-index: 1003;
     opacity: 1;
     transition: opacity 0.3s ease;
+    box-sizing: border-box;
+    word-break: break-all;
+    overflow-wrap: anywhere;
 }
 
 .is-mobile:not(.is-tablet) .mv-image-info-panel {
     top: calc(var(--safe-area-inset-top) + 15px);
+    left: calc(var(--safe-area-inset-left, 0px) + 15px);
+    max-width: calc(100vw - 80px - var(--safe-area-inset-left, 0px) - var(--safe-area-inset-right, 0px));
 }
 
 /* 隱藏行動裝置上 Obsidian 預設的 modal 關閉按鈕 */
@@ -387,6 +393,7 @@
 .mv-info-item {
     display: inline-block;
     margin-right: 10px;
+    vertical-align: middle;
 }
 
 .mv-info-item:last-child {
@@ -395,6 +402,9 @@
 
 .mv-info-filename {
     cursor: text;
+    max-width: 100%;
+    word-break: break-all;
+    overflow-wrap: anywhere;
 }
 
 .mv-info-dimensions {
@@ -1022,8 +1032,8 @@
     flex-grow: 1;
 }
 
-.mv-settings-input-flex .setting-item-control input[type="text"] {
-    width: 100% !important;
+.setting-item.mv-settings-input-flex .setting-item-control input[type="text"] {
+    width: 100%;
     min-width: 180px;
     max-width: 350px;
 }

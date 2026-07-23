@@ -275,15 +275,8 @@ export class FullScreenModal extends Modal {
                 img.src = ytThumbnail;
                 img.onclick = () => this.showMedia(index);
                 const videoIcon = container.createDiv('mv-video-indicator');
-                const svg = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                svg.setAttribute('viewBox', '0 0 24 24');
-                svg.setAttribute('width', '24');
-                svg.setAttribute('height', '24');
-                const path = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'path');
-                path.setAttribute('fill', 'currentColor');
-                path.setAttribute('d', 'M8 5v14l11-7z');
-                svg.appendChild(path);
-                videoIcon.appendChild(svg);
+                const svg = videoIcon.createSvg('svg', { attr: { viewBox: '0 0 24 24', width: '24', height: '24' } });
+                svg.createSvg('path', { attr: { fill: 'currentColor', d: 'M8 5v14l11-7z' } });
             } else {
                 if (media.url.match(/\.(mp4|mkv|mov|webm)/i)) {
                     const video = container.createEl('video');
@@ -298,30 +291,16 @@ export class FullScreenModal extends Modal {
                     if (!Platform.isAndroidApp) {
                         video.src = media.url;
                         const videoIcon = container.createDiv('mv-video-indicator');
-                        const svg = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                        svg.setAttribute('viewBox', '0 0 24 24');
-                        svg.setAttribute('width', '24');
-                        svg.setAttribute('height', '24');
-                        const path = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'path');
-                        path.setAttribute('fill', 'currentColor');
-                        path.setAttribute('d', 'M8 5v14l11-7z');
-                        svg.appendChild(path);
-                        videoIcon.appendChild(svg);
+                        const svg = videoIcon.createSvg('svg', { attr: { viewBox: '0 0 24 24', width: '24', height: '24' } });
+                        svg.createSvg('path', { attr: { fill: 'currentColor', d: 'M8 5v14l11-7z' } });
                     }
                 } else {
                     const audio = container.createEl('audio');
                     audio.src = media.url;
                     container.onclick = () => this.showMedia(index);
                     const audioIcon = container.createDiv('mv-audio-indicator');
-                    const svg = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                    svg.setAttribute('viewBox', '0 0 24 24');
-                    svg.setAttribute('width', '24');
-                    svg.setAttribute('height', '24');
-                    const path = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'path');
-                    path.setAttribute('fill', 'currentColor');
-                    path.setAttribute('d', 'M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z');
-                    svg.appendChild(path);
-                    audioIcon.appendChild(svg);
+                    const svg = audioIcon.createSvg('svg', { attr: { viewBox: '0 0 24 24', width: '24', height: '24' } });
+                    svg.createSvg('path', { attr: { fill: 'currentColor', d: 'M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z' } });
 
                     // 添加檔案名稱顯示
                     const fileName = media.path ? media.path.split('/').pop() : media.url.split('/').pop();
@@ -480,8 +459,7 @@ export class FullScreenModal extends Modal {
 
     async showImageInfo(media: Media) {
         // 創建資訊面板
-        const infoPanel = activeDocument.createElement('div');
-        infoPanel.className = 'mv-image-info-panel';
+        const infoPanel = createDiv('mv-image-info-panel');
 
         // 添加刪除按鈕（只在啟用刪除功能時顯示）
         if (this.plugin.settings.allowMediaDeletion) {
@@ -529,13 +507,13 @@ export class FullScreenModal extends Modal {
             const decodedFileName = decodeURIComponent(cleanFileName);
 
             // 添加檔案編號
-            infoPanel.createEl('span', {
+            infoPanel.createSpan({
                 text: `${this.currentIndex + 1}/${this.mediaUrls.length}`,
                 cls: 'mv-info-item'
             });
 
             // 添加檔案名稱
-            infoPanel.createEl('span', {
+            infoPanel.createSpan({
                 text: decodedFileName,
                 cls: ['mv-info-item', 'mv-info-filename'],
                 attr: { contentEditable: 'true' }
@@ -543,7 +521,7 @@ export class FullScreenModal extends Modal {
 
             // 添加圖片尺寸
             if (this.isImage) {
-                infoPanel.createEl('span', {
+                infoPanel.createSpan({
                     text: `(${this.fullImage.naturalWidth} × ${this.fullImage.naturalHeight})`,
                     cls: ['mv-info-item', 'mv-info-dimensions']
                 });
@@ -1202,15 +1180,8 @@ export class FullScreenModal extends Modal {
                     img.src = ytThumbnail;
                     img.onclick = () => this.showMedia(idx);
                     const videoIcon = container.createDiv('mv-video-indicator');
-                    const svg = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                    svg.setAttribute('viewBox', '0 0 24 24');
-                    svg.setAttribute('width', '24');
-                    svg.setAttribute('height', '24');
-                    const path = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'path');
-                    path.setAttribute('fill', 'currentColor');
-                    path.setAttribute('d', 'M8 5v14l11-7z');
-                    svg.appendChild(path);
-                    videoIcon.appendChild(svg);
+                    const svg = videoIcon.createSvg('svg', { attr: { viewBox: '0 0 24 24', width: '24', height: '24' } });
+                    svg.createSvg('path', { attr: { fill: 'currentColor', d: 'M8 5v14l11-7z' } });
                 } else {
                     if (media.url.match(/\.(mp4|mkv|mov|webm)/i)) {
                         const video = container.createEl('video');
@@ -1225,29 +1196,16 @@ export class FullScreenModal extends Modal {
                         if (!Platform.isAndroidApp) {
                             video.src = media.url;
                             const videoIcon = container.createDiv('mv-video-indicator');
-                            const svg = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                            svg.setAttribute('viewBox', '0 0 24 24');
-                            svg.setAttribute('width', '24');
-                            svg.setAttribute('height', '24');
-                            const path = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'path');
-                            path.setAttribute('d', 'M8 5v14l11-7z');
-                            svg.appendChild(path);
-                            videoIcon.appendChild(svg);
+                            const svg = videoIcon.createSvg('svg', { attr: { viewBox: '0 0 24 24', width: '24', height: '24' } });
+                            svg.createSvg('path', { attr: { d: 'M8 5v14l11-7z' } });
                         }
                     } else {
                         const audio = container.createEl('audio');
                         audio.src = media.url;
                         container.onclick = () => this.showMedia(idx);
                         const audioIcon = container.createDiv('mv-audio-indicator');
-                        const svg = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                        svg.setAttribute('viewBox', '0 0 24 24');
-                        svg.setAttribute('width', '24');
-                        svg.setAttribute('height', '24');
-                        const path = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'path');
-                        path.setAttribute('fill', 'currentColor');
-                        path.setAttribute('d', 'M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z');
-                        svg.appendChild(path);
-                        audioIcon.appendChild(svg);
+                        const svg = audioIcon.createSvg('svg', { attr: { viewBox: '0 0 24 24', width: '24', height: '24' } });
+                        svg.createSvg('path', { attr: { fill: 'currentColor', d: 'M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z' } });
 
                         // 添加檔案名稱顯示
                         const fileName = media.path ? media.path.split('/').pop() : media.url.split('/').pop();

@@ -811,12 +811,13 @@ export class GalleryBlock {
     }
 
     private createDragHandleIcon(): SVGSVGElement {
-        const svg = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('viewBox', '0 0 24 24');
-        const path = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'path');
-        path.setAttribute('fill', 'currentColor');
-        path.setAttribute('d', 'M13,6.83V11H17.17L15.59,9.41L17,8L21,12L17,16L15.59,14.59L17.17,13H13V17.17L14.59,15.59L16,17L12,21L8,17L9.41,15.59L11,17.17V13H6.83L8.41,14.59L7,16L3,12L7,8L8.41,9.41L6.83,11H11V6.83L9.41,8.41L8,7L12,3L16,7L14.59,8.41L13,6.83Z');
-        svg.appendChild(path);
+        const svg = createSvg('svg', { attr: { viewBox: '0 0 24 24' } });
+        svg.createSvg('path', {
+            attr: {
+                fill: 'currentColor',
+                d: 'M13,6.83V11H17.17L15.59,9.41L17,8L21,12L17,16L15.59,14.59L17.17,13H13V17.17L14.59,15.59L16,17L12,21L8,17L9.41,15.59L11,17.17V13H6.83L8.41,14.59L7,16L3,12L7,8L8.41,9.41L6.83,11H11V6.83L9.41,8.41L8,7L12,3L16,7L14.59,8.41L13,6.83Z'
+            }
+        });
         return svg;
     }
 
@@ -852,9 +853,8 @@ export class GalleryBlock {
 
     createGalleryElement(mediaUrlsData: MediaUrlsData) {
         const { items, containerInfo, galleryId, sourcePath } = mediaUrlsData;
-        const titleDiv = activeDocument.createElement('div');
-        const galleryDiv = activeDocument.createElement('div');
-        galleryDiv.className = 'mvgb-media-gallery-grid';
+        const titleDiv = createDiv();
+        const galleryDiv = createDiv('mvgb-media-gallery-grid');
 
         // 使用從 mediaUrlsData 中取得的 galleryId
         galleryDiv.setAttribute('data-gallery-id', galleryId);
@@ -872,13 +872,13 @@ export class GalleryBlock {
 
         // 處理容器標題
         if (typeof containerInfo.title === 'object' && containerInfo.title !== null) {
-            const containerLinkArea = titleDiv.createEl('div', {
+            const containerLinkArea = titleDiv.createDiv({
                 cls: 'mvgb-container-link-area'
             });
 
             if (containerInfo.title.type === 'text') {
                 // 純文字
-                containerLinkArea.createEl('span', {
+                containerLinkArea.createSpan({
                     text: containerInfo.title.text
                 });
             } else {
@@ -918,8 +918,7 @@ export class GalleryBlock {
             galleryDiv.addClass('has-container-title');
         }
 
-        const container = activeDocument.createElement('div');
-        container.className = 'mvgb-media-container';
+        const container = createDiv('mvgb-media-container');
         container.appendChild(titleDiv);
         container.appendChild(galleryDiv);
 
@@ -942,24 +941,13 @@ export class GalleryBlock {
 
             // 不使用分頁時，如果允許新增圖片，則顯示傳統的新增按鈕
             if (containerInfo.addButtonEnabled || items.length === 0) {
-                const addContainer = activeDocument.createElement('div');
-                addContainer.className = 'mv-media-thumbnail-container mvgb-add-media-button';
+                const addContainer = createDiv('mv-media-thumbnail-container mvgb-add-media-button');
 
                 const addIcon = addContainer.createDiv('mvgb-add-media-icon');
-                const svg = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                svg.setAttribute('viewBox', '0 0 24 24');
-                svg.setAttribute('width', '24');
-                svg.setAttribute('height', '24');
-                const path = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'path');
-                path.setAttribute('fill', 'currentColor');
-                path.setAttribute('d', 'M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z');
-                svg.appendChild(path);
-                addIcon.appendChild(svg);
+                const svg = addIcon.createSvg('svg', { attr: { viewBox: '0 0 24 24', width: '24', height: '24' } });
+                svg.createSvg('path', { attr: { fill: 'currentColor', d: 'M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z' } });
 
-                const addIconText = activeDocument.createElement('div');
-                addIconText.className = 'mvgb-add-media-text';
-                addIconText.textContent = t('add_item');
-                addIcon.appendChild(addIconText);
+                addIcon.createDiv({ cls: 'mvgb-add-media-text', text: t('add_item') });
 
                 addContainer.onclick = () => {
                     const modal = new ImageUploadModal(this.app, this.plugin, galleryDiv, sourcePath);
@@ -983,18 +971,16 @@ export class GalleryBlock {
                 GalleryBlock.paginationState.delete(galleryId);
             }
 
-            const controlsDiv = activeDocument.createElement('div');
-            controlsDiv.className = 'mvgb-gallery-controls';
+            const controlsDiv = createDiv('mvgb-gallery-controls');
 
-            const paginationDiv = activeDocument.createElement('div');
-            paginationDiv.className = 'mvgb-pagination';
+            const paginationDiv = createDiv('mvgb-pagination');
 
             const prevPageButton = paginationDiv.createEl('button', {
                 cls: 'mvgb-gallery-control-button prev-page-button',
                 text: t('prev_page')
             });
 
-            const pageInfoSpan = paginationDiv.createEl('span', {
+            const pageInfoSpan = paginationDiv.createSpan({
                 cls: 'mvgb-page-info',
                 text: `${currentPage} / ${totalPages}`
             });
@@ -1181,53 +1167,34 @@ export class GalleryBlock {
     }
 
     createNoteContainer(item: GalleryItem, index: number, allItems: GalleryItem[], galleryId: string, sourcePath?: string, isFiltered?: boolean) {
-        const container = activeDocument.createElement('div');
-        container.className = 'mv-media-thumbnail-container mvgb-note-thumbnail';
+        const container = createDiv('mv-media-thumbnail-container mvgb-note-thumbnail');
         container.dataset.galleryId = galleryId;
         container.dataset.galleryIndex = index.toString();
 
-        const notePreview = activeDocument.createElement('div');
-        notePreview.className = 'mvgb-note-preview';
+        const notePreview = container.createDiv('mvgb-note-preview');
 
         // 如果有縮圖，使用縮圖
         if (item.thumbnail) {
-            const img = activeDocument.createElement('img');
+            const img = notePreview.createEl('img');
             img.src = item.thumbnail;
             img.className = 'mvgb-note-thumbnail-image';
             img.toggleClass('is-pointer-disabled', Platform.isMobile);
-            notePreview.appendChild(img);
         } else {
             // 否則使用預設圖示
-            const noteIcon = activeDocument.createElement('div');
-            noteIcon.className = 'mvgb-note-icon';
+            const noteIcon = notePreview.createDiv('mvgb-note-icon');
 
             if (item.isExternalLink) {
-                const svg = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                svg.setAttribute('viewBox', '0 0 24 24');
-                svg.setAttribute('width', '24');
-                svg.setAttribute('height', '24');
-                const path = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'path');
-                path.setAttribute('fill', 'currentColor');
-                path.setAttribute('d', 'M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z');
-                svg.appendChild(path);
-                noteIcon.appendChild(svg);
+                const svg = noteIcon.createSvg('svg', { attr: { viewBox: '0 0 24 24', width: '24', height: '24' } });
+                svg.createSvg('path', { attr: { fill: 'currentColor', d: 'M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z' } });
                 noteIcon.classList.add('external-link');
             } else {
-                const svg = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                svg.setAttribute('viewBox', '0 0 24 24');
-                svg.setAttribute('width', '24');
-                svg.setAttribute('height', '24');
-                const path = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'path');
-                path.setAttribute('fill', 'currentColor');
-                path.setAttribute('d', 'M14,17H7V15H14V17M17,13H7V11H17V13M17,9H7V7H17V9M19,3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3Z');
-                svg.appendChild(path);
-                noteIcon.appendChild(svg);
+                const svg = noteIcon.createSvg('svg', { attr: { viewBox: '0 0 24 24', width: '24', height: '24' } });
+                svg.createSvg('path', { attr: { fill: 'currentColor', d: 'M14,17H7V15H14V17M17,13H7V11H17V13M17,9H7V7H17V9M19,3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3Z' } });
                 noteIcon.classList.add('internal-link');
             }
-            notePreview.appendChild(noteIcon);
         }
 
-        const noteTitle = createEl('div', { cls: 'mvgb-note-title', text: this.getGalleryTitleText(item) });
+        const noteTitle = notePreview.createDiv({ cls: 'mvgb-note-title', text: this.getGalleryTitleText(item) });
         if (item.isInternalLink && !item.file) {
             noteTitle.addClass('mvgb-invalid-link');
         }
@@ -1385,9 +1352,7 @@ export class GalleryBlock {
                         galleryDiv.replaceChildren();
                         const colDivs: HTMLDivElement[] = [];
                         for (let c = 0; c < cols; c++) {
-                            const colDiv = activeDocument.createElement('div');
-                            colDiv.className = 'mvgb-waterfall-column';
-                            galleryDiv.appendChild(colDiv);
+                            const colDiv = galleryDiv.createDiv('mvgb-waterfall-column');
                             colDivs.push(colDiv);
                         }
                         itemElements.forEach((el, idx) => {
@@ -1435,9 +1400,7 @@ export class GalleryBlock {
         if (page === totalPages && currentPageItems.length < itemsPerPage) {
             const placeholdersNeeded = itemsPerPage - currentPageItems.length;
             for (let i = 0; i < placeholdersNeeded; i++) {
-                const placeholder = activeDocument.createElement('div');
-                placeholder.className = 'mv-media-thumbnail-container placeholder';
-                placeholder.addClass('is-placeholder-hidden'); // 隱藏但保持佔位
+                const placeholder = createDiv('mv-media-thumbnail-container placeholder is-placeholder-hidden');
                 itemElements.push(placeholder);
             }
         }
@@ -1447,9 +1410,9 @@ export class GalleryBlock {
         // 更新分頁控制項
         if (galleryDiv.parentElement) {
             const paginationDiv = galleryDiv.parentElement.querySelector('.mvgb-pagination');
-            if (paginationDiv) {
+            if (paginationDiv instanceof HTMLElement) {
                 const pageInfoSpan = paginationDiv.querySelector('.mvgb-page-info');
-                if (pageInfoSpan) {
+                if (pageInfoSpan instanceof HTMLElement) {
                     pageInfoSpan.textContent = `${page} / ${totalPages}`;
                 }
             }
@@ -1457,135 +1420,95 @@ export class GalleryBlock {
     }
 
     createMediaContainer(media: GalleryItem, index: number, allItems: GalleryItem[], galleryId: string, sourcePath?: string, isFiltered?: boolean) {
-        const container = activeDocument.createElement('div');
-        container.className = 'mv-media-thumbnail-container';
+        const container = createDiv('mv-media-thumbnail-container');
         container.dataset.galleryId = galleryId;
         container.dataset.galleryIndex = index.toString();
 
         if (media.type === 'image') {
-            const img = activeDocument.createElement('img');
             if (media.url) {
+                const img = container.createEl('img');
                 img.src = media.url;
                 img.alt = media.path || '';
                 img.toggleClass('is-pointer-disabled', Platform.isMobile);
-                container.appendChild(img);
             }
         } else if (media.type === 'youtube') {
             if (media.thumbnail) {
-                const img = activeDocument.createElement('img');
+                const img = container.createEl('img');
                 img.src = media.thumbnail;
                 img.alt = media.path || '';
                 img.className = 'mvgb-video-thumbnail';
                 img.toggleClass('is-pointer-disabled', Platform.isMobile);
-                container.appendChild(img);
             }
-            const videoIcon = activeDocument.createElement('div');
-            videoIcon.className = 'mv-video-indicator';
-            const svg = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'svg');
-            svg.setAttribute('viewBox', '0 0 24 24');
-            svg.setAttribute('width', '24');
-            svg.setAttribute('height', '24');
-            const path = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'path');
-            path.setAttribute('d', 'M8 5v14l11-7z');
-            svg.appendChild(path);
-            videoIcon.appendChild(svg);
-            container.appendChild(videoIcon);
+            const videoIcon = container.createDiv('mv-video-indicator');
+            const svg = videoIcon.createSvg('svg', { attr: { viewBox: '0 0 24 24', width: '24', height: '24' } });
+            svg.createSvg('path', { attr: { d: 'M8 5v14l11-7z' } });
         } else {
             if (media.path && media.url) {
                 // 處理影片檔案
                 if (media.path.toLowerCase().match(/\.(mp4|mkv|mov|webm)$/)) {
                     // 如果有自訂縮圖，使用縮圖顯示
                     if (media.thumbnail) {
-                        const img = activeDocument.createElement('img');
+                        const img = container.createEl('img');
                         img.src = media.thumbnail;
                         img.alt = media.path || '';
                         img.className = 'mvgb-video-thumbnail';
                         img.toggleClass('is-pointer-disabled', Platform.isMobile);
-                        container.appendChild(img);
                     } else {
-                        const video = activeDocument.createElement('video');
+                        const video = container.createEl('video');
                         if (!Platform.isAndroidApp) {
                             video.src = media.url;
                         }
                         video.addClass('is-pointer-disabled');
-                        container.appendChild(video);
                     }
 
                     if (!Platform.isAndroidApp || media.thumbnail) {
-                        const videoIcon = activeDocument.createElement('div');
-                        videoIcon.className = 'mv-video-indicator';
-                        const svg = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                        svg.setAttribute('viewBox', '0 0 24 24');
-                        svg.setAttribute('width', '24');
-                        svg.setAttribute('height', '24');
-                        const path = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'path');
-                        path.setAttribute('d', 'M8 5v14l11-7z');
-                        svg.appendChild(path);
-                        videoIcon.appendChild(svg);
-                        container.appendChild(videoIcon);
+                        const videoIcon = container.createDiv('mv-video-indicator');
+                        const svg = videoIcon.createSvg('svg', { attr: { viewBox: '0 0 24 24', width: '24', height: '24' } });
+                        svg.createSvg('path', { attr: { d: 'M8 5v14l11-7z' } });
                     }
                 } else {
                     // 處理音樂檔案
                     container.addClass('mvgb-audio-thumbnail');
                     // 如果有自訂縮圖，使用縮圖顯示
                     if (media.thumbnail) {
-                        const img = activeDocument.createElement('img');
+                        const img = container.createEl('img');
                         img.src = media.thumbnail;
                         img.alt = media.path || '';
                         img.className = 'mvgb-video-thumbnail';
                         img.toggleClass('is-pointer-disabled', Platform.isMobile);
-                        container.appendChild(img);
                     } else {
-                        const audio = activeDocument.createElement('audio');
+                        const audio = container.createEl('audio');
                         audio.src = media.url;
                         audio.addClass('is-pointer-disabled');
-                        container.appendChild(audio);
                     }
 
                     if (!Platform.isAndroidApp || media.thumbnail) {
-                        const audioIcon = activeDocument.createElement('div');
-                        audioIcon.className = 'mv-audio-indicator';
-                        const svg = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                        svg.setAttribute('viewBox', '0 0 24 24');
-                        svg.setAttribute('width', '24');
-                        svg.setAttribute('height', '24');
-                        const path = activeDocument.createElementNS('http://www.w3.org/2000/svg', 'path');
-                        path.setAttribute('fill', 'currentColor');
-                        path.setAttribute('d', 'M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z');
-                        svg.appendChild(path);
-                        audioIcon.appendChild(svg);
-                        container.appendChild(audioIcon);
+                        const audioIcon = container.createDiv('mv-audio-indicator');
+                        const svg = audioIcon.createSvg('svg', { attr: { viewBox: '0 0 24 24', width: '24', height: '24' } });
+                        svg.createSvg('path', { attr: { fill: 'currentColor', d: 'M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z' } });
                     }
 
                     // 添加檔案名稱顯示
-                    const filenameDiv = activeDocument.createElement('div');
-                    filenameDiv.className = 'mv-audio-filename';
                     let filename = '';
                     if (media.path) {
                         const pathParts = media.path.split('/');
                         filename = pathParts[pathParts.length - 1];
                         filename = filename.replace(/\.[^/.]+$/, '');
                     }
-                    filenameDiv.textContent = filename;
-                    container.appendChild(filenameDiv);
+                    container.createDiv({ cls: 'mv-audio-filename', text: filename });
                 }
             }
         }
 
         if (typeof media.title === 'object' && media.title !== null) {
-            const linkArea = activeDocument.createElement('div');
-            linkArea.className = 'mvgb-media-link-area';
+            const linkArea = container.createDiv('mvgb-media-link-area');
 
             if (media.title.type === 'text') {
                 // 純文字
-                const textSpan = activeDocument.createElement('span');
-                textSpan.textContent = media.title.text;
-                textSpan.addClass('mvgb-media-link-text');
-                linkArea.appendChild(textSpan);
+                linkArea.createSpan({ cls: 'mvgb-media-link-text', text: media.title.text });
             } else {
                 // 內部或外部連結
-                const link = activeDocument.createElement('a');
-                link.textContent = media.title.text;
+                const link = linkArea.createEl('a', { text: media.title.text });
 
                 if (media.title.url) {
                     if (media.title.type === 'internal') {
@@ -1964,15 +1887,17 @@ export class GalleryBlock {
     }
 
     createHoverControls(item: GalleryItem, index: number, allItems: GalleryItem[], galleryId: string, sourcePath?: string) {
-        const controls = activeDocument.createElement('div');
-        controls.className = 'mvgb-hover-controls';
+        const controls = createDiv('mvgb-hover-controls');
 
         if (item.loc) {
-            const dragHandle = activeDocument.createElement('button');
-            dragHandle.className = 'mvgb-hover-btn mvgb-btn-drag';
-            dragHandle.type = 'button';
-            dragHandle.title = t('drag_reorder');
-            dragHandle.draggable = true;
+            const dragHandle = controls.createEl('button', {
+                cls: 'mvgb-hover-btn mvgb-btn-drag',
+                attr: {
+                    type: 'button',
+                    title: t('drag_reorder'),
+                    draggable: 'true'
+                }
+            });
             dragHandle.appendChild(this.createDragHandleIcon());
             dragHandle.onclick = (e) => {
                 e.preventDefault();

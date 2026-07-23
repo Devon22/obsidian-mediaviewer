@@ -50,7 +50,18 @@ export class MediaViewSettingTab extends PluginSettingTab {
         const { containerEl } = this;
         containerEl.empty();
 
-        // 1. 是否顯示圖片資訊 (例如尺寸、檔案大小等)
+        // 1. 畫廊圖片是否使用瀑布流顯示
+        new Setting(containerEl)
+            .setName(t('gallery_waterfall'))
+            .setDesc(t('gallery_waterfall_desc'))
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.galleryWaterfall)
+                .onChange(async (value) => {
+                    this.plugin.settings.galleryWaterfall = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        // 2. 是否顯示圖片資訊 (例如尺寸、檔案大小等)
         new Setting(containerEl)
             .setName(t('show_image_info'))
             .setDesc(t('show_image_info_desc'))
@@ -61,7 +72,7 @@ export class MediaViewSettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
-        // 2. 是否允許在媒體檢視器中直接刪除媒體檔案
+        // 3. 是否允許在媒體檢視器中直接刪除媒體檔案
         new Setting(containerEl)
             .setName(t('allow_media_deletion'))
             .setDesc(t('allow_media_deletion_desc'))
@@ -72,7 +83,7 @@ export class MediaViewSettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
         
-        // 3. 打開畫廊時是否自動開啟第一張圖片
+        // 4. 打開畫廊時是否自動開啟第一張圖片
         new Setting(containerEl)
             .setName(t('auto_open_first_image'))
             .setDesc(t('auto_open_first_image_desc'))
@@ -83,7 +94,7 @@ export class MediaViewSettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
-        // 4. 檢視時是否以原始大小尺寸顯示
+        // 5. 檢視時是否以原始大小尺寸顯示
         new Setting(containerEl)
             .setName(t('display_original_size'))
             .setDesc(t('display_original_size_desc'))
@@ -94,7 +105,7 @@ export class MediaViewSettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
-        // 5. 點擊圖片時是否打開媒體瀏覽器
+        // 6. 點擊圖片時是否打開媒體瀏覽器
         new Setting(containerEl)
             .setName(t('click_to_open_media'))
             .setDesc(t('click_to_open_media_desc'))
@@ -105,7 +116,7 @@ export class MediaViewSettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
         
-        // 6. 是否停用畫廊內的圖片點擊事件 (用以相容其他圖片類外掛)
+        // 7. 是否停用畫廊內的圖片點擊事件 (用以相容其他圖片類外掛)
         new Setting(containerEl)
             .setName(t('disable_click_to_open_media_on_gallery'))
             .setDesc(t('disable_click_to_open_media_on_gallery_desc'))
@@ -116,7 +127,7 @@ export class MediaViewSettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
-        // 7. 打開影片檔案時是否預設靜音播放
+        // 8. 打開影片檔案時是否預設靜音播放
         new Setting(containerEl)
             .setName(t('mute_video_on_open'))
             .setDesc(t('mute_video_on_open_desc'))
@@ -127,7 +138,7 @@ export class MediaViewSettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
-        // 8. 投影片自動播放的間隔時間 (秒，0 代表停用)
+        // 9. 投影片自動播放的間隔時間 (秒，0 代表停用)
         new Setting(containerEl)
             .setName(t('auto_play_interval'))
             .setDesc(t('auto_play_interval_desc'))
@@ -140,7 +151,7 @@ export class MediaViewSettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
-        // 9. 畫廊網格大小的預設等級 (小、中、大)
+        // 10. 畫廊網格大小的預設等級 (小、中、大)
         new Setting(containerEl)
             .setName(t('grid_size'))
             .setDesc(t('grid_size_desc'))
@@ -154,7 +165,7 @@ export class MediaViewSettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
-        // 10. 小尺寸網格的自訂寬度 (像素)
+        // 11. 小尺寸網格的自訂寬度 (像素)
         new Setting(containerEl)
             .setName(t('grid_size_small_width'))
             .setDesc(t('grid_size_small_width_desc'))
@@ -167,7 +178,7 @@ export class MediaViewSettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
-        // 11. 中尺寸網格的自訂寬度 (像素)
+        // 12. 中尺寸網格的自訂寬度 (像素)
         new Setting(containerEl)
             .setName(t('grid_size_medium_width'))
             .setDesc(t('grid_size_medium_width_desc'))
@@ -180,7 +191,7 @@ export class MediaViewSettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
-        // 12. 大尺寸網格的自訂寬度 (像素)
+        // 13. 大尺寸網格的自訂寬度 (像素)
         new Setting(containerEl)
             .setName(t('grid_size_large_width'))
             .setDesc(t('grid_size_large_width_desc'))
@@ -190,17 +201,6 @@ export class MediaViewSettingTab extends PluginSettingTab {
                 .onChange(async (value) => {
                     const numValue = parseInt(value);
                     this.plugin.settings.galleryGridSizeLarge = isNaN(numValue) ? 150 : numValue;
-                    await this.plugin.saveSettings();
-                }));
-
-        // 13. 畫廊圖片是否使用瀑布流顯示
-        new Setting(containerEl)
-            .setName(t('gallery_waterfall'))
-            .setDesc(t('gallery_waterfall_desc'))
-            .addToggle(toggle => toggle
-                .setValue(this.plugin.settings.galleryWaterfall)
-                .onChange(async (value) => {
-                    this.plugin.settings.galleryWaterfall = value;
                     await this.plugin.saveSettings();
                 }));
 
@@ -216,19 +216,5 @@ export class MediaViewSettingTab extends PluginSettingTab {
                     this.plugin.settings.itemsPerPage = isNaN(numValue) ? 20 : numValue;
                     await this.plugin.saveSettings();
                 }));
-        
-        // 15. 媒體檔案的插入位置 (最前面或最後面)
-        new Setting(containerEl)
-            .setName(t('insert_position'))
-            .addDropdown(dropdown => {
-                dropdown
-                    .addOption('true', t('insert_at_end'))
-                    .addOption('false', t('insert_at_start'))
-                    .setValue(this.plugin.settings.insertAtEnd.toString())
-                    .onChange(async (value) => {
-                        this.plugin.settings.insertAtEnd = value === 'true';
-                        await this.plugin.saveSettings();
-                    });
-            });
     }
 }
